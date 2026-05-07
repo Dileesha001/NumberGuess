@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Preconnect to Google Fonts for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Import 'Inter' font for a modern look -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css" />
+    <title>Number Guessing Game</title>
+  </head>
+  <body>
+    <div id="app">
+      <main class="game-container">
+        <header class="game-header">
+          <h1>Number Guessing Game</h1>
+          <p>I have selected a number between <span class="highlight">1 and 100</span>.</p>
+        </header>
+
+        <div class="game-body">
+          <form id="guess-form" class="guess-form">
+            <input 
+              type="number" 
+              id="guess-input" 
+              class="guess-input" 
+              placeholder="Enter your guess" 
+              min="1" 
+              max="100" 
+              required
+            />
+            <button type="submit" class="guess-btn" id="submit-btn">Guess</button>
+          </form>
+
+          <div id="message-container" class="message-container hidden">
+            <!-- Messages will be injected here via JS -->
+          </div>
+
+          <div id="stats" class="stats">
+            Attempts: <span id="attempts-count">0</span>
+          </div>
+        </div>
+
+        <div class="game-footer">
+          <button id="restart-btn" class="restart-btn hidden">Play Again</button>
+        </div>
+      </main>
+    </div>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

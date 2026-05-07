@@ -1,0 +1,228 @@
+:root {
+  --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+  --card-bg: rgba(255, 255, 255, 0.05);
+  --card-border: rgba(255, 255, 255, 0.1);
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --accent-color: #6366f1;
+  --accent-hover: #4f46e5;
+  --success-color: #10b981;
+  --error-color: #ef4444;
+  --warning-color: #f59e0b;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg-gradient);
+  color: var(--text-primary);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+#app {
+  width: 100%;
+  max-width: 500px;
+  padding: 20px;
+}
+
+.game-container {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 24px;
+  padding: 40px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.game-container:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6);
+}
+
+.game-header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+  background: linear-gradient(to right, #818cf8, #c084fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.game-header p {
+  color: var(--text-secondary);
+  font-size: 1.05rem;
+  margin-bottom: 30px;
+}
+
+.highlight {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.guess-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.guess-input {
+  width: 100%;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 2px solid var(--card-border);
+  border-radius: 12px;
+  color: var(--text-primary);
+  font-size: 1.2rem;
+  text-align: center;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.guess-input:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+}
+
+.guess-input::-webkit-outer-spin-button,
+.guess-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.guess-input[type=number] {
+  appearance: textfield;
+}
+
+.guess-btn {
+  padding: 16px;
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.guess-btn:hover {
+  background: var(--accent-hover);
+  transform: translateY(-2px);
+}
+
+.guess-btn:active {
+  transform: translateY(0);
+}
+
+.message-container {
+  padding: 16px;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin-bottom: 24px;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.message-container.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.message-container.hidden {
+  display: none;
+}
+
+.message-container.error {
+  background: rgba(239, 68, 68, 0.1);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.message-container.warning {
+  background: rgba(245, 158, 11, 0.1);
+  color: #fcd34d;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.message-container.success {
+  background: rgba(16, 185, 129, 0.1);
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.stats {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  margin-bottom: 24px;
+}
+
+#attempts-count {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.restart-btn {
+  padding: 14px 28px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.restart-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.restart-btn.hidden {
+  display: none;
+}
+
+/* Animations */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+  20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.shake {
+  animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes pop {
+  0% { transform: scale(0.9); opacity: 0; }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.pop {
+  animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+
+@media (max-width: 480px) {
+  .game-container {
+    padding: 30px 20px;
+  }
+  
+  .game-header h1 {
+    font-size: 1.75rem;
+  }
+}

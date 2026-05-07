@@ -3,12 +3,28 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "main": "electron/main.js",
+  "author": "Developer",
+  "description": "Number Guessing Game Desktop Application",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && electron-builder --win",
     "preview": "vite preview"
   },
+  "build": {
+    "appId": "com.numberguess.app",
+    "productName": "NumberGuess",
+    "win": {
+      "target": "nsis"
+    },
+    "directories": {
+      "output": "dist-electron-build"
+    }
+  },
   "devDependencies": {
-    "vite": "^8.0.10"
+    "electron": "^41.5.0",
+    "electron-builder": "^26.8.1",
+    "vite": "^8.0.10",
+    "vite-plugin-electron": "^0.29.1"
   }
 }

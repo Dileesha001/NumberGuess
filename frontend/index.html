@@ -29,11 +29,11 @@
             <p>Guess the hidden number between 1 and 100.</p>
           </div>
           
-          <!-- Placeholders -->
-          <div class="game-card placeholder">
-            <div class="game-card-icon">❓</div>
-            <h3>Coming Soon</h3>
-            <p>More games will be added here in the future.</p>
+          <!-- Game 2: Hangman -->
+          <div class="game-card" data-game="hangman">
+            <div class="game-card-icon">🪢</div>
+            <h3>Hangman</h3>
+            <p>Guess the hidden word before it's too late.</p>
           </div>
           <div class="game-card placeholder">
             <div class="game-card-icon">❓</div>
@@ -85,6 +85,75 @@
         <div class="game-footer">
           <button id="restart-btn" class="restart-btn hidden">Play Again</button>
         </div>
+        </main>
+      </div>
+
+      <!-- Game View for Hangman -->
+      <div id="hangman-game" class="hidden">
+        <div class="game-nav" style="max-width: 500px; margin: 0 auto 20px auto;">
+          <button id="hangman-back-btn" class="back-btn">← Back to Menu</button>
+        </div>
+        <main class="game-container">
+          <header class="game-header">
+            <h1>Hangman</h1>
+            <p>Guess the word by entering letters!</p>
+          </header>
+
+          <div class="game-body">
+            <!-- Hangman Drawing SVG -->
+            <div class="hangman-drawing">
+              <svg height="200" width="200" class="figure-container">
+                <!-- Scaffold -->
+                <line x1="20" y1="190" x2="180" y2="190" class="figure-part show-part"/>
+                <line x1="60" y1="190" x2="60" y2="20" class="figure-part show-part"/>
+                <line x1="60" y1="20" x2="120" y2="20" class="figure-part show-part"/>
+                <line x1="120" y1="20" x2="120" y2="40" class="figure-part show-part"/>
+
+                <!-- Head (1 wrong) -->
+                <circle cx="120" cy="60" r="20" class="figure-part hide-part" id="hangman-head"/>
+                <!-- Body (2 wrong) -->
+                <line x1="120" y1="80" x2="120" y2="130" class="figure-part hide-part" id="hangman-body"/>
+                <!-- Left Arm (3 wrong) -->
+                <line x1="120" y1="90" x2="100" y2="120" class="figure-part hide-part" id="hangman-arm-l"/>
+                <!-- Right Arm (4 wrong) -->
+                <line x1="120" y1="90" x2="140" y2="120" class="figure-part hide-part" id="hangman-arm-r"/>
+                <!-- Left Leg (5 wrong) -->
+                <line x1="120" y1="130" x2="100" y2="170" class="figure-part hide-part" id="hangman-leg-l"/>
+                <!-- Right Leg (6 wrong) -->
+                <line x1="120" y1="130" x2="140" y2="170" class="figure-part hide-part" id="hangman-leg-r"/>
+              </svg>
+            </div>
+
+            <!-- Word Display -->
+            <div id="hangman-word-display" class="word-display">
+              <!-- Empty boxes generated here -->
+            </div>
+
+            <!-- Input Form -->
+            <form id="hangman-form" class="guess-form">
+              <input 
+                type="text" 
+                id="hangman-input" 
+                class="guess-input" 
+                placeholder="?" 
+                maxlength="1" 
+                autocomplete="off"
+                required
+                style="width: 80px; margin: 0 auto; text-align: center; text-transform: uppercase;"
+              />
+              <button type="submit" class="guess-btn" id="hangman-submit-btn">Guess</button>
+            </form>
+
+            <div id="hangman-message" class="message-container hidden"></div>
+
+            <div class="stats">
+              Wrong Guesses: <span id="hangman-wrong-count">0</span> / 6
+            </div>
+          </div>
+
+          <div class="game-footer">
+            <button id="hangman-restart-btn" class="restart-btn hidden">Play Again</button>
+          </div>
         </main>
       </div>
     </div>

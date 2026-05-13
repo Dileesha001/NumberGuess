@@ -3,6 +3,17 @@ let secretNumber;
 let attempts;
 let isGameOver;
 
+// Hangman State
+const hangmanWords = [
+  'APPLE', 'BANANA', 'ELEPHANT', 'GUITAR', 'MOUNTAIN', 
+  'OCEAN', 'PLANET', 'SUMMER', 'WINTER', 'BUTTERFLY', 
+  'SUNFLOWER', 'PENGUIN', 'DIAMOND', 'HOSPITAL', 'LIBRARY'
+];
+let currentWord = '';
+let guessedLetters = new Set();
+let wrongGuesses = 0;
+let isHangmanGameOver = false;
+
 // DOM Elements
 const form = document.getElementById('guess-form');
 const guessInput = document.getElementById('guess-input');
@@ -10,6 +21,25 @@ const submitBtn = document.getElementById('submit-btn');
 const messageContainer = document.getElementById('message-container');
 const attemptsCount = document.getElementById('attempts-count');
 const restartBtn = document.getElementById('restart-btn');
+
+// Hangman DOM Elements
+const hangmanGameView = document.getElementById('hangman-game');
+const hangmanWordDisplay = document.getElementById('hangman-word-display');
+const hangmanForm = document.getElementById('hangman-form');
+const hangmanInput = document.getElementById('hangman-input');
+const hangmanSubmitBtn = document.getElementById('hangman-submit-btn');
+const hangmanMessage = document.getElementById('hangman-message');
+const hangmanWrongCount = document.getElementById('hangman-wrong-count');
+const hangmanRestartBtn = document.getElementById('hangman-restart-btn');
+const hangmanBackBtn = document.getElementById('hangman-back-btn');
+const hangmanParts = [
+  document.getElementById('hangman-head'),
+  document.getElementById('hangman-body'),
+  document.getElementById('hangman-arm-l'),
+  document.getElementById('hangman-arm-r'),
+  document.getElementById('hangman-leg-l'),
+  document.getElementById('hangman-leg-r')
+];
 
 // Navigation Elements
 const mainMenu = document.getElementById('main-menu');
@@ -21,13 +51,20 @@ const gameCards = document.querySelectorAll('.game-card');
 function showMenu() {
   mainMenu.classList.remove('hidden');
   numberGuessGame.classList.add('hidden');
+  hangmanGameView.classList.add('hidden');
 }
 
 function showGame(gameId) {
+  mainMenu.classList.add('hidden');
+  numberGuessGame.classList.add('hidden');
+  hangmanGameView.classList.add('hidden');
+  
   if (gameId === 'number-guess') {
-    mainMenu.classList.add('hidden');
     numberGuessGame.classList.remove('hidden');
     initGame();
+  } else if (gameId === 'hangman') {
+    hangmanGameView.classList.remove('hidden');
+    initHangman();
   }
 }
 
@@ -126,11 +163,131 @@ function handleGuess(e) {
   }
 }
 
+// --- Hangman Logic ---
+
+function showHangmanMessage(text, type) {
+  hangmanMessage.innerHTML = text;
+  hangmanMessage.className = `message-container show ${type}`;
+  hangmanMessage.classList.remove('shake', 'pop');
+  void hangmanMessage.offsetWidth;
+  if (type === 'error' || type === 'warning') {
+    hangmanMessage.classList.add('shake');
+  } else if (type === 'success') {
+    hangmanMessage.classList.add('pop');
+  }
+}
+
+function initHangman() {
+  currentWord = hangmanWords[Math.floor(Math.random() * hangmanWords.length)];
+  guessedLetters.clear();
+  wrongGuesses = 0;
+  isHangmanGameOver = false;
+
+  hangmanWrongCount.textContent = wrongGuesses;
+  hangmanInput.value = '';
+  hangmanInput.disabled = false;
+  hangmanSubmitBtn.disabled = false;
+  hangmanSubmitBtn.style.opacity = '1';
+  hangmanMessage.className = 'message-container hidden';
+  hangmanMessage.innerHTML = '';
+  hangmanRestartBtn.classList.add('hidden');
+
+  hangmanParts.forEach(part => {
+    part.classList.remove('show-part');
+    part.classList.add('hide-part');
+  });
+
+  renderHangmanWord();
+  hangmanInput.focus();
+}
+
+function renderHangmanWord() {
+  hangmanWordDisplay.innerHTML = '';
+  for (let i = 0; i < currentWord.length; i++) {
+    const letter = currentWord[i];
+    const box = document.createElement('div');
+    box.className = 'letter-box';
+    if (guessedLetters.has(letter)) {
+      box.textContent = letter;
+    }
+    hangmanWordDisplay.appendChild(box);
+  }
+}
+
+function handleHangmanGuess(e) {
+  e.preventDefault();
+  if (isHangmanGameOver) return;
+
+  const guess = hangmanInput.value.toUpperCase().trim();
+  hangmanInput.value = '';
+  hangmanInput.focus();
+
+  if (!guess || guess.length !== 1 || !/[A-Z]/.test(guess)) {
+    showHangmanMessage('Please enter a valid letter.', 'error');
+    return;
+  }
+
+  if (guessedLetters.has(guess)) {
+    showHangmanMessage('You already guessed that letter.', 'warning');
+    return;
+  }
+
+  guessedLetters.add(guess);
+
+  if (currentWord.includes(guess)) {
+    renderHangmanWord();
+    
+    // Check win condition
+    const isWin = currentWord.split('').every(l => guessedLetters.has(l));
+    if (isWin) {
+      isHangmanGameOver = true;
+      showHangmanMessage('🎉 You won! You guessed the word!', 'success');
+      hangmanInput.disabled = true;
+      hangmanSubmitBtn.disabled = true;
+      hangmanSubmitBtn.style.opacity = '0.5';
+      hangmanRestartBtn.classList.remove('hidden');
+      hangmanRestartBtn.focus();
+    } else {
+      showHangmanMessage('Good guess!', 'success');
+    }
+  } else {
+    wrongGuesses++;
+    hangmanWrongCount.textContent = wrongGuesses;
+    hangmanParts[wrongGuesses - 1].classList.remove('hide-part');
+    hangmanParts[wrongGuesses - 1].classList.add('show-part');
+
+    if (wrongGuesses >= 6) {
+      isHangmanGameOver = true;
+      hangmanWordDisplay.innerHTML = '';
+      for (let i = 0; i < currentWord.length; i++) {
+        const box = document.createElement('div');
+        box.className = 'letter-box';
+        box.textContent = currentWord[i];
+        if (!guessedLetters.has(currentWord[i])) {
+          box.style.color = 'var(--error-color)';
+        }
+        hangmanWordDisplay.appendChild(box);
+      }
+      showHangmanMessage(`Game Over! The word was ${currentWord}.`, 'error');
+      hangmanInput.disabled = true;
+      hangmanSubmitBtn.disabled = true;
+      hangmanSubmitBtn.style.opacity = '0.5';
+      hangmanRestartBtn.classList.remove('hidden');
+      hangmanRestartBtn.focus();
+    } else {
+      showHangmanMessage('Incorrect guess!', 'warning');
+    }
+  }
+}
+
 // Event Listeners
 form.addEventListener('submit', handleGuess);
 restartBtn.addEventListener('click', initGame);
-
 backBtn.addEventListener('click', showMenu);
+
+hangmanForm.addEventListener('submit', handleHangmanGuess);
+hangmanRestartBtn.addEventListener('click', initHangman);
+hangmanBackBtn.addEventListener('click', showMenu);
 
 gameCards.forEach(card => {
   card.addEventListener('click', () => {

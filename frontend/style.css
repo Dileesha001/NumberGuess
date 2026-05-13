@@ -331,6 +331,51 @@ body {
   animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
 }
 
+/* --- Hangman Styles --- */
+.hangman-drawing {
+  margin-bottom: 24px;
+}
+
+.figure-container {
+  fill: transparent;
+  stroke: var(--text-primary);
+  stroke-width: 4px;
+  stroke-linecap: round;
+}
+
+.figure-part {
+  transition: all 0.3s ease;
+}
+
+.hide-part {
+  display: none;
+}
+
+.show-part {
+  display: block;
+}
+
+.word-display {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 30px;
+}
+
+.letter-box {
+  width: 40px;
+  height: 50px;
+  border-bottom: 3px solid var(--text-primary);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-transform: uppercase;
+}
+
 @media (max-width: 480px) {
   .game-container {
     padding: 30px 20px;

@@ -12,8 +12,8 @@
     "preview": "vite preview"
   },
   "build": {
-    "appId": "com.numberguess.app",
-    "productName": "NumberGuess",
+    "appId": "com.dprminigames.app",
+    "productName": "DPR Mini Games",
     "win": {
       "target": "nsis"
     },

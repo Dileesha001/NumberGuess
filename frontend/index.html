@@ -10,12 +10,51 @@
     <!-- Import 'Inter' font for a modern look -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./style.css" />
-    <title>Number Guessing Game</title>
+    <title>DPR Mini Games</title>
   </head>
   <body>
     <div id="app">
-      <main class="game-container">
-        <header class="game-header">
+      <!-- Main Menu View -->
+      <main id="main-menu" class="menu-container">
+        <header class="menu-header">
+          <h1>DPR Mini Games</h1>
+          <p>Select a game to play!</p>
+        </header>
+        
+        <div class="games-grid">
+          <!-- Game 1: Number Guessing -->
+          <div class="game-card" data-game="number-guess">
+            <div class="game-card-icon">🔢</div>
+            <h3>Number Guessing</h3>
+            <p>Guess the hidden number between 1 and 100.</p>
+          </div>
+          
+          <!-- Placeholders -->
+          <div class="game-card placeholder">
+            <div class="game-card-icon">❓</div>
+            <h3>Coming Soon</h3>
+            <p>More games will be added here in the future.</p>
+          </div>
+          <div class="game-card placeholder">
+            <div class="game-card-icon">❓</div>
+            <h3>Coming Soon</h3>
+            <p>More games will be added here in the future.</p>
+          </div>
+          <div class="game-card placeholder">
+            <div class="game-card-icon">❓</div>
+            <h3>Coming Soon</h3>
+            <p>More games will be added here in the future.</p>
+          </div>
+        </div>
+      </main>
+
+      <!-- Game View for Number Guessing -->
+      <div id="number-guess-game" class="hidden">
+        <div class="game-nav" style="max-width: 500px; margin: 0 auto 20px auto;">
+          <button id="back-btn" class="back-btn">← Back to Menu</button>
+        </div>
+        <main class="game-container">
+          <header class="game-header">
           <h1>Number Guessing Game</h1>
           <p>I have selected a number between <span class="highlight">1 and 100</span>.</p>
         </header>
@@ -46,7 +85,8 @@
         <div class="game-footer">
           <button id="restart-btn" class="restart-btn hidden">Play Again</button>
         </div>
-      </main>
+        </main>
+      </div>
     </div>
     <script type="module" src="./main.js"></script>
   </body>

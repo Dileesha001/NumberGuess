@@ -11,6 +11,26 @@ const messageContainer = document.getElementById('message-container');
 const attemptsCount = document.getElementById('attempts-count');
 const restartBtn = document.getElementById('restart-btn');
 
+// Navigation Elements
+const mainMenu = document.getElementById('main-menu');
+const numberGuessGame = document.getElementById('number-guess-game');
+const backBtn = document.getElementById('back-btn');
+const gameCards = document.querySelectorAll('.game-card');
+
+// Navigation Logic
+function showMenu() {
+  mainMenu.classList.remove('hidden');
+  numberGuessGame.classList.add('hidden');
+}
+
+function showGame(gameId) {
+  if (gameId === 'number-guess') {
+    mainMenu.classList.add('hidden');
+    numberGuessGame.classList.remove('hidden');
+    initGame();
+  }
+}
+
 // Initialize Game
 function initGame() {
   secretNumber = Math.floor(Math.random() * 100) + 1;
@@ -109,6 +129,17 @@ function handleGuess(e) {
 // Event Listeners
 form.addEventListener('submit', handleGuess);
 restartBtn.addEventListener('click', initGame);
+
+backBtn.addEventListener('click', showMenu);
+
+gameCards.forEach(card => {
+  card.addEventListener('click', () => {
+    const gameId = card.getAttribute('data-game');
+    if (gameId) {
+      showGame(gameId);
+    }
+  });
+});
 
 // Start the game for the first time
 initGame();

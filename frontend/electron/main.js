@@ -9,14 +9,14 @@ let win;
 
 function createWindow() {
   win = new BrowserWindow({
-    width: 800,
+    width: 1000,
     height: 800,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
     },
     autoHideMenuBar: true, // Hides the top menu for a clean look
-    title: "Number Guessing Game",
+    title: "DPR Mini Games",
     icon: path.join(__dirname, '../public/vite.svg')
   });
 

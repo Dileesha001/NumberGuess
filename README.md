@@ -1,14 +1,19 @@
-# Number Guessing Game
+# DPR Mini Games
 
-This repository contains two different versions of a classic **Number Guessing Game**, where the objective is to guess a randomly selected number between 1 and 100 within the fewest attempts possible.
+This repository contains **DPR Mini Games**, a collection of interactive games. The project features two different implementations: a lightweight Python command-line game and a modern, standalone desktop application built with Electron.
+
+## Included Games
+
+1. **Number Guessing Game**: A classic game where the objective is to guess a randomly selected number between 1 and 100 within the fewest attempts possible. Available in both CLI and GUI versions.
+2. **Hangman**: A word-guessing game where you try to guess the hidden word by suggesting letters before you run out of attempts and the hangman figure is complete. Available in the GUI version.
 
 ## Implementations
 
 ### 1. Python Command-Line Game
-A lightweight, text-based version of the game written in Python. It runs directly in the terminal and provides feedback on whether your guesses are too high or too low.
+A lightweight, text-based version of the Number Guessing Game written in Python. It runs directly in the terminal and provides feedback on whether your guesses are too high or too low.
 
 ### 2. Electron/Vite Desktop Application
-A standalone desktop application with a rich, modern Graphical User Interface (GUI). Built using HTML, CSS, JavaScript, Vite, and Electron, it features a visual interface, animations, and an engaging user experience.
+A standalone desktop application featuring a main menu and multiple games (Number Guessing and Hangman). Built using HTML, CSS, JavaScript, Vite, and Electron, it features a visual interface, animations, dynamic SVG drawings, and an engaging user experience.
 
 ---
 
@@ -19,7 +24,7 @@ A standalone desktop application with a rich, modern Graphical User Interface (G
 - **For the Python Version:** [Python 3.x](https://www.python.org/downloads/) installed on your machine.
 - **For the GUI Version:** [Node.js](https://nodejs.org/) (which includes npm) installed on your machine.
 
-### Running the Python Game
+### Running the Python Game (Number Guessing Only)
 
 1. Open your terminal or command prompt.
 2. Navigate to the root directory of the project.
@@ -28,7 +33,7 @@ A standalone desktop application with a rich, modern Graphical User Interface (G
    python NumberGuess.py
    ```
 
-### Running the GUI Application
+### Running the GUI Application (All Games)
 
 1. Open your terminal or command prompt.
 2. Navigate to the `frontend` directory:
@@ -51,10 +56,21 @@ A standalone desktop application with a rich, modern Graphical User Interface (G
 
 ## Features
 
-- Dynamic feedback indicating whether the guess is too high or too low.
-- Input validation to ensure guesses are within the 1-100 range.
-- A counter keeping track of the number of attempts made.
-- Modern interface with animations in the GUI version.
+- **Multi-game platform** with a central menu to select games.
+- **Number Guessing Game**:
+  - Dynamic feedback (too high/too low).
+  - Input validation and attempt counter.
+- **Hangman Game**:
+  - Random word selection from a predefined list.
+  - Interactive UI with letter placeholders.
+  - Dynamic SVG drawing for the hangman figure based on wrong guesses.
+  - Win/Loss tracking and messages.
+- **Modern UI**: Smooth animations, clean layouts, and interactive elements across all games.
+
+## Tech Stack
+
+- **CLI Game**: Python
+- **GUI Application**: HTML5, Vanilla CSS, JavaScript (ES6+), Vite, Electron
 
 ## License
 

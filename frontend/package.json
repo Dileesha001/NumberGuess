@@ -19,7 +19,13 @@
     },
     "directories": {
       "output": "dist-electron-build"
-    }
+    },
+    "extraResources": [
+      {
+        "from": "../cricket_logic.py",
+        "to": "cricket_logic.py"
+      }
+    ]
   },
   "devDependencies": {
     "electron": "^41.5.0",

@@ -1,3 +1,18 @@
+// Node.js imports for Electron
+let execFile;
+let pathModule;
+let fsModule;
+let processModule;
+try {
+  const req = typeof window !== 'undefined' && window.require ? window.require : require;
+  execFile = req('child_process').execFile;
+  pathModule = req('path');
+  fsModule = req('fs');
+  processModule = req('process');
+} catch (e) {
+  console.warn("Node integration not available", e);
+}
+
 // Game State
 let secretNumber;
 let attempts;
@@ -89,17 +104,177 @@ const numberGuessGame = document.getElementById('number-guess-game');
 const backBtn = document.getElementById('back-btn');
 const gameCards = document.querySelectorAll('.game-card');
 
+// --- Mini Cricket State & DOM ---
+let cricketState = { runs: 0, wickets: 0, balls_faced: 0, max_balls: 12, game_over: false };
+const cricketGameView = document.getElementById('cricket-game');
+const cricketRuns = document.getElementById('cricket-runs');
+const cricketWickets = document.getElementById('cricket-wickets');
+const cricketBalls = document.getElementById('cricket-balls');
+const cricketMessage = document.getElementById('cricket-message');
+const cricketHitBtn = document.getElementById('cricket-hit-btn');
+const cricketRestartBtn = document.getElementById('cricket-restart-btn');
+const cricketBackBtn = document.getElementById('cricket-back-btn');
+
+function showCricketMessage(text, type) {
+  cricketMessage.innerHTML = text;
+  cricketMessage.className = `message-container show ${type}`;
+  cricketMessage.classList.remove('shake', 'pop');
+  void cricketMessage.offsetWidth;
+  if (type === 'error' || type === 'warning') {
+    cricketMessage.classList.add('shake');
+  } else if (type === 'success') {
+    cricketMessage.classList.add('pop');
+  }
+}
+
+function initCricket() {
+  cricketState = { runs: 0, wickets: 0, balls_faced: 0, max_balls: 12, game_over: false };
+  updateCricketUI();
+  cricketHitBtn.disabled = false;
+  cricketHitBtn.style.opacity = '1';
+  cricketMessage.className = 'message-container hidden';
+  cricketMessage.innerHTML = '';
+  cricketRestartBtn.classList.add('hidden');
+}
+
+function updateCricketUI() {
+  cricketRuns.textContent = cricketState.runs;
+  cricketWickets.textContent = cricketState.wickets;
+  cricketBalls.textContent = cricketState.balls_faced;
+}
+
+function handleCricketHit() {
+  if (cricketState.game_over) return;
+  if (!execFile) { showCricketMessage('Error: Node integration missing', 'error'); return; }
+  cricketHitBtn.disabled = true;
+  cricketHitBtn.style.opacity = '0.7';
+  let scriptPath = '../cricket_logic.py';
+  if (pathModule && fsModule && processModule) {
+     const resourcesPath = processModule.resourcesPath || processModule.cwd();
+     const pathsToTry = [
+       pathModule.join(resourcesPath, 'cricket_logic.py'),
+       pathModule.join(processModule.cwd(), 'cricket_logic.py'),
+       pathModule.join(processModule.cwd(), '../cricket_logic.py')
+     ];
+     
+     for (const p of pathsToTry) {
+       if (fsModule.existsSync(p)) {
+         scriptPath = p;
+         break;
+       }
+     }
+  }
+
+  // Graphics Animation START
+  const ball = document.getElementById('cricket-ball');
+  const bat = document.getElementById('cricket-bat');
+  const bowlerArm = document.getElementById('bowler-arm');
+  const wickets = document.getElementById('wickets');
+  
+  if (ball && bat && bowlerArm) {
+    ball.style.transition = 'none';
+    ball.style.opacity = '1';
+    ball.setAttribute('cx', '60');
+    ball.setAttribute('cy', '65');
+    bat.style.transform = 'rotate(0deg)';
+    bowlerArm.style.transform = 'rotate(-45deg)';
+    if (wickets) {
+      wickets.style.transition = 'none';
+      wickets.style.transform = 'rotate(0deg)';
+      wickets.style.transformOrigin = '315px 100px';
+    }
+    
+    // Bowl the ball
+    setTimeout(() => { bowlerArm.style.transform = 'rotate(45deg)'; }, 50);
+    setTimeout(() => {
+      ball.style.transition = 'all 0.3s linear';
+      ball.setAttribute('cx', '315');
+      ball.setAttribute('cy', '85');
+    }, 100);
+  }
+  
+  const stateStr = JSON.stringify(cricketState);
+  
+  // Use 'py' as default on Windows, fallback to 'python'
+  execFile('py', [scriptPath, '--action', 'hit', '--state', stateStr], (error, stdout) => {
+    setTimeout(() => {
+      cricketHitBtn.disabled = false;
+      cricketHitBtn.style.opacity = '1';
+      if (error) { 
+         // Fallback to 'python' if 'py' is not found
+         execFile('python', [scriptPath, '--action', 'hit', '--state', stateStr], (err2, out2) => {
+            if (err2) {
+               console.error(err2); showCricketMessage('Error executing logic. Python is not installed!', 'error'); return;
+            }
+            processResponse(out2);
+         });
+         return; 
+      }
+      processResponse(stdout);
+    }, 400); // Wait for bowl animation
+  });
+
+  function processResponse(stdout) {
+    try {
+      const res = JSON.parse(stdout.trim());
+      if (res.error) { showCricketMessage(res.error, 'error'); return; }
+      cricketState = res.state;
+      updateCricketUI();
+      
+      const isOut = res.message.includes('OUT') || res.message.includes('ALL OUT');
+      const isSix = res.message.includes('SIX');
+      const isFour = res.message.includes('FOUR');
+      const type = isOut ? 'error' : (isSix || isFour) ? 'success' : 'warning';
+      
+      // Animate Outcome
+      if (ball && bat) {
+        bat.style.transform = 'rotate(-60deg)';
+        setTimeout(() => {
+           if (isOut) {
+             if (wickets) {
+               wickets.style.transition = 'transform 0.3s ease';
+               wickets.style.transform = 'rotate(45deg)';
+             }
+             ball.style.opacity = '0';
+           } else if (res.message.includes('Dot ball')) {
+             ball.style.opacity = '0';
+           } else {
+             ball.style.transition = 'all 0.4s ease-out';
+             ball.setAttribute('cx', isSix ? '10' : '100');
+             ball.setAttribute('cy', isSix ? '-20' : '10');
+             setTimeout(() => { ball.style.opacity = '0'; }, 400);
+           }
+        }, 100);
+      }
+      
+      showCricketMessage(res.message, type);
+      if (cricketState.game_over) {
+        cricketHitBtn.disabled = true;
+        cricketHitBtn.style.opacity = '0.5';
+        cricketRestartBtn.classList.remove('hidden');
+        cricketRestartBtn.focus();
+      }
+    } catch (e) {
+      console.error(e, stdout);
+      showCricketMessage('Invalid response from logic.', 'error');
+    }
+  }
+}
+
+
 // Navigation Logic
 function showMenu() {
   mainMenu.classList.remove('hidden');
   numberGuessGame.classList.add('hidden');
   hangmanGameView.classList.add('hidden');
+  if (cricketGameView) cricketGameView.classList.add('hidden');
 }
 
 function showGame(gameId) {
   mainMenu.classList.add('hidden');
   numberGuessGame.classList.add('hidden');
   hangmanGameView.classList.add('hidden');
+  if (cricketGameView) cricketGameView.classList.add('hidden');
   
   if (gameId === 'number-guess') {
     numberGuessGame.classList.remove('hidden');
@@ -107,6 +282,9 @@ function showGame(gameId) {
   } else if (gameId === 'hangman') {
     hangmanGameView.classList.remove('hidden');
     initHangman();
+  } else if (gameId === 'mini-cricket') {
+    cricketGameView.classList.remove('hidden');
+    initCricket();
   }
 }
 
@@ -348,6 +526,10 @@ backBtn.addEventListener('click', showMenu);
 hangmanForm.addEventListener('submit', handleHangmanGuess);
 hangmanRestartBtn.addEventListener('click', initHangman);
 hangmanBackBtn.addEventListener('click', showMenu);
+
+if (cricketHitBtn) cricketHitBtn.addEventListener('click', handleCricketHit);
+if (cricketRestartBtn) cricketRestartBtn.addEventListener('click', initCricket);
+if (cricketBackBtn) cricketBackBtn.addEventListener('click', showMenu);
 
 gameCards.forEach(card => {
   card.addEventListener('click', () => {

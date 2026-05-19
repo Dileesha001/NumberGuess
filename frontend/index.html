@@ -35,10 +35,11 @@
             <h3>Hangman</h3>
             <p>Guess the hidden word before it's too late.</p>
           </div>
-          <div class="game-card placeholder">
-            <div class="game-card-icon">❓</div>
-            <h3>Coming Soon</h3>
-            <p>More games will be added here in the future.</p>
+          <!-- Game 3: Mini Cricket -->
+          <div class="game-card" data-game="mini-cricket">
+            <div class="game-card-icon">🏏</div>
+            <h3>Mini Cricket</h3>
+            <p>Hit the ball to score runs before you get out.</p>
           </div>
           <div class="game-card placeholder">
             <div class="game-card-icon">❓</div>
@@ -155,6 +156,83 @@
 
           <div class="game-footer">
             <button id="hangman-restart-btn" class="restart-btn hidden">Play Again</button>
+          </div>
+        </main>
+      </div>
+
+      <!-- Game View for Mini Cricket -->
+      <div id="cricket-game" class="hidden">
+        <div class="game-nav" style="max-width: 500px; margin: 0 auto 20px auto;">
+          <button id="cricket-back-btn" class="back-btn">← Back to Menu</button>
+        </div>
+        <main class="game-container">
+          <header class="game-header">
+            <h1>Mini Cricket</h1>
+            <p>Score as many runs as possible in <span class="highlight">2 Overs (12 balls)</span>!</p>
+          </header>
+
+          <div class="game-body">
+            <!-- Cricket Graphics -->
+            <div class="cricket-graphics" style="margin-bottom: 20px; text-align: center;">
+              <svg height="150" width="380" id="cricket-svg" style="background: #4ade80; border: 2px solid #166534; border-radius: 8px;">
+                <!-- Pitch -->
+                <rect x="40" y="80" width="300" height="30" fill="#eab308"/>
+                
+                <!-- Wickets (Batsman side, right) -->
+                <g id="wickets">
+                  <line x1="315" y1="70" x2="315" y2="100" stroke="#b45309" stroke-width="2"/>
+                  <line x1="320" y1="70" x2="320" y2="100" stroke="#b45309" stroke-width="2"/>
+                  <line x1="325" y1="70" x2="325" y2="100" stroke="#b45309" stroke-width="2"/>
+                  <line x1="313" y1="70" x2="327" y2="70" stroke="#b45309" stroke-width="2"/>
+                </g>
+                
+                <!-- Batsman (Right side) -->
+                <circle cx="335" cy="40" r="8" fill="var(--text-primary)" />
+                <line x1="335" y1="48" x2="335" y2="80" stroke="var(--text-primary)" stroke-width="3"/>
+                <line x1="335" y1="80" x2="325" y2="100" stroke="var(--text-primary)" stroke-width="3"/>
+                <line x1="335" y1="80" x2="345" y2="100" stroke="var(--text-primary)" stroke-width="3"/>
+                
+                <!-- Bat -->
+                <line id="cricket-bat" x1="335" y1="65" x2="320" y2="95" stroke="#b45309" stroke-width="6" stroke-linecap="round" style="transform-origin: 335px 65px; transition: transform 0.15s ease;"/>
+                
+                <!-- Bowler (Left side) -->
+                <circle cx="45" cy="40" r="8" fill="var(--text-primary)" />
+                <line x1="45" y1="48" x2="45" y2="80" stroke="var(--text-primary)" stroke-width="3"/>
+                <line x1="45" y1="80" x2="35" y2="100" stroke="var(--text-primary)" stroke-width="3"/>
+                <line x1="45" y1="80" x2="55" y2="100" stroke="var(--text-primary)" stroke-width="3"/>
+                <line id="bowler-arm" x1="45" y1="55" x2="60" y2="65" stroke="var(--text-primary)" stroke-width="3" style="transform-origin: 45px 55px; transition: transform 0.2s ease;"/>
+                
+                <!-- Ball -->
+                <circle id="cricket-ball" cx="60" cy="65" r="4" fill="#ef4444" style="transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1); opacity: 0;"/>
+              </svg>
+            </div>
+
+            <div class="cricket-scoreboard">
+              <div class="score-item">
+                <span class="score-label">Runs</span>
+                <span id="cricket-runs" class="score-value">0</span>
+              </div>
+              <div class="score-item">
+                <span class="score-label">Wickets</span>
+                <span id="cricket-wickets" class="score-value">0</span>
+              </div>
+              <div class="score-item">
+                <span class="score-label">Balls</span>
+                <span id="cricket-balls" class="score-value">0</span> / 12
+              </div>
+            </div>
+
+            <div id="cricket-message" class="message-container hidden" style="margin-top: 20px;">
+              <!-- Messages will be injected here via JS -->
+            </div>
+
+            <div class="cricket-action-area" style="margin-top: 30px; text-align: center;">
+              <button id="cricket-hit-btn" class="guess-btn" style="font-size: 1.5rem; padding: 15px 40px; border-radius: 50px; background-color: var(--primary-color);">HIT 🏏</button>
+            </div>
+          </div>
+
+          <div class="game-footer">
+            <button id="cricket-restart-btn" class="restart-btn hidden">Play Again</button>
           </div>
         </main>
       </div>

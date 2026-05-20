@@ -1,6 +1,7 @@
 import argparse
 import json
 import random
+import base64
 
 def play_ball(state):
     # state = {'runs': 0, 'wickets': 0, 'balls_faced': 0, 'max_balls': 12, 'game_over': False}
@@ -47,9 +48,14 @@ def main():
     args = parser.parse_args()
     
     try:
-        state = json.loads(args.state)
-    except json.JSONDecodeError:
-        print(json.dumps({'error': 'Invalid state JSON'}))
+        try:
+            # Decode base64 first to avoid escaping issues
+            decoded_state = base64.b64decode(args.state).decode('utf-8')
+            state = json.loads(decoded_state)
+        except Exception:
+            state = json.loads(args.state)
+    except Exception as e:
+        print(json.dumps({'error': f'Invalid state JSON: {str(e)}'}))
         return
 
     if args.action == 'hit':

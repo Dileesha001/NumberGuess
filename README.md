@@ -6,6 +6,7 @@ This repository contains **DPR Mini Games**, a collection of interactive games. 
 
 1. **Number Guessing Game**: A classic game where the objective is to guess a randomly selected number between 1 and 100 within the fewest attempts possible. Available in both CLI and GUI versions.
 2. **Hangman**: A word-guessing game where you try to guess the hidden word by suggesting letters before you run out of attempts and the hangman figure is complete. Available in the GUI version.
+3. **Mini Cricket**: A real-time, timing-based cricket simulation featuring fielders driven by a Finite State Machine (FSM), vector physics, and keyboard controls. Available in the GUI version.
 
 ## Implementations
 
@@ -65,6 +66,12 @@ A standalone desktop application featuring a main menu and multiple games (Numbe
   - Interactive UI with letter placeholders.
   - Dynamic SVG drawing for the hangman figure based on wrong guesses.
   - Win/Loss tracking and messages.
+- **Mini Cricket**:
+  - Top-down vector graphics SVG stadium that dynamically resizes to fit the viewport.
+  - Fully FSM-driven 11-member fielding AI with `IDLE`, `CHASING`, and `THROWING` states.
+  - Keyboard-driven controls: **Enter** to bowl/start and standard/Numpad **5** to bat.
+  - Over-by-over transition changing ends (reverses bowling direction and bat/crease locations every 6 balls).
+  - Real-time run/wicket tracking and run-out simulation.
 - **Modern UI**: Smooth animations, clean layouts, and interactive elements across all games.
 
 ## Tech Stack

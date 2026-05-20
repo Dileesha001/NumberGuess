@@ -25,7 +25,7 @@ function createWindow() {
   if (process.env.VITE_DEV_SERVER_URL) {
     win.loadURL(process.env.VITE_DEV_SERVER_URL);
     // Optionally open DevTools
-    // win.webContents.openDevTools();
+    win.webContents.openDevTools();
   } else {
     // When built, load the local index.html
     win.loadFile(path.join(__dirname, '../dist/index.html'));

@@ -14,6 +14,11 @@
   </head>
   <body>
     <div id="app">
+      <!-- Header Controls -->
+      <div class="app-header-controls">
+        <button id="mute-btn" class="icon-btn" title="Toggle Sound">🔊</button>
+      </div>
+
       <!-- Main Menu View -->
       <main id="main-menu" class="menu-container">
         <header class="menu-header">
@@ -27,6 +32,7 @@
             <div class="game-card-icon">🔢</div>
             <h3>Number Guessing</h3>
             <p>Guess the hidden number between 1 and 100.</p>
+            <div class="card-stats">Best: <span class="card-stats-val" id="stats-guess-val">-</span></div>
           </div>
           
           <!-- Game 2: Hangman -->
@@ -34,12 +40,14 @@
             <div class="game-card-icon">🪢</div>
             <h3>Hangman</h3>
             <p>Guess the hidden word before it's too late.</p>
+            <div class="card-stats">Record: <span class="card-stats-val" id="stats-hangman-val">-</span></div>
           </div>
           <!-- Game 3: Mini Cricket -->
           <div class="game-card" data-game="mini-cricket">
             <div class="game-card-icon">🏏</div>
             <h3>Mini Cricket</h3>
             <p>Hit the ball to score runs before you get out.</p>
+            <div class="card-stats">High Score: <span class="card-stats-val" id="stats-cricket-val">-</span></div>
           </div>
           <div class="game-card placeholder">
             <div class="game-card-icon">❓</div>
@@ -80,6 +88,11 @@
 
           <div id="stats" class="stats">
             Attempts: <span id="attempts-count">0</span>
+          </div>
+
+          <div id="guess-history-container" class="history-container hidden">
+            <div class="history-label">Guess History</div>
+            <div id="guess-history-chips" class="history-chips"></div>
           </div>
         </div>
 
@@ -132,8 +145,13 @@
               </div>
             </div>
 
-            <!-- Input Form -->
-            <form id="hangman-form" class="guess-form">
+            <!-- On-Screen Virtual Keyboard -->
+            <div id="hangman-keyboard" class="keyboard-grid">
+              <!-- Dynamically populated letters -->
+            </div>
+
+            <!-- Kept hidden for compatibility -->
+            <form id="hangman-form" class="hidden">
               <input 
                 type="text" 
                 id="hangman-input" 
@@ -236,6 +254,18 @@
               <div class="score-item">
                 <span class="score-label">Balls</span>
                 <span id="cricket-balls" class="score-value">0</span> / 12
+              </div>
+            </div>
+
+            <div class="cricket-broadcast-strip">
+              <span>Delivery Details</span>
+              <span id="cricket-speed-val" class="broadcast-val">-</span>
+            </div>
+
+            <div class="over-history-container">
+              <div class="score-label" style="text-align: left; margin-bottom: 6px;">Over History</div>
+              <div id="cricket-over-balls" class="over-history-balls">
+                <!-- Ball circles will be generated here -->
               </div>
             </div>
 

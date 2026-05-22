@@ -17,6 +17,217 @@ try {
 let secretNumber;
 let attempts;
 let isGameOver;
+let guessHistory = [];
+
+// Statistics State
+let gameStats = {
+  numberGuess: { bestScore: null, gamesPlayed: 0 },
+  hangman: { wins: 0, losses: 0 },
+  cricket: { highRun: 0, gamesPlayed: 0 }
+};
+
+// Sound State
+let isMuted = false;
+let audioCtx = null;
+
+// Mini Cricket Over outcomes history
+let ballOutcomesHistory = [];
+
+function initAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+}
+
+function playSfx(type) {
+  if (isMuted) return;
+  try {
+    initAudio();
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    const now = audioCtx.currentTime;
+    
+    switch (type) {
+      case 'click': {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.frequency.setValueAtTime(600, now);
+        osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+        
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+        
+        osc.start(now);
+        osc.stop(now + 0.1);
+        break;
+      }
+      case 'bowl': {
+        const bufferSize = audioCtx.sampleRate * 0.4;
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = Math.random() * 2 - 1;
+        }
+        const noise = audioCtx.createBufferSource();
+        noise.buffer = buffer;
+        
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.Q.setValueAtTime(8, now);
+        filter.frequency.setValueAtTime(1200, now);
+        filter.frequency.exponentialRampToValueAtTime(300, now + 0.4);
+        
+        const gain = audioCtx.createGain();
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+        
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        noise.start(now);
+        noise.stop(now + 0.4);
+        break;
+      }
+      case 'hit': {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.frequency.setValueAtTime(850, now);
+        osc.frequency.setValueAtTime(400, now + 0.02);
+        
+        gain.gain.setValueAtTime(0.35, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+        
+        osc.start(now);
+        osc.stop(now + 0.12);
+        break;
+      }
+      case 'out': {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.frequency.setValueAtTime(160, now);
+        osc.frequency.linearRampToValueAtTime(50, now + 0.5);
+        
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+        
+        osc.start(now);
+        osc.stop(now + 0.5);
+        break;
+      }
+      case 'boundary': {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.frequency.setValueAtTime(523.25, now);
+        osc.frequency.setValueAtTime(659.25, now + 0.08);
+        osc.frequency.setValueAtTime(783.99, now + 0.16);
+        osc.frequency.setValueAtTime(1046.50, now + 0.24);
+        
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.linearRampToValueAtTime(0.12, now + 0.24);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+        
+        osc.start(now);
+        osc.stop(now + 0.45);
+        break;
+      }
+      case 'success': {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.frequency.setValueAtTime(880, now);
+        osc.frequency.exponentialRampToValueAtTime(1200, now + 0.15);
+        
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+        
+        osc.start(now);
+        osc.stop(now + 0.35);
+        break;
+      }
+      case 'fail': {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'square';
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.frequency.setValueAtTime(120, now);
+        osc.frequency.setValueAtTime(115, now + 0.15);
+        
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+        
+        osc.start(now);
+        osc.stop(now + 0.3);
+        break;
+      }
+    }
+  } catch (e) {
+    console.error("Audio playback error:", e);
+  }
+}
+
+function loadStats() {
+  try {
+    const stored = localStorage.getItem('dpr_mini_games_stats');
+    if (stored) {
+      gameStats = { ...gameStats, ...JSON.parse(stored) };
+    }
+  } catch (e) {
+    console.error("Failed to load stats from localStorage", e);
+  }
+  updateStatsUI();
+}
+
+function saveStats() {
+  try {
+    localStorage.setItem('dpr_mini_games_stats', JSON.stringify(gameStats));
+  } catch (e) {
+    console.error("Failed to save stats to localStorage", e);
+  }
+  updateStatsUI();
+}
+
+function updateStatsUI() {
+  const guessVal = document.getElementById('stats-guess-val');
+  const hangmanVal = document.getElementById('stats-hangman-val');
+  const cricketVal = document.getElementById('stats-cricket-val');
+  
+  if (guessVal) {
+    guessVal.textContent = gameStats.numberGuess.bestScore !== null 
+      ? `${gameStats.numberGuess.bestScore} att.` 
+      : '-';
+  }
+  if (hangmanVal) {
+    const total = gameStats.hangman.wins + gameStats.hangman.losses;
+    hangmanVal.textContent = total > 0 
+      ? `${gameStats.hangman.wins}W / ${gameStats.hangman.losses}L` 
+      : '-';
+  }
+  if (cricketVal) {
+    cricketVal.textContent = gameStats.cricket.highRun > 0 
+      ? `${gameStats.cricket.highRun} runs` 
+      : '-';
+  }
+}
 
 // Hangman State
 const hangmanWords = [
@@ -203,15 +414,78 @@ function showCricketMessage(text, type) {
   }
 }
 
+function generateBowlingSpeed() {
+  const speedVal = document.getElementById('cricket-speed-val');
+  if (!speedVal) return;
+  const isSpin = Math.random() < 0.35;
+  let speed = 0;
+  let style = "";
+  if (isSpin) {
+    speed = (85 + Math.random() * 20).toFixed(1);
+    style = "Off-spin";
+  } else {
+    speed = (130 + Math.random() * 22).toFixed(1);
+    style = "Fast-medium";
+  }
+  speedVal.innerHTML = `${style} @ <span class="highlight">${speed} km/h</span>`;
+}
+
+function updateOverHistoryUI() {
+  const container = document.getElementById('cricket-over-balls');
+  if (!container) return;
+  container.innerHTML = '';
+  
+  const currentOverIndex = Math.floor(Math.max(0, cricketState.balls_faced - 1) / 6);
+  const startIdx = currentOverIndex * 6;
+  const overBalls = ballOutcomesHistory.slice(startIdx, startIdx + 6);
+  
+  for (let i = 0; i < 6; i++) {
+    const chip = document.createElement('div');
+    chip.className = 'over-ball-chip';
+    
+    if (i < overBalls.length) {
+      const val = overBalls[i];
+      chip.textContent = val === 'W' ? 'W' : val === 0 ? '.' : val;
+      chip.classList.add('active');
+      if (val === 'W') chip.classList.add('wicket');
+      else if (val === 0) chip.classList.add('dot');
+      else if (val === 4) chip.classList.add('boundary-four');
+      else if (val === 6) chip.classList.add('boundary-six');
+      else chip.classList.add('run');
+    } else {
+      chip.textContent = '-';
+    }
+    container.appendChild(chip);
+  }
+}
+
+function triggerBoundaryFlash() {
+  const container = document.querySelector('#cricket-game .game-container');
+  if (container) {
+    container.classList.remove('boundary-flash');
+    void container.offsetWidth;
+    container.classList.add('boundary-flash');
+    setTimeout(() => {
+      container.classList.remove('boundary-flash');
+    }, 1500);
+  }
+}
+
 function initCricket() {
   cricketState = { runs: 0, wickets: 0, balls_faced: 0, max_balls: 12, game_over: false };
   bowlingDirection = 1;
+  ballOutcomesHistory = [];
+  
   if (isAutoBowlingTimeout) {
     clearTimeout(isAutoBowlingTimeout);
     isAutoBowlingTimeout = null;
   }
   resetPlayState();
   updateCricketUI();
+  updateOverHistoryUI();
+  
+  const speedVal = document.getElementById('cricket-speed-val');
+  if (speedVal) speedVal.textContent = '-';
   
   cricketHitBtn.disabled = false;
   cricketHitBtn.style.opacity = '1';
@@ -361,6 +635,9 @@ function bowlBall() {
   ball.x = 225;
   ball.y = (bowlingDirection === 1) ? 115 : 335;
   
+  playSfx('bowl');
+  generateBowlingSpeed();
+  
   cricketHitBtn.textContent = 'HIT 🏏';
   cricketHitBtn.disabled = false;
   cricketHitBtn.style.opacity = '1';
@@ -405,6 +682,12 @@ function attemptHit() {
     
     gameLoopActive = false;
     showCricketMessage("Timing: PERFECT! 💥", 'success');
+    playSfx('hit');
+    
+    const speedVal = document.getElementById('cricket-speed-val');
+    if (speedVal) {
+      speedVal.innerHTML += ` | Timing: <span style="color: var(--success-color); font-weight: bold;">PERFECT</span>`;
+    }
     
     const batEl = document.getElementById('cricket-bat');
     if (batEl) {
@@ -468,6 +751,12 @@ function attemptHit() {
     let diff = (bowlingDirection === 1) ? (ball.y - 305) : (145 - ball.y);
     let timingMsg = diff < 0 ? "Timing: TOO EARLY! ❌" : "Timing: TOO LATE! ❌";
     showCricketMessage(timingMsg, 'error');
+    playSfx('fail');
+    
+    const speedVal = document.getElementById('cricket-speed-val');
+    if (speedVal) {
+      speedVal.innerHTML += ` | Timing: <span style="color: var(--error-color); font-weight: bold;">${diff < 0 ? 'EARLY' : 'LATE'}</span>`;
+    }
     
     const batEl = document.getElementById('cricket-bat');
     if (batEl) {
@@ -741,6 +1030,9 @@ function handleBoundary(runs) {
     cricketState = currentShotOutcome.state;
     showCricketMessage(currentShotOutcome.message, 'success');
   }
+  ballOutcomesHistory.push(runs);
+  triggerBoundaryFlash();
+  playSfx('boundary');
   finishDelivery();
 }
 
@@ -749,15 +1041,28 @@ function handleCaughtOut() {
     cricketState = currentShotOutcome.state;
     showCricketMessage(currentShotOutcome.message, 'error');
   }
+  ballOutcomesHistory.push('W');
+  playSfx('out');
   finishDelivery();
 }
 
 function handleSafeRuns() {
+  let lastOutcome = 0;
   if (currentShotOutcome) {
     cricketState = currentShotOutcome.state;
     const isDot = currentShotOutcome.message.includes('Dot');
     showCricketMessage(currentShotOutcome.message, isDot ? 'warning' : 'success');
+    
+    if (isDot) {
+      lastOutcome = 0;
+      playSfx('fail');
+    } else {
+      let runMatch = currentShotOutcome.message.match(/\d+/);
+      lastOutcome = runMatch ? parseInt(runMatch[0], 10) : 1;
+      playSfx('success');
+    }
   }
+  ballOutcomesHistory.push(lastOutcome);
   finishDelivery();
 }
 
@@ -782,7 +1087,9 @@ function checkRunOut() {
       cricketState.wickets++;
       cricketState.balls_faced++;
     }
+    ballOutcomesHistory.push('W');
     showCricketMessage("OUT! Run out at the wickets! 🛑", 'error');
+    playSfx('out');
     finishDelivery();
   } else {
     handleSafeRuns();
@@ -797,10 +1104,14 @@ function handleMissOutcome() {
   if (isBowled) {
     cricketState.wickets++;
     cricketState.balls_faced++;
+    ballOutcomesHistory.push('W');
     showCricketMessage("OUT! Bowled! Clean bowled! 🛑", 'error');
+    playSfx('out');
   } else {
     cricketState.balls_faced++;
+    ballOutcomesHistory.push(0);
     showCricketMessage("Dot ball. Good bowling.", 'warning');
+    playSfx('fail');
   }
   
   ball.x = 225;
@@ -831,6 +1142,8 @@ function finishDelivery() {
   }
   gameState = 'IDLE';
   
+  updateOverHistoryUI();
+  
   if (cricketState.wickets >= 10 || cricketState.balls_faced >= cricketState.max_balls) {
     cricketState.game_over = true;
     cricketHitBtn.disabled = true;
@@ -841,6 +1154,14 @@ function finishDelivery() {
     
     let endMsg = cricketState.wickets >= 10 ? " ALL OUT!" : " Innings over!";
     showCricketMessage(`Match Over! You scored ${cricketState.runs}/${cricketState.wickets}.${endMsg}`, 'success');
+    playSfx('success');
+    
+    // Save Cricket Stats
+    gameStats.cricket.gamesPlayed++;
+    if (cricketState.runs > gameStats.cricket.highRun) {
+      gameStats.cricket.highRun = cricketState.runs;
+    }
+    saveStats();
   } else {
     cricketHitBtn.disabled = false;
     cricketHitBtn.style.opacity = '1';
@@ -875,6 +1196,7 @@ function showMenu() {
     clearTimeout(isAutoBowlingTimeout);
     isAutoBowlingTimeout = null;
   }
+  loadStats();
   mainMenu.classList.remove('hidden');
   numberGuessGame.classList.add('hidden');
   hangmanGameView.classList.add('hidden');
@@ -882,6 +1204,7 @@ function showMenu() {
 }
 
 function showGame(gameId) {
+  playSfx('click');
   gameLoopActive = false;
   if (gameLoopId) {
     cancelAnimationFrame(gameLoopId);
@@ -908,11 +1231,11 @@ function showGame(gameId) {
   }
 }
 
-// Initialize Game
 function initGame() {
   secretNumber = Math.floor(Math.random() * 100) + 1;
   attempts = 0;
   isGameOver = false;
+  guessHistory = [];
   
   // Reset UI
   updateAttempts();
@@ -923,6 +1246,13 @@ function initGame() {
   
   messageContainer.className = 'message-container hidden';
   messageContainer.innerHTML = '';
+  
+  const historyContainer = document.getElementById('guess-history-container');
+  const historyChips = document.getElementById('guess-history-chips');
+  if (historyContainer && historyChips) {
+    historyContainer.classList.add('hidden');
+    historyChips.innerHTML = '';
+  }
   
   restartBtn.classList.add('hidden');
   guessInput.focus();
@@ -961,6 +1291,7 @@ function handleGuess(e) {
   
   if (!guessValue) {
     showMessage('Please enter a number.', 'error');
+    playSfx('fail');
     return;
   }
   
@@ -968,38 +1299,72 @@ function handleGuess(e) {
   
   if (isNaN(guess)) {
     showMessage('Invalid input! Please enter a whole number.', 'error');
+    playSfx('fail');
     return;
   }
   
   if (guess < 1 || guess > 100) {
     showMessage('Out of bounds! Please guess a number between 1 and 100.', 'warning');
+    playSfx('fail');
     return;
   }
   
   attempts++;
   updateAttempts();
   
+  let diff = Math.abs(guess - secretNumber);
+  let chipClass = '';
+  let direction = '';
+  
   if (guess < secretNumber) {
+    direction = '↑';
+    chipClass = diff <= 10 ? 'close' : 'low';
     showMessage('Too low! Try again.', 'warning');
+    playSfx('click');
     guessInput.value = '';
     guessInput.focus();
   } else if (guess > secretNumber) {
+    direction = '↓';
+    chipClass = diff <= 10 ? 'close' : 'high';
     showMessage('Too high! Try again.', 'warning');
+    playSfx('click');
     guessInput.value = '';
     guessInput.focus();
   } else {
+    direction = '🎉';
+    chipClass = 'correct';
+    
     // Game Won
     isGameOver = true;
     showMessage(`🎉 Congratulations!<br/>You guessed the number ${secretNumber} correctly!`, 'success');
+    playSfx('success');
     
     // Disable inputs
     guessInput.disabled = true;
     submitBtn.disabled = true;
     submitBtn.style.opacity = '0.5';
     
+    // Update Stats
+    gameStats.numberGuess.gamesPlayed++;
+    if (gameStats.numberGuess.bestScore === null || attempts < gameStats.numberGuess.bestScore) {
+      gameStats.numberGuess.bestScore = attempts;
+    }
+    saveStats();
+    
     // Show restart button
     restartBtn.classList.remove('hidden');
     restartBtn.focus();
+  }
+  
+  // Append to guess timeline
+  const historyContainer = document.getElementById('guess-history-container');
+  const historyChips = document.getElementById('guess-history-chips');
+  if (historyContainer && historyChips) {
+    historyContainer.classList.remove('hidden');
+    const chip = document.createElement('div');
+    chip.className = `history-chip ${chipClass}`;
+    chip.innerHTML = `<span>${guess}</span> <span>${direction}</span>`;
+    historyChips.appendChild(chip);
   }
 }
 
@@ -1015,6 +1380,124 @@ function showHangmanMessage(text, type) {
   } else if (type === 'success') {
     hangmanMessage.classList.add('pop');
   }
+}
+
+function generateHangmanKeyboard() {
+  const keyboard = document.getElementById('hangman-keyboard');
+  if (!keyboard) return;
+  keyboard.innerHTML = '';
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  
+  alphabet.forEach(letter => {
+    const btn = document.createElement('button');
+    btn.className = 'key-btn';
+    btn.id = `key-${letter}`;
+    btn.textContent = letter;
+    btn.addEventListener('click', () => {
+      handleHangmanLetterGuess(letter);
+    });
+    keyboard.appendChild(btn);
+  });
+}
+
+function handleHangmanLetterGuess(letter) {
+  if (isHangmanGameOver) return;
+
+  const guess = letter.toUpperCase().trim();
+
+  if (!guess || guess.length !== 1 || !/[A-Z]/.test(guess)) {
+    showHangmanMessage('Please enter a valid letter.', 'error');
+    return;
+  }
+
+  if (guessedLetters.has(guess)) {
+    showHangmanMessage('You already guessed that letter.', 'warning');
+    playSfx('fail');
+    return;
+  }
+
+  guessedLetters.add(guess);
+  
+  const keyBtn = document.getElementById(`key-${guess}`);
+
+  if (currentWord.includes(guess)) {
+    if (keyBtn) {
+      keyBtn.classList.add('correct-guess');
+      keyBtn.disabled = true;
+    }
+    renderHangmanWord();
+    
+    // Check win condition
+    const isWin = currentWord.split('').every(l => guessedLetters.has(l));
+    if (isWin) {
+      isHangmanGameOver = true;
+      showHangmanMessage('🎉 You won! You guessed the word!', 'success');
+      playSfx('success');
+      
+      // Update statistics
+      gameStats.hangman.wins++;
+      saveStats();
+      
+      hangmanInput.disabled = true;
+      hangmanSubmitBtn.disabled = true;
+      hangmanSubmitBtn.style.opacity = '0.5';
+      hangmanRestartBtn.classList.remove('hidden');
+      hangmanRestartBtn.focus();
+      
+      disableAllKeyboardKeys();
+    } else {
+      showHangmanMessage('Good guess!', 'success');
+      playSfx('click');
+    }
+  } else {
+    if (keyBtn) {
+      keyBtn.classList.add('wrong-guess');
+      keyBtn.disabled = true;
+    }
+    wrongGuesses++;
+    hangmanWrongCount.textContent = wrongGuesses;
+    
+    if (hangmanParts[wrongGuesses - 1]) {
+      hangmanParts[wrongGuesses - 1].classList.remove('hide-part');
+      hangmanParts[wrongGuesses - 1].classList.add('show-part');
+    }
+
+    if (wrongGuesses >= 6) {
+      isHangmanGameOver = true;
+      hangmanWordDisplay.innerHTML = '';
+      for (let i = 0; i < currentWord.length; i++) {
+        const box = document.createElement('div');
+        box.className = 'letter-box';
+        box.textContent = currentWord[i];
+        if (!guessedLetters.has(currentWord[i])) {
+          box.style.color = 'var(--error-color)';
+        }
+        hangmanWordDisplay.appendChild(box);
+      }
+      showHangmanMessage(`Game Over! The word was ${currentWord}.`, 'error');
+      playSfx('out');
+      
+      // Update statistics
+      gameStats.hangman.losses++;
+      saveStats();
+      
+      hangmanInput.disabled = true;
+      hangmanSubmitBtn.disabled = true;
+      hangmanSubmitBtn.style.opacity = '0.5';
+      hangmanRestartBtn.classList.remove('hidden');
+      hangmanRestartBtn.focus();
+      
+      disableAllKeyboardKeys();
+    } else {
+      showHangmanMessage('Incorrect guess!', 'warning');
+      playSfx('fail');
+    }
+  }
+}
+
+function disableAllKeyboardKeys() {
+  const keys = document.querySelectorAll('.key-btn');
+  keys.forEach(k => k.disabled = true);
 }
 
 function initHangman() {
@@ -1051,10 +1534,13 @@ function initHangman() {
   hangmanRestartBtn.classList.add('hidden');
 
   hangmanParts.forEach(part => {
-    part.classList.remove('show-part');
-    part.classList.add('hide-part');
+    if (part) {
+      part.classList.remove('show-part');
+      part.classList.add('hide-part');
+    }
   });
 
+  generateHangmanKeyboard();
   renderHangmanWord();
   hangmanInput.focus();
 }
@@ -1075,66 +1561,10 @@ function renderHangmanWord() {
 function handleHangmanGuess(e) {
   e.preventDefault();
   if (isHangmanGameOver) return;
-
   const guess = hangmanInput.value.toUpperCase().trim();
   hangmanInput.value = '';
-  hangmanInput.focus();
-
-  if (!guess || guess.length !== 1 || !/[A-Z]/.test(guess)) {
-    showHangmanMessage('Please enter a valid letter.', 'error');
-    return;
-  }
-
-  if (guessedLetters.has(guess)) {
-    showHangmanMessage('You already guessed that letter.', 'warning');
-    return;
-  }
-
-  guessedLetters.add(guess);
-
-  if (currentWord.includes(guess)) {
-    renderHangmanWord();
-    
-    // Check win condition
-    const isWin = currentWord.split('').every(l => guessedLetters.has(l));
-    if (isWin) {
-      isHangmanGameOver = true;
-      showHangmanMessage('🎉 You won! You guessed the word!', 'success');
-      hangmanInput.disabled = true;
-      hangmanSubmitBtn.disabled = true;
-      hangmanSubmitBtn.style.opacity = '0.5';
-      hangmanRestartBtn.classList.remove('hidden');
-      hangmanRestartBtn.focus();
-    } else {
-      showHangmanMessage('Good guess!', 'success');
-    }
-  } else {
-    wrongGuesses++;
-    hangmanWrongCount.textContent = wrongGuesses;
-    hangmanParts[wrongGuesses - 1].classList.remove('hide-part');
-    hangmanParts[wrongGuesses - 1].classList.add('show-part');
-
-    if (wrongGuesses >= 6) {
-      isHangmanGameOver = true;
-      hangmanWordDisplay.innerHTML = '';
-      for (let i = 0; i < currentWord.length; i++) {
-        const box = document.createElement('div');
-        box.className = 'letter-box';
-        box.textContent = currentWord[i];
-        if (!guessedLetters.has(currentWord[i])) {
-          box.style.color = 'var(--error-color)';
-        }
-        hangmanWordDisplay.appendChild(box);
-      }
-      showHangmanMessage(`Game Over! The word was ${currentWord}.`, 'error');
-      hangmanInput.disabled = true;
-      hangmanSubmitBtn.disabled = true;
-      hangmanSubmitBtn.style.opacity = '0.5';
-      hangmanRestartBtn.classList.remove('hidden');
-      hangmanRestartBtn.focus();
-    } else {
-      showHangmanMessage('Incorrect guess!', 'warning');
-    }
+  if (guess) {
+    handleHangmanLetterGuess(guess);
   }
 }
 
@@ -1180,6 +1610,24 @@ window.addEventListener('keydown', (e) => {
       }
     }
   }
+  else if (hangmanGameView && !hangmanGameView.classList.contains('hidden')) {
+    if (e.key === 'Enter' && isHangmanGameOver) {
+      e.preventDefault();
+      initHangman();
+    } else if (!isHangmanGameOver) {
+      const key = e.key.toUpperCase();
+      if (key.length === 1 && /[A-Z]/.test(key)) {
+        e.preventDefault();
+        handleHangmanLetterGuess(key);
+      }
+    }
+  }
+  else if (numberGuessGame && !numberGuessGame.classList.contains('hidden')) {
+    if (e.key === 'Enter' && isGameOver) {
+      e.preventDefault();
+      initGame();
+    }
+  }
 });
 
 gameCards.forEach(card => {
@@ -1192,4 +1640,15 @@ gameCards.forEach(card => {
 });
 
 // Start the game for the first time
+loadStats();
+
+const muteBtn = document.getElementById('mute-btn');
+if (muteBtn) {
+  muteBtn.addEventListener('click', () => {
+    isMuted = !isMuted;
+    muteBtn.textContent = isMuted ? '🔇' : '🔊';
+    muteBtn.title = isMuted ? 'Unmute Sound' : 'Mute Sound';
+  });
+}
+
 initGame();

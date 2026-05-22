@@ -1,14 +1,33 @@
 :root {
-  --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-  --card-bg: rgba(255, 255, 255, 0.05);
-  --card-border: rgba(255, 255, 255, 0.1);
+  --bg-gradient: radial-gradient(circle at center, #161b33 0%, #080a14 100%);
+  --card-bg: rgba(20, 25, 45, 0.45);
+  --card-border: rgba(255, 255, 255, 0.06);
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
-  --accent-color: #6366f1;
-  --accent-hover: #4f46e5;
+  --text-muted: #64748b;
+  
+  /* Game Themes Accents */
+  --launcher-glow: 0 0 25px rgba(99, 102, 241, 0.2);
+  --accent-launcher: #6366f1;
+  --accent-launcher-hover: #4f46e5;
+  
+  --number-glow: 0 0 25px rgba(6, 182, 212, 0.2);
+  --accent-number: #06b6d4;
+  --accent-number-hover: #0891b2;
+  
+  --hangman-glow: 0 0 25px rgba(244, 63, 94, 0.2);
+  --accent-hangman: #f43f5e;
+  --accent-hangman-hover: #e11d48;
+  
+  --cricket-glow: 0 0 25px rgba(16, 185, 129, 0.2);
+  --accent-cricket: #10b981;
+  --accent-cricket-hover: #059669;
+  
   --success-color: #10b981;
   --error-color: #ef4444;
   --warning-color: #f59e0b;
+  
+  --font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 * {
@@ -18,159 +37,314 @@
 }
 
 body {
-  font-family: 'Inter', sans-serif;
-  background: transparent;
+  font-family: var(--font-family);
+  background: var(--bg-gradient);
   color: var(--text-primary);
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Background Glowing Orbs */
+body::before, body::after {
+  content: '';
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  filter: blur(120px);
+  z-index: -1;
+  opacity: 0.25;
+  pointer-events: none;
+}
+body::before {
+  top: 10%;
+  left: 15%;
+  background: var(--accent-launcher);
+}
+body::after {
+  bottom: 10%;
+  right: 15%;
+  background: var(--accent-cricket);
 }
 
 #app {
   width: 100%;
-  max-width: 900px;
-  padding: 20px;
+  max-width: 960px;
+  padding: 24px;
+  position: relative;
+  z-index: 1;
 }
 
-/* --- Menu Styles --- */
-.menu-container {
-  background: var(--bg-gradient);
+/* Header Controls */
+.app-header-controls {
+  position: absolute;
+  top: -10px;
+  right: 24px;
+  display: flex;
+  gap: 12px;
+  z-index: 10;
+}
+
+.icon-btn {
+  background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--card-border);
-  border-radius: 24px;
-  padding: 40px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  color: var(--text-primary);
+  padding: 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(8px);
+}
+
+.icon-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.icon-btn:active {
+  transform: translateY(0);
+}
+
+/* --- Launcher Menu Styles --- */
+.menu-container {
+  background: rgba(15, 22, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 32px;
+  padding: 48px;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), var(--launcher-glow);
   text-align: center;
-  transition: opacity 0.3s ease;
+  backdrop-filter: blur(20px);
+  transition: all 0.4s ease;
+  animation: floatIn 0.8s ease-out;
 }
 
 .menu-header h1 {
-  font-size: 2.5rem;
-  font-weight: 700;
+  font-size: 3rem;
+  font-weight: 800;
   margin-bottom: 12px;
-  background: linear-gradient(to right, #818cf8, #c084fc);
+  letter-spacing: -0.05em;
+  background: linear-gradient(135deg, #a5b4fc 0%, #6366f1 50%, #c084fc 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  animation: pulseTitle 4s infinite alternate;
 }
 
 .menu-header p {
   color: var(--text-secondary);
-  font-size: 1.1rem;
-  margin-bottom: 40px;
+  font-size: 1.2rem;
+  margin-bottom: 48px;
+  font-weight: 500;
 }
 
 .games-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 28px;
   justify-content: center;
 }
 
 .game-card {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
-  border-radius: 16px;
-  padding: 30px 20px;
+  border-radius: 24px;
+  padding: 36px 24px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 }
 
-.game-card:hover {
-  transform: translateY(-5px);
-  background: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.3);
-  border-color: rgba(255, 255, 255, 0.2);
+.game-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.game-card:hover::before {
+  opacity: 1;
+}
+
+/* Card Glows based on Game */
+.game-card[data-game="number-guess"]:hover {
+  transform: translateY(-8px);
+  border-color: rgba(6, 182, 212, 0.4);
+  box-shadow: 0 20px 40px -10px rgba(6, 182, 212, 0.25), var(--number-glow);
+}
+
+.game-card[data-game="hangman"]:hover {
+  transform: translateY(-8px);
+  border-color: rgba(244, 63, 94, 0.4);
+  box-shadow: 0 20px 40px -10px rgba(244, 63, 94, 0.25), var(--hangman-glow);
+}
+
+.game-card[data-game="mini-cricket"]:hover {
+  transform: translateY(-8px);
+  border-color: rgba(16, 185, 129, 0.4);
+  box-shadow: 0 20px 40px -10px rgba(16, 185, 129, 0.25), var(--cricket-glow);
 }
 
 .game-card.placeholder {
   cursor: default;
-  opacity: 0.6;
+  opacity: 0.5;
 }
 
 .game-card.placeholder:hover {
   transform: none;
-  background: var(--card-bg);
   box-shadow: none;
   border-color: var(--card-border);
 }
 
 .game-card-icon {
-  font-size: 3rem;
-  margin-bottom: 8px;
+  font-size: 3.5rem;
+  margin-bottom: 4px;
+  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.3));
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.game-card:hover .game-card-icon {
+  transform: scale(1.15) translateY(-4px);
 }
 
 .game-card h3 {
-  font-size: 1.25rem;
+  font-size: 1.4rem;
   color: var(--text-primary);
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .game-card p {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   color: var(--text-secondary);
+  line-height: 1.5;
 }
 
-/* --- Game View Styles --- */
+/* Card Stats Dashboard Overlay */
+.card-stats {
+  margin-top: auto;
+  width: 100%;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  align-items: center;
+}
+
+.card-stats-val {
+  color: var(--text-primary);
+}
+
+/* --- Unified Game View Styles --- */
 .game-container {
-  position: relative;
-  background: var(--bg-gradient);
-  border: 1px solid var(--card-border);
-  border-radius: 24px;
-  padding: 40px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  background: rgba(15, 22, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 32px;
+  padding: 44px;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8);
   text-align: center;
-  transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
-  max-width: 500px;
+  backdrop-filter: blur(20px);
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+  max-width: 540px;
   margin: 0 auto;
+  animation: slideUp 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+/* Customize Glowing Theme based on Active Game */
+#number-guess-game .game-container {
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), var(--number-glow);
+  border-color: rgba(6, 182, 212, 0.15);
+}
+
+#hangman-game .game-container {
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), var(--hangman-glow);
+  border-color: rgba(244, 63, 94, 0.15);
+}
+
+#cricket-game .game-container {
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), var(--cricket-glow);
+  border-color: rgba(16, 185, 129, 0.15);
 }
 
 .game-nav {
   display: flex;
-  justify-content: flex-start;
-  margin-bottom: 20px;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
 }
 
 .back-btn {
-  background: white;
-  color: #0f172a;
-  border: none;
-  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+  border: 1px solid var(--card-border);
+  font-size: 0.95rem;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 8px;
-  transition: all 0.2s ease;
-  padding: 10px 16px;
-  border-radius: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 10px 18px;
+  border-radius: 12px;
+  backdrop-filter: blur(8px);
 }
 
 .back-btn:hover {
-  background: #f8fafc;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
+  background: var(--text-primary);
+  color: #080a14;
+  transform: translateX(-4px);
+  box-shadow: 0 8px 16px rgba(255, 255, 255, 0.1);
 }
 
 .hidden {
   display: none !important;
 }
 
-.game-container:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6);
+.game-header h1 {
+  font-size: 2.2rem;
+  font-weight: 800;
+  margin-bottom: 10px;
+  letter-spacing: -0.03em;
 }
 
-.game-header h1 {
-  font-size: 2rem;
-  font-weight: 700;
-  margin-bottom: 12px;
-  background: linear-gradient(to right, #818cf8, #c084fc);
+#number-guess-game .game-header h1 {
+  background: linear-gradient(135deg, #a5f3fc 0%, #06b6d4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+#hangman-game .game-header h1 {
+  background: linear-gradient(135deg, #fecdd3 0%, #f43f5e 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+#cricket-game .game-header h1 {
+  background: linear-gradient(135deg, #d1fae5 0%, #10b981 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -178,14 +352,26 @@ body {
 .game-header p {
   color: var(--text-secondary);
   font-size: 1.05rem;
-  margin-bottom: 30px;
+  margin-bottom: 32px;
+  font-weight: 500;
 }
 
 .highlight {
   color: var(--text-primary);
-  font-weight: 600;
+  font-weight: 700;
 }
 
+#number-guess-game .highlight {
+  color: var(--accent-number);
+}
+#hangman-game .highlight {
+  color: var(--accent-hangman);
+}
+#cricket-game .highlight {
+  color: var(--accent-cricket);
+}
+
+/* Custom Interactive Forms */
 .guess-form {
   display: flex;
   flex-direction: column;
@@ -195,57 +381,145 @@ body {
 
 .guess-input {
   width: 100%;
-  padding: 16px;
-  background: rgba(0, 0, 0, 0.2);
+  padding: 18px;
+  background: rgba(0, 0, 0, 0.35);
   border: 2px solid var(--card-border);
-  border-radius: 12px;
+  border-radius: 16px;
   color: var(--text-primary);
-  font-size: 1.2rem;
+  font-size: 1.4rem;
+  font-weight: 700;
   text-align: center;
   outline: none;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: monospace;
 }
 
-.guess-input:focus {
-  border-color: var(--accent-color);
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+#number-guess-game .guess-input:focus {
+  border-color: var(--accent-number);
+  box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.15);
+  background: rgba(0, 0, 0, 0.5);
 }
 
-.guess-input::-webkit-outer-spin-button,
-.guess-input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-.guess-input[type=number] {
-  appearance: textfield;
+#hangman-game .guess-input:focus {
+  border-color: var(--accent-hangman);
+  box-shadow: 0 0 0 4px rgba(244, 63, 94, 0.15);
+  background: rgba(0, 0, 0, 0.5);
 }
 
 .guess-btn {
-  padding: 16px;
-  background: var(--accent-color);
-  color: white;
+  padding: 18px;
   border: none;
-  border-radius: 12px;
-  font-size: 1.1rem;
-  font-weight: 600;
+  border-radius: 16px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: white;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
 }
 
-.guess-btn:hover {
-  background: var(--accent-hover);
+#number-guess-game .guess-btn {
+  background: var(--accent-number);
+}
+#number-guess-game .guess-btn:hover {
+  background: var(--accent-number-hover);
   transform: translateY(-2px);
+  box-shadow: 0 12px 20px -5px rgba(6, 182, 212, 0.4);
+}
+
+#hangman-game .guess-btn {
+  background: var(--accent-hangman);
+}
+#hangman-game .guess-btn:hover {
+  background: var(--accent-hangman-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 20px -5px rgba(244, 63, 94, 0.4);
+}
+
+#cricket-game .guess-btn {
+  background: var(--accent-cricket);
+}
+#cricket-game .guess-btn:hover {
+  background: var(--accent-cricket-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 20px -5px rgba(16, 185, 129, 0.4);
 }
 
 .guess-btn:active {
   transform: translateY(0);
 }
 
-.message-container {
+/* Guess History Timeline styling */
+.history-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+  margin-bottom: 24px;
+  background: rgba(0, 0, 0, 0.2);
   padding: 16px;
-  border-radius: 12px;
+  border-radius: 16px;
+  border: 1px solid var(--card-border);
+}
+
+.history-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  font-weight: 700;
+  text-align: left;
+}
+
+.history-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-start;
+}
+
+.history-chip {
+  padding: 6px 14px;
+  border-radius: 30px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+
+.history-chip.low {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #fbbf24;
+}
+
+.history-chip.high {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #f87171;
+}
+
+.history-chip.close {
+  background: rgba(6, 182, 212, 0.15);
+  border-color: rgba(6, 182, 212, 0.35);
+  color: #22d3ee;
+}
+
+.history-chip.correct {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.45);
+  color: #34d399;
+}
+
+/* Feedback message container */
+.message-container {
+  padding: 16px 20px;
+  border-radius: 16px;
   font-size: 1.1rem;
-  font-weight: 500;
+  font-weight: 600;
   margin-bottom: 24px;
   opacity: 0;
   transform: translateY(10px);
@@ -257,65 +531,59 @@ body {
   transform: translateY(0);
 }
 
-.message-container.hidden {
-  display: none;
-}
-
 .message-container.error {
-  background: rgba(239, 68, 68, 0.1);
+  background: rgba(239, 68, 68, 0.12);
   color: #fca5a5;
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.25);
 }
 
 .message-container.warning {
-  background: rgba(245, 158, 11, 0.1);
+  background: rgba(245, 158, 11, 0.12);
   color: #fcd34d;
-  border: 1px solid rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(245, 158, 11, 0.25);
 }
 
 .message-container.success {
-  background: rgba(16, 185, 129, 0.1);
+  background: rgba(16, 185, 129, 0.12);
   color: #6ee7b7;
-  border: 1px solid rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
 .stats {
   color: var(--text-secondary);
-  font-size: 0.95rem;
+  font-size: 1rem;
   margin-bottom: 24px;
+  font-weight: 500;
 }
 
-#attempts-count {
+.stats span {
   color: var(--text-primary);
-  font-weight: 600;
-  font-size: 1.1rem;
+  font-weight: 700;
+  font-size: 1.15rem;
 }
 
 .restart-btn {
-  padding: 14px 28px;
-  background: rgba(255, 255, 255, 0.1);
+  padding: 16px 36px;
+  background: rgba(255, 255, 255, 0.08);
   color: var(--text-primary);
   border: 1px solid var(--card-border);
-  border-radius: 12px;
-  font-size: 1rem;
-  font-weight: 500;
+  border-radius: 16px;
+  font-size: 1.05rem;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .restart-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.restart-btn.hidden {
-  display: none;
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 /* Animations */
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
-  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-  20%, 40%, 60%, 80% { transform: translateX(5px); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-6px); }
+  20%, 40%, 60%, 80% { transform: translateX(6px); }
 }
 
 .shake {
@@ -323,28 +591,52 @@ body {
 }
 
 @keyframes pop {
-  0% { transform: scale(0.9); opacity: 0; }
-  50% { transform: scale(1.05); }
+  0% { transform: scale(0.92); opacity: 0; }
+  60% { transform: scale(1.04); }
   100% { transform: scale(1); opacity: 1; }
 }
 
 .pop {
-  animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+  animation: pop 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
 }
 
-/* --- Hangman Styles --- */
+@keyframes floatIn {
+  0% { transform: translateY(30px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slideUp {
+  0% { transform: translateY(20px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes pulseTitle {
+  0% { filter: drop-shadow(0 2px 4px rgba(99, 102, 241, 0.2)); }
+  100% { filter: drop-shadow(0 4px 15px rgba(99, 102, 241, 0.6)); }
+}
+
+@keyframes boundaryPulse {
+  0%, 100% { border-color: rgba(16, 185, 129, 0.15); box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), var(--cricket-glow); }
+  50% { border-color: rgba(16, 185, 129, 0.8); box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 45px rgba(16, 185, 129, 0.7); }
+}
+
+.boundary-flash {
+  animation: boundaryPulse 0.4s ease-in-out 3;
+}
+
+/* --- Hangman Game Layout & Styles --- */
 #hangman-game .game-container {
-  max-width: 650px;
+  max-width: 700px;
 }
 
 .hangman-layout {
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
-  gap: 40px;
-  margin-bottom: 30px;
+  justify-content: space-around;
+  padding: 10px 0;
+  gap: 28px;
+  margin-bottom: 28px;
   min-height: 200px;
 }
 
@@ -352,143 +644,280 @@ body {
   flex-shrink: 0;
   width: 200px;
   height: 200px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 20px;
+  border: 1px solid var(--card-border);
+  padding: 10px;
 }
 
 .figure-container {
   fill: transparent;
-  stroke: var(--text-primary);
+  stroke: var(--text-secondary);
   stroke-width: 4px;
   stroke-linecap: round;
 }
 
 .figure-part {
-  transition: all 0.3s ease;
+  transition: opacity 0.4s ease, stroke-dashoffset 0.4s ease;
 }
 
-.hide-part {
-  display: none;
-}
-
-.show-part {
-  display: block;
+.figure-part.show-part {
+  stroke: var(--accent-hangman);
+  filter: drop-shadow(0 0 6px var(--accent-hangman));
 }
 
 .word-display {
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 10px;
+  max-width: 360px;
 }
 
 .letter-box {
-  width: 40px;
-  height: 50px;
-  border-bottom: 3px solid var(--text-primary);
+  width: 42px;
+  height: 48px;
+  border-bottom: 3.5px solid var(--text-secondary);
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  font-size: 2rem;
-  font-weight: 700;
+  font-size: 2.2rem;
+  font-weight: 800;
   color: var(--text-primary);
   text-transform: uppercase;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-@media (max-width: 480px) {
-  .game-container {
-    padding: 30px 20px;
-  }
-  
-  .game-header h1 {
-    font-size: 1.75rem;
-  }
-
-  .hangman-layout {
-    flex-direction: column;
-    gap: 20px;
-  }
+.letter-box:not(:empty) {
+  border-bottom-color: var(--accent-hangman);
+  color: var(--text-primary);
+  text-shadow: 0 0 8px rgba(244, 63, 94, 0.5);
+  animation: pop 0.3s ease;
 }
 
-/* --- Mini Cricket Styles --- */
-.cricket-scoreboard {
-  display: flex;
-  justify-content: space-around;
-  background: rgba(0, 0, 0, 0.2);
-  padding: 15px;
-  border-radius: 12px;
+/* On Screen Virtual Keyboard */
+.keyboard-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 8px;
+  margin-bottom: 24px;
+  max-width: 100%;
+}
+
+.key-btn {
+  background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--card-border);
-  margin-bottom: 20px;
+  color: var(--text-primary);
+  padding: 12px 0;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.key-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+}
+
+.key-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.key-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.key-btn.correct-guess {
+  background: rgba(16, 185, 129, 0.2) !important;
+  border-color: var(--success-color) !important;
+  color: #34d399 !important;
+  opacity: 0.9 !important;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+}
+
+.key-btn.wrong-guess {
+  background: rgba(239, 68, 68, 0.15) !important;
+  border-color: var(--error-color) !important;
+  color: #f87171 !important;
+  opacity: 0.6 !important;
+}
+
+@media (max-width: 580px) {
+  .keyboard-grid {
+    grid-template-columns: repeat(7, 1fr);
+  }
+}
+
+/* --- Mini Cricket Broadcast Graphics & Scoreboard --- */
+#cricket-game .game-container {
+  max-width: 580px;
+  padding: 30px 24px;
+}
+
+.cricket-scoreboard {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  background: rgba(0, 0, 0, 0.35);
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid var(--card-border);
+  margin-bottom: 16px;
+  gap: 12px;
 }
 
 .score-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
+  justify-content: center;
+  position: relative;
+}
+
+.score-item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 15%;
+  height: 70%;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .score-label {
-  font-size: 0.9rem;
-  color: var(--text-secondary);
+  font-size: 0.75rem;
+  color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 1px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
 }
 
 .score-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-#cricket-game .game-container {
-  max-width: 500px;
-  padding: 16px 24px;
-}
-
-#cricket-game .game-header h1 {
   font-size: 1.8rem;
-  margin-bottom: 6px;
+  font-weight: 800;
+  color: var(--text-primary);
+  font-family: monospace;
 }
 
-#cricket-game .game-header p {
-  font-size: 0.95rem;
-  margin-bottom: 12px;
+/* Broadcast Speed/Physics details strip */
+.cricket-broadcast-strip {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.1) 0%, transparent 100%);
+  border-left: 3px solid var(--accent-cricket);
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
 }
 
-#cricket-game .cricket-scoreboard {
-  margin-bottom: 12px;
-  padding: 10px;
+.broadcast-val {
+  color: var(--accent-cricket);
+  font-weight: 700;
 }
 
-#cricket-game .message-container {
-  margin-top: 10px;
-  margin-bottom: 10px;
-  padding: 10px;
-  font-size: 1.05rem;
+/* Over Ball-by-Ball history */
+.over-history-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 12px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--card-border);
+}
+
+.over-history-balls {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.over-ball-chip {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--card-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.over-ball-chip.active {
+  animation: pop 0.4s ease;
+}
+
+.over-ball-chip.dot {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text-muted);
+}
+
+.over-ball-chip.run {
+  background: rgba(6, 182, 212, 0.18);
+  border-color: rgba(6, 182, 212, 0.4);
+  color: #22d3ee;
+}
+
+.over-ball-chip.boundary-four {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: var(--success-color);
+  color: #34d399;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.25);
+}
+
+.over-ball-chip.boundary-six {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: var(--accent-launcher);
+  color: #a5b4fc;
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
+}
+
+.over-ball-chip.wicket {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: var(--error-color);
+  color: #fca5a5;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.25);
+  animation: shake 0.4s ease;
 }
 
 #cricket-svg {
   max-width: 100%;
-  max-height: 48vh;
+  max-height: 40vh;
   height: auto;
   aspect-ratio: 1 / 1;
   display: block;
   margin: 0 auto;
 }
 
-/* How to Play Modal Overlay */
+/* How to Play Modal Overlay (Upgraded Glass) */
 .how-to-play-overlay {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(15, 23, 42, 0.85); /* Smooth dark backdrop */
-  backdrop-filter: blur(8px); /* Sleek background blur */
+  background: rgba(8, 10, 20, 0.85);
+  backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 100;
-  border-radius: 24px; /* Align with game-container radius */
+  border-radius: 32px;
   opacity: 1;
   transition: opacity 0.3s ease;
 }
@@ -498,18 +927,18 @@ body {
 }
 
 .how-to-play-content {
-  background: rgba(30, 41, 59, 0.95);
+  background: rgba(20, 25, 45, 0.95);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 30px;
-  border-radius: 20px;
+  padding: 36px;
+  border-radius: 24px;
   width: 90%;
-  max-width: 420px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  max-width: 440px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
   text-align: left;
 }
 
 .how-to-play-content h2 {
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   margin-bottom: 20px;
   color: #fff;
   text-align: center;
@@ -522,16 +951,33 @@ body {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 15px;
-  margin-bottom: 25px;
+  gap: 16px;
+  margin-bottom: 28px;
 }
 
 .how-to-play-steps li {
   font-size: 0.95rem;
   color: var(--text-secondary);
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 .how-to-play-steps strong {
   color: var(--text-primary);
+}
+
+/* Responsive adjustments */
+@media (max-width: 620px) {
+  .menu-container, .game-container {
+    padding: 30px 20px;
+    border-radius: 24px;
+  }
+  
+  .menu-header h1 {
+    font-size: 2.2rem;
+  }
+  
+  .hangman-layout {
+    flex-direction: column;
+    gap: 20px;
+  }
 }

@@ -49,10 +49,12 @@
             <p>Hit the ball to score runs before you get out.</p>
             <div class="card-stats">High Score: <span class="card-stats-val" id="stats-cricket-val">-</span></div>
           </div>
-          <div class="game-card placeholder">
-            <div class="game-card-icon">❓</div>
-            <h3>Coming Soon</h3>
-            <p>More games will be added here in the future.</p>
+          <!-- Game 4: Cricket Test Match -->
+          <div class="game-card" data-game="cricket-test">
+            <div class="game-card-icon">🏏</div>
+            <h3>Cricket Test</h3>
+            <p>Play a classic Test Match! Manual running: press W to run, S to turn back. Play until 10 wickets down.</p>
+            <div class="card-stats">High Score: <span class="card-stats-val" id="stats-test-cricket-val">-</span></div>
           </div>
         </div>
       </main>
@@ -253,7 +255,7 @@
               </div>
               <div class="score-item">
                 <span class="score-label">Balls</span>
-                <span id="cricket-balls" class="score-value">0</span> / 12
+                <span><span id="cricket-balls" class="score-value">0</span><span id="cricket-balls-limit"> / 12</span></span>
               </div>
             </div>
 

@@ -23,7 +23,8 @@ let guessHistory = [];
 let gameStats = {
   numberGuess: { bestScore: null, gamesPlayed: 0 },
   hangman: { wins: 0, losses: 0 },
-  cricket: { highRun: 0, gamesPlayed: 0 }
+  cricket: { highRun: 0, gamesPlayed: 0 },
+  cricketTest: { highRun: 0, gamesPlayed: 0 }
 };
 
 // Sound State
@@ -189,7 +190,12 @@ function loadStats() {
   try {
     const stored = localStorage.getItem('dpr_mini_games_stats');
     if (stored) {
-      gameStats = { ...gameStats, ...JSON.parse(stored) };
+      const parsed = JSON.parse(stored);
+      gameStats = { 
+        ...gameStats, 
+        ...parsed,
+        cricketTest: parsed.cricketTest || { highRun: 0, gamesPlayed: 0 }
+      };
     }
   } catch (e) {
     console.error("Failed to load stats from localStorage", e);
@@ -210,6 +216,7 @@ function updateStatsUI() {
   const guessVal = document.getElementById('stats-guess-val');
   const hangmanVal = document.getElementById('stats-hangman-val');
   const cricketVal = document.getElementById('stats-cricket-val');
+  const cricketTestVal = document.getElementById('stats-test-cricket-val');
   
   if (guessVal) {
     guessVal.textContent = gameStats.numberGuess.bestScore !== null 
@@ -225,6 +232,11 @@ function updateStatsUI() {
   if (cricketVal) {
     cricketVal.textContent = gameStats.cricket.highRun > 0 
       ? `${gameStats.cricket.highRun} runs` 
+      : '-';
+  }
+  if (cricketTestVal) {
+    cricketTestVal.textContent = (gameStats.cricketTest && gameStats.cricketTest.highRun > 0)
+      ? `${gameStats.cricketTest.highRun} runs` 
       : '-';
   }
 }
@@ -316,6 +328,7 @@ const backBtn = document.getElementById('back-btn');
 const gameCards = document.querySelectorAll('.game-card');
 
 // // --- Mini Cricket State & DOM ---
+let isTestMatch = false;
 let cricketState = { runs: 0, wickets: 0, balls_faced: 0, max_balls: 12, game_over: false };
 const cricketGameView = document.getElementById('cricket-game');
 const cricketRuns = document.getElementById('cricket-runs');
@@ -471,8 +484,32 @@ function triggerBoundaryFlash() {
   }
 }
 
+function updateHowToPlayModal() {
+  const modalTitle = cricketHowToPlayModal.querySelector('h2');
+  const modalSteps = cricketHowToPlayModal.querySelector('.how-to-play-steps');
+  if (!modalTitle || !modalSteps) return;
+  
+  if (isTestMatch) {
+    modalTitle.innerHTML = "🏏 How to Play Cricket Test";
+    modalSteps.innerHTML = `
+      <li><strong>1. Start/Bowl:</strong> Press the <span class="highlight" style="color: #60a5fa;">Enter ↵</span> key to start and bowl.</li>
+      <li><strong>2. Hit:</strong> Press the <span class="highlight" style="color: #60a5fa;">5</span> key (keyboard or Numpad) to hit.</li>
+      <li><strong>3. Manual Running:</strong> Press <span class="highlight" style="color: #60a5fa;">W</span> to start/take a run. Press <span class="highlight" style="color: #60a5fa;">S</span> to cancel the run and turn back to the crease.</li>
+      <li><strong>4. Test Rules:</strong> No limit on overs! Play until all <span class="highlight" style="color: #f43f5e;">10 wickets</span> are down.</li>
+    `;
+  } else {
+    modalTitle.innerHTML = "🏏 How to Play Mini Cricket";
+    modalSteps.innerHTML = `
+      <li><strong>1. Start/Bowl:</strong> Press the <span class="highlight" style="color: #60a5fa;">Enter ↵</span> key to start the match and bowl.</li>
+      <li><strong>2. Hit:</strong> Watch the ball. Press either <span class="highlight" style="color: #60a5fa;">5</span> key (keyboard or Numpad) to bat exactly as the ball crosses the crease.</li>
+      <li><strong>3. Auto-Bowl:</strong> After each play completes, the next delivery will bowl automatically!</li>
+      <li><strong>4. Ends Change:</strong> After every 6 balls (an Over), the bowling direction changes!</li>
+    `;
+  }
+}
+
 function initCricket() {
-  cricketState = { runs: 0, wickets: 0, balls_faced: 0, max_balls: 12, game_over: false };
+  cricketState = { runs: 0, wickets: 0, balls_faced: 0, max_balls: isTestMatch ? Infinity : 12, game_over: false };
   bowlingDirection = 1;
   ballOutcomesHistory = [];
   
@@ -495,9 +532,54 @@ function initCricket() {
   cricketMessage.innerHTML = '';
   cricketRestartBtn.classList.add('hidden');
   
+  const gameHeaderTitle = cricketGameView.querySelector('.game-header h1');
+  const gameHeaderDesc = cricketGameView.querySelector('.game-header p');
+  const ballsLimitEl = document.getElementById('cricket-balls-limit');
+  
+  if (isTestMatch) {
+    if (gameHeaderTitle) gameHeaderTitle.textContent = "Cricket Test Match";
+    if (gameHeaderDesc) gameHeaderDesc.innerHTML = 'Score as many runs as possible until <span class="highlight">10 Wickets</span> are down!';
+    if (ballsLimitEl) ballsLimitEl.style.display = 'none';
+  } else {
+    if (gameHeaderTitle) gameHeaderTitle.textContent = "Mini Cricket";
+    if (gameHeaderDesc) gameHeaderDesc.innerHTML = 'Score as many runs as possible in <span class="highlight">2 Overs (12 balls)</span>!';
+    if (ballsLimitEl) ballsLimitEl.style.display = 'inline';
+  }
+  
+  updateHowToPlayModal();
+  
   if (cricketHowToPlayModal) {
     cricketHowToPlayModal.classList.remove('hidden');
   }
+}
+
+function startManualRun() {
+  if (!isTestMatch) return;
+  if (batsmen.isRunning) {
+    if (batsmen.target1Y === batsmen.start1Y) {
+      batsmen.target1Y = batsmen.start1Y === 305 ? 145 : 305;
+      batsmen.target2Y = batsmen.start2Y === 305 ? 145 : 305;
+      showCricketMessage("Running! 🏃", "success");
+    }
+  } else {
+    batsmen.target1Y = batsmen.start1Y === 305 ? 145 : 305;
+    batsmen.target2Y = batsmen.start2Y === 305 ? 145 : 305;
+    batsmen.isRunning = true;
+    showCricketMessage("Running! 🏃", "success");
+  }
+  updateCricketUI();
+}
+
+function cancelManualRun() {
+  if (!isTestMatch) return;
+  if (batsmen.isRunning) {
+    if (batsmen.target1Y !== batsmen.start1Y) {
+      batsmen.target1Y = batsmen.start1Y;
+      batsmen.target2Y = batsmen.start2Y;
+      showCricketMessage("Turning back! 🔄", "warning");
+    }
+  }
+  updateCricketUI();
 }
 
 function resetPlayState() {
@@ -514,6 +596,8 @@ function resetPlayState() {
   batsmen = {
     batsman1Y: b1Y,
     batsman2Y: b2Y,
+    start1Y: b1Y,
+    start2Y: b2Y,
     target1Y: b1Y,
     target2Y: b2Y,
     completedRuns: 0,
@@ -535,7 +619,11 @@ function resetPlayState() {
 }
 
 function updateCricketUI() {
-  cricketRuns.textContent = cricketState.runs;
+  if (isTestMatch) {
+    cricketRuns.textContent = cricketState.runs + (batsmen.completedRuns || 0);
+  } else {
+    cricketRuns.textContent = cricketState.runs;
+  }
   cricketWickets.textContent = cricketState.wickets;
   cricketBalls.textContent = cricketState.balls_faced;
 }
@@ -787,53 +875,152 @@ function processHitResponse(res) {
   let angleDeg = (Math.random() - 0.5) * 130;
   let angleRad = (angleDeg * Math.PI) / 180;
   
-  if (msg.includes('SIX')) {
-    let speed = 6.8 + Math.random() * 1.2;
-    ball.vx = Math.sin(angleRad) * speed;
-    ball.vy = -bowlingDirection * Math.cos(angleRad) * speed;
-    ball.loft = true;
-    ball.loftDuration = 55;
-    ball.loftProgress = 0;
-    ball.maxLoftHeight = 35;
-  } 
-  else if (msg.includes('FOUR')) {
-    let speed = 5.2 + Math.random() * 0.8;
-    ball.vx = Math.sin(angleRad) * speed;
-    ball.vy = -bowlingDirection * Math.cos(angleRad) * speed;
-    ball.loft = false;
-  }
-  else if (msg.includes('Dot ball')) {
-    let targetFielder = fielders[1 + Math.floor(Math.random() * (fielders.length - 1))];
-    let dx = targetFielder.x - ball.x;
-    let dy = targetFielder.y - ball.y;
-    let dist = Math.sqrt(dx * dx + dy * dy);
-    
-    let speed = 2.8;
-    ball.vx = (dx / dist) * speed;
-    ball.vy = (dy / dist) * speed;
-    ball.loft = false;
-    
-    selectActiveFielder();
-  }
-  else if (msg.includes('OUT')) {
-    let isCaught = Math.random() < 0.65;
-    if (isCaught) {
+  if (isTestMatch) {
+    if (msg.includes('SIX')) {
+      let speed = 6.8 + Math.random() * 1.2;
+      ball.vx = Math.sin(angleRad) * speed;
+      ball.vy = -bowlingDirection * Math.cos(angleRad) * speed;
+      ball.loft = true;
+      ball.loftDuration = 55;
+      ball.loftProgress = 0;
+      ball.maxLoftHeight = 35;
+      
+      batsmen.isRunning = false;
+      batsmen.completedRuns = 0;
+    } 
+    else if (msg.includes('FOUR')) {
+      let speed = 5.2 + Math.random() * 0.8;
+      ball.vx = Math.sin(angleRad) * speed;
+      ball.vy = -bowlingDirection * Math.cos(angleRad) * speed;
+      ball.loft = false;
+      
+      batsmen.isRunning = false;
+      batsmen.completedRuns = 0;
+    }
+    else if (msg.includes('OUT')) {
+      let isCaught = Math.random() < 0.65;
+      if (isCaught) {
+        let targetFielder = fielders[1 + Math.floor(Math.random() * (fielders.length - 1))];
+        let dx = targetFielder.x - ball.x;
+        let dy = targetFielder.y - ball.y;
+        let dist = Math.sqrt(dx * dx + dy * dy);
+        
+        let flightFrames = 50;
+        ball.vx = dx / flightFrames;
+        ball.vy = dy / flightFrames;
+        ball.loft = true;
+        ball.loftDuration = flightFrames;
+        ball.loftProgress = 0;
+        ball.maxLoftHeight = 25;
+        
+        selectActiveFielder();
+        
+        batsmen.isRunning = false;
+        batsmen.completedRuns = 0;
+      } else {
+        let speed = 3.2;
+        ball.vx = Math.sin(angleRad) * speed;
+        ball.vy = -bowlingDirection * Math.cos(angleRad) * speed;
+        ball.loft = false;
+        
+        selectActiveFielder();
+        
+        batsmen.isRunning = false;
+        batsmen.completedRuns = 0;
+        batsmen.speed = 2.45;
+        showCricketMessage("Hit! Press W to run, S to return.", 'success');
+      }
+    }
+    else {
+      let speed = msg.includes('Dot') ? 2.8 : 3.5;
       let targetFielder = fielders[1 + Math.floor(Math.random() * (fielders.length - 1))];
       let dx = targetFielder.x - ball.x;
       let dy = targetFielder.y - ball.y;
       let dist = Math.sqrt(dx * dx + dy * dy);
       
-      let flightFrames = 50;
-      ball.vx = dx / flightFrames;
-      ball.vy = dy / flightFrames;
-      ball.loft = true;
-      ball.loftDuration = flightFrames;
-      ball.loftProgress = 0;
-      ball.maxLoftHeight = 25;
+      if (msg.includes('Dot')) {
+        ball.vx = (dx / dist) * speed;
+        ball.vy = (dy / dist) * speed;
+      } else {
+        ball.vx = Math.sin(angleRad) * speed;
+        ball.vy = -bowlingDirection * Math.cos(angleRad) * speed;
+      }
+      ball.loft = false;
       
       selectActiveFielder();
-    } else {
-      let speed = 3.2;
+      
+      batsmen.isRunning = false;
+      batsmen.completedRuns = 0;
+      batsmen.speed = 2.45;
+      showCricketMessage("Hit! Press W to run, S to return.", 'success');
+    }
+  } else {
+    if (msg.includes('SIX')) {
+      let speed = 6.8 + Math.random() * 1.2;
+      ball.vx = Math.sin(angleRad) * speed;
+      ball.vy = -bowlingDirection * Math.cos(angleRad) * speed;
+      ball.loft = true;
+      ball.loftDuration = 55;
+      ball.loftProgress = 0;
+      ball.maxLoftHeight = 35;
+    } 
+    else if (msg.includes('FOUR')) {
+      let speed = 5.2 + Math.random() * 0.8;
+      ball.vx = Math.sin(angleRad) * speed;
+      ball.vy = -bowlingDirection * Math.cos(angleRad) * speed;
+      ball.loft = false;
+    }
+    else if (msg.includes('Dot ball')) {
+      let targetFielder = fielders[1 + Math.floor(Math.random() * (fielders.length - 1))];
+      let dx = targetFielder.x - ball.x;
+      let dy = targetFielder.y - ball.y;
+      let dist = Math.sqrt(dx * dx + dy * dy);
+      
+      let speed = 2.8;
+      ball.vx = (dx / dist) * speed;
+      ball.vy = (dy / dist) * speed;
+      ball.loft = false;
+      
+      selectActiveFielder();
+    }
+    else if (msg.includes('OUT')) {
+      let isCaught = Math.random() < 0.65;
+      if (isCaught) {
+        let targetFielder = fielders[1 + Math.floor(Math.random() * (fielders.length - 1))];
+        let dx = targetFielder.x - ball.x;
+        let dy = targetFielder.y - ball.y;
+        let dist = Math.sqrt(dx * dx + dy * dy);
+        
+        let flightFrames = 50;
+        ball.vx = dx / flightFrames;
+        ball.vy = dy / flightFrames;
+        ball.loft = true;
+        ball.loftDuration = flightFrames;
+        ball.loftProgress = 0;
+        ball.maxLoftHeight = 25;
+        
+        selectActiveFielder();
+      } else {
+        let speed = 3.2;
+        ball.vx = Math.sin(angleRad) * speed;
+        ball.vy = -bowlingDirection * Math.cos(angleRad) * speed;
+        ball.loft = false;
+        
+        selectActiveFielder();
+        
+        batsmen.isRunning = true;
+        batsmen.speed = 1.25;
+        batsmen.completedRuns = 0;
+        batsmen.targetRuns = 1;
+        batsmen.target1Y = (batsmen.batsman1Y === 305) ? 145 : 305;
+        batsmen.target2Y = (batsmen.batsman2Y === 305) ? 145 : 305;
+      }
+    }
+    else if (msg.includes('You ran')) {
+      let runMatch = msg.match(/\d+/);
+      let targetRuns = runMatch ? parseInt(runMatch[0], 10) : 1;
+      
+      let speed = 3.5;
       ball.vx = Math.sin(angleRad) * speed;
       ball.vy = -bowlingDirection * Math.cos(angleRad) * speed;
       ball.loft = false;
@@ -841,30 +1028,12 @@ function processHitResponse(res) {
       selectActiveFielder();
       
       batsmen.isRunning = true;
-      batsmen.speed = 1.25;
+      batsmen.speed = 2.45;
       batsmen.completedRuns = 0;
-      batsmen.targetRuns = 1;
+      batsmen.targetRuns = targetRuns;
       batsmen.target1Y = (batsmen.batsman1Y === 305) ? 145 : 305;
       batsmen.target2Y = (batsmen.batsman2Y === 305) ? 145 : 305;
     }
-  }
-  else if (msg.includes('You ran')) {
-    let runMatch = msg.match(/\d+/);
-    let targetRuns = runMatch ? parseInt(runMatch[0], 10) : 1;
-    
-    let speed = 3.5;
-    ball.vx = Math.sin(angleRad) * speed;
-    ball.vy = -bowlingDirection * Math.cos(angleRad) * speed;
-    ball.loft = false;
-    
-    selectActiveFielder();
-    
-    batsmen.isRunning = true;
-    batsmen.speed = 2.45;
-    batsmen.completedRuns = 0;
-    batsmen.targetRuns = targetRuns;
-    batsmen.target1Y = (batsmen.batsman1Y === 305) ? 145 : 305;
-    batsmen.target2Y = (batsmen.batsman2Y === 305) ? 145 : 305;
   }
 }
 
@@ -1004,15 +1173,29 @@ function gameLoop() {
     if (dir2 < 0 && batsmen.batsman2Y <= batsmen.target2Y) batsmen.batsman2Y = batsmen.target2Y;
 
     if (batsmen.batsman1Y === batsmen.target1Y && batsmen.batsman2Y === batsmen.target2Y) {
-      batsmen.completedRuns++;
-      
-      let temp = batsmen.target1Y;
-      batsmen.target1Y = batsmen.target2Y;
-      batsmen.target2Y = temp;
-      
-      if (batsmen.completedRuns >= batsmen.targetRuns) {
+      if (isTestMatch) {
+        if (batsmen.target1Y !== batsmen.start1Y) {
+          batsmen.completedRuns++;
+          playSfx('click');
+          batsmen.start1Y = batsmen.target1Y;
+          batsmen.start2Y = batsmen.target2Y;
+          showCricketMessage(`Completed ${batsmen.completedRuns} run(s). Press W to run another or stay safe!`, 'success');
+        } else {
+          showCricketMessage(`Returned to crease safely. Total runs: ${batsmen.completedRuns}`, 'warning');
+        }
         batsmen.isRunning = false;
-        handleSafeRuns();
+        updateCricketUI();
+      } else {
+        batsmen.completedRuns++;
+        
+        let temp = batsmen.target1Y;
+        batsmen.target1Y = batsmen.target2Y;
+        batsmen.target2Y = temp;
+        
+        if (batsmen.completedRuns >= batsmen.targetRuns) {
+          batsmen.isRunning = false;
+          handleSafeRuns();
+        }
       }
     }
   }
@@ -1026,7 +1209,11 @@ function gameLoop() {
 }
 
 function handleBoundary(runs) {
-  if (currentShotOutcome) {
+  if (isTestMatch) {
+    cricketState.runs += runs;
+    cricketState.balls_faced++;
+    showCricketMessage(runs === 6 ? "SIX! What a shot! 💥" : "FOUR! Beautiful boundary! 🏏", 'success');
+  } else if (currentShotOutcome) {
     cricketState = currentShotOutcome.state;
     showCricketMessage(currentShotOutcome.message, 'success');
   }
@@ -1037,12 +1224,31 @@ function handleBoundary(runs) {
 }
 
 function handleCaughtOut() {
-  if (currentShotOutcome) {
+  if (isTestMatch) {
+    cricketState.wickets++;
+    cricketState.balls_faced++;
+    showCricketMessage("OUT! Caught! What a catch! 🛑", 'error');
+  } else if (currentShotOutcome) {
     cricketState = currentShotOutcome.state;
     showCricketMessage(currentShotOutcome.message, 'error');
   }
   ballOutcomesHistory.push('W');
   playSfx('out');
+  finishDelivery();
+}
+
+function handleSafeRunsTest() {
+  cricketState.runs += batsmen.completedRuns;
+  cricketState.balls_faced++;
+  ballOutcomesHistory.push(batsmen.completedRuns);
+  
+  if (batsmen.completedRuns === 0) {
+    showCricketMessage("Dot ball.", 'warning');
+    playSfx('fail');
+  } else {
+    showCricketMessage(`Safe! You scored ${batsmen.completedRuns} run(s).`, 'success');
+    playSfx('success');
+  }
   finishDelivery();
 }
 
@@ -1077,7 +1283,12 @@ function checkRunOut() {
   }
 
   if (!isSafe) {
-    if (currentShotOutcome) {
+    if (isTestMatch) {
+      cricketState.wickets++;
+      cricketState.runs += batsmen.completedRuns;
+      cricketState.balls_faced++;
+      showCricketMessage("OUT! Run out at the wickets! 🛑", 'error');
+    } else if (currentShotOutcome) {
       cricketState = { ...currentShotOutcome.state };
       cricketState.wickets++;
       let targetRuns = batsmen.targetRuns;
@@ -1088,11 +1299,14 @@ function checkRunOut() {
       cricketState.balls_faced++;
     }
     ballOutcomesHistory.push('W');
-    showCricketMessage("OUT! Run out at the wickets! 🛑", 'error');
     playSfx('out');
     finishDelivery();
   } else {
-    handleSafeRuns();
+    if (isTestMatch) {
+      handleSafeRunsTest();
+    } else {
+      handleSafeRuns();
+    }
   }
 }
 
@@ -1144,7 +1358,9 @@ function finishDelivery() {
   
   updateOverHistoryUI();
   
-  if (cricketState.wickets >= 10 || cricketState.balls_faced >= cricketState.max_balls) {
+  const gameOverCondition = isTestMatch ? (cricketState.wickets >= 10) : (cricketState.wickets >= 10 || cricketState.balls_faced >= cricketState.max_balls);
+  
+  if (gameOverCondition) {
     cricketState.game_over = true;
     cricketHitBtn.disabled = true;
     cricketHitBtn.style.opacity = '0.5';
@@ -1157,9 +1373,16 @@ function finishDelivery() {
     playSfx('success');
     
     // Save Cricket Stats
-    gameStats.cricket.gamesPlayed++;
-    if (cricketState.runs > gameStats.cricket.highRun) {
-      gameStats.cricket.highRun = cricketState.runs;
+    if (isTestMatch) {
+      gameStats.cricketTest.gamesPlayed++;
+      if (cricketState.runs > gameStats.cricketTest.highRun) {
+        gameStats.cricketTest.highRun = cricketState.runs;
+      }
+    } else {
+      gameStats.cricket.gamesPlayed++;
+      if (cricketState.runs > gameStats.cricket.highRun) {
+        gameStats.cricket.highRun = cricketState.runs;
+      }
     }
     saveStats();
   } else {
@@ -1226,6 +1449,11 @@ function showGame(gameId) {
     hangmanGameView.classList.remove('hidden');
     initHangman();
   } else if (gameId === 'mini-cricket') {
+    isTestMatch = false;
+    cricketGameView.classList.remove('hidden');
+    initCricket();
+  } else if (gameId === 'cricket-test') {
+    isTestMatch = true;
     cricketGameView.classList.remove('hidden');
     initCricket();
   }
@@ -1607,6 +1835,16 @@ window.addEventListener('keydown', (e) => {
       if (gameState === 'BOWLING') {
         e.preventDefault();
         attemptHit();
+      }
+    } else if (e.key.toLowerCase() === 'w') {
+      if (isTestMatch && gameState === 'PLAYING' && ball.state !== 'DEAD' && !cricketState.game_over) {
+        e.preventDefault();
+        startManualRun();
+      }
+    } else if (e.key.toLowerCase() === 's') {
+      if (isTestMatch && gameState === 'PLAYING' && ball.state !== 'DEAD' && !cricketState.game_over) {
+        e.preventDefault();
+        cancelManualRun();
       }
     }
   }

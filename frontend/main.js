@@ -341,6 +341,85 @@ const cricketBackBtn = document.getElementById('cricket-back-btn');
 const cricketHowToPlayModal = document.getElementById('cricket-how-to-play-modal');
 const cricketCloseHelpBtn = document.getElementById('cricket-close-help-btn');
 
+const cricketTeamSelectModal = document.getElementById('cricket-team-select-modal');
+const cricketStartMatchBtn = document.getElementById('cricket-start-match-btn');
+const cricketUserTeamSelect = document.getElementById('cricket-user-team');
+const cricketOppTeamSelect = document.getElementById('cricket-opp-team');
+const cricketScorecardModal = document.getElementById('cricket-scorecard-modal');
+const cricketCloseScorecardBtn = document.getElementById('cricket-close-scorecard-btn');
+const scorecardTabBatting = document.getElementById('scorecard-tab-batting');
+const scorecardTabBowling = document.getElementById('scorecard-tab-bowling');
+const scorecardSectionBatting = document.getElementById('scorecard-section-batting');
+const scorecardSectionBowling = document.getElementById('scorecard-section-bowling');
+
+// Bowler types lookup table (Fast vs Spin)
+const BOWLER_TYPES = {
+  "Jasprit Bumrah": "Fast", "Mohammed Siraj": "Fast", "R. Ashwin": "Spin", "Ravindra Jadeja": "Spin", "Akash Deep": "Fast",
+  "Pat Cummins": "Fast", "Mitchell Starc": "Fast", "Josh Hazlewood": "Fast", "Nathan Lyon": "Spin", "Mitchell Marsh": "Fast", "Cameron Green": "Fast",
+  "Chris Woakes": "Fast", "Gus Atkinson": "Fast", "Mark Wood": "Fast", "Shoaib Bashir": "Spin", "Ben Stokes": "Fast",
+  "Prabath Jayasuriya": "Spin", "Asitha Fernando": "Fast", "Lahiru Kumara": "Fast", "Vishwa Fernando": "Fast", "D. de Silva": "Spin", "Angelo Mathews": "Fast"
+};
+
+// Global history array to store scores of dismissed batters
+let battingScorecardHistory = [];
+
+// Partnership tracking globals
+let currentPartnershipRuns = 0;
+let currentPartnershipCelebrated50 = false;
+let currentPartnershipCelebrated100 = false;
+
+// Bowler selection weights (Main Bowlers get higher weights than part-timers)
+const BOWLER_WEIGHTS = {
+  "Jasprit Bumrah": 4, "Mohammed Siraj": 4, "R. Ashwin": 4, "Ravindra Jadeja": 4, "Akash Deep": 3,
+  "Pat Cummins": 4, "Mitchell Starc": 4, "Josh Hazlewood": 4, "Nathan Lyon": 4, "Mitchell Marsh": 2, "Cameron Green": 2,
+  "Chris Woakes": 4, "Gus Atkinson": 4, "Mark Wood": 4, "Shoaib Bashir": 4, "Ben Stokes": 2,
+  "Prabath Jayasuriya": 4, "Asitha Fernando": 4, "Lahiru Kumara": 4, "Vishwa Fernando": 4, "D. de Silva": 2, "Angelo Mathews": 2
+};
+
+let isMilestoneCelebrating = false;
+
+// Squad declarations containing real players
+const SQUADS = {
+  IND: {
+    name: "India",
+    short: "IND",
+    batters: ["Rohit Sharma", "Yashasvi Jaiswal", "Shubman Gill", "Virat Kohli", "Rishabh Pant", "KL Rahul", "Ravindra Jadeja", "R. Ashwin", "Jasprit Bumrah", "Mohammed Siraj", "Akash Deep"],
+    bowlers: ["Jasprit Bumrah", "Mohammed Siraj", "R. Ashwin", "Ravindra Jadeja", "Akash Deep"]
+  },
+  AUS: {
+    name: "Australia",
+    short: "AUS",
+    batters: ["Usman Khawaja", "Steve Smith", "M. Labuschagne", "Travis Head", "Mitchell Marsh", "Alex Carey", "Pat Cummins", "Mitchell Starc", "Nathan Lyon", "Josh Hazlewood", "Cameron Green"],
+    bowlers: ["Pat Cummins", "Mitchell Starc", "Josh Hazlewood", "Nathan Lyon", "Mitchell Marsh", "Cameron Green"]
+  },
+  ENG: {
+    name: "England",
+    short: "ENG",
+    batters: ["Zak Crawley", "Ben Duckett", "Ollie Pope", "Joe Root", "Harry Brook", "Ben Stokes", "Jamie Smith", "Chris Woakes", "Gus Atkinson", "Shoaib Bashir", "Mark Wood"],
+    bowlers: ["Chris Woakes", "Gus Atkinson", "Mark Wood", "Shoaib Bashir", "Ben Stokes"]
+  },
+  SL: {
+    name: "Sri Lanka",
+    short: "SL",
+    batters: ["Pathum Nissanka", "D. Karunaratne", "Kusal Mendis", "Angelo Mathews", "Dinesh Chandimal", "D. de Silva", "Kamindu Mendis", "P. Jayasuriya", "Asitha Fernando", "Lahiru Kumara", "Vishwa Fernando"],
+    bowlers: ["Prabath Jayasuriya", "Asitha Fernando", "Lahiru Kumara", "Vishwa Fernando", "D. de Silva", "Angelo Mathews"]
+  }
+};
+
+let userTeamCode = 'AUS';
+let oppTeamCode = 'IND';
+let battersList = [];
+let bowlersList = [];
+let batter1 = null; // { name, runs, balls }
+let batter2 = null; // { name, runs, balls }
+let currentBowler = null; // { name, balls, runs, wickets }
+let nextBatsmanIndex = 2;
+let nextBowlerIndex = 1;
+let strikerOnStrike = 1; // 1 = batter1, 2 = batter2
+
+// Map to track bowlers' stats continuously across the match
+let bowlerStatsMap = {}; // name -> { name, balls, runs, wickets }
+
 let bowlingDirection = 1; // 1 = top-to-bottom, -1 = bottom-to-top
 let isAutoBowlingTimeout = null;
 
@@ -371,8 +450,9 @@ class Fielder {
     this.has_ball = false;
   }
 
-  update(ballX, ballY) {
-    if (this.state === 'CHASING') {
+  update(ballX, ballY, isActive) {
+    if (isActive) {
+      this.state = 'CHASING';
       let dx = ballX - this.x;
       let dy = ballY - this.y;
       let distance = Math.sqrt(dx * dx + dy * dy);
@@ -382,6 +462,30 @@ class Fielder {
       } else {
         this.x = ballX;
         this.y = ballY;
+      }
+    } else {
+      let dx = ballX - this.x;
+      let dy = ballY - this.y;
+      let distance = Math.sqrt(dx * dx + dy * dy);
+      if ((ball.state === 'HIT' || ball.state === 'THROWN') && distance < 120) {
+        this.state = 'CHASING';
+        let moveSpeed = this.speed * 0.7;
+        if (distance > 12) {
+          this.x += (dx / distance) * moveSpeed;
+          this.y += (dy / distance) * moveSpeed;
+        }
+      } else {
+        let hdx = this.homeX - this.x;
+        let hdy = this.homeY - this.y;
+        let hdist = Math.sqrt(hdx * hdx + hdy * hdy);
+        if (hdist > 2) {
+          this.x += (hdx / hdist) * 1.5; // return to base
+          this.y += (hdy / hdist) * 1.5;
+        } else {
+          this.x = this.homeX;
+          this.y = this.homeY;
+          this.state = 'IDLE';
+        }
       }
     }
   }
@@ -537,7 +641,8 @@ function generateBowlingSpeed() {
   if (!speedVal) return;
   
   if (!overBowlerStyle) {
-    overBowlerStyle = Math.random() < 0.5 ? "Off-spin" : "Fast-medium";
+    const bowlerType = BOWLER_TYPES[currentBowler.name] || "Fast";
+    overBowlerStyle = (bowlerType === "Spin") ? "Off-spin" : "Fast-medium";
   }
   ballStyle = overBowlerStyle;
   
@@ -623,10 +728,93 @@ function updateHowToPlayModal() {
 }
 
 function initCricket() {
+  if (cricketTeamSelectModal) {
+    cricketTeamSelectModal.classList.remove('hidden');
+  }
+  if (cricketScorecardModal) {
+    cricketScorecardModal.classList.add('hidden');
+  }
+}
+
+function updateTeamCardCrossHighlight() {
+  const userVal = document.getElementById('cricket-user-team')?.value;
+  const oppVal = document.getElementById('cricket-opp-team')?.value;
+
+  // Grey out the "taken" option in each dropdown
+  document.querySelectorAll('#user-team-options .team-select-option').forEach(opt => {
+    opt.classList.toggle('disabled-option', opt.getAttribute('data-value') === oppVal);
+  });
+  document.querySelectorAll('#opp-team-options .team-select-option').forEach(opt => {
+    opt.classList.toggle('disabled-option', opt.getAttribute('data-value') === userVal);
+  });
+
+  // Update matchup preview
+  const batFlag = document.getElementById('matchup-bat-flag');
+  const batName = document.getElementById('matchup-bat-name');
+  const bowlFlag = document.getElementById('matchup-bowl-flag');
+  const bowlName = document.getElementById('matchup-bowl-name');
+  const userTrigger = document.getElementById('user-team-trigger');
+  const oppTrigger = document.getElementById('opp-team-trigger');
+  if (batFlag && userTrigger) batFlag.textContent = userTrigger.querySelector('.select-flag')?.textContent || '';
+  if (batName && userVal) batName.textContent = userVal;
+  if (bowlFlag && oppTrigger) bowlFlag.textContent = oppTrigger.querySelector('.select-flag')?.textContent || '';
+  if (bowlName && oppVal) bowlName.textContent = oppVal;
+}
+
+function startMatchWithSelectedTeams() {
+  userTeamCode = cricketUserTeamSelect ? cricketUserTeamSelect.value : 'AUS';
+  oppTeamCode = cricketOppTeamSelect ? cricketOppTeamSelect.value : 'IND';
+
+  // Validate: batting and bowling teams cannot be the same
+  if (userTeamCode === oppTeamCode) {
+    const errorEl = document.getElementById('team-select-error');
+    if (errorEl) {
+      errorEl.classList.remove('hidden');
+      errorEl.classList.add('shake');
+      setTimeout(() => errorEl.classList.remove('shake'), 600);
+    }
+    return;
+  } else {
+    const errorEl = document.getElementById('team-select-error');
+    if (errorEl) errorEl.classList.add('hidden');
+  }
+
+  if (cricketTeamSelectModal) {
+    cricketTeamSelectModal.classList.add('hidden');
+  }
+  if (cricketScorecardModal) {
+    cricketScorecardModal.classList.add('hidden');
+  }
+  
+  battingScorecardHistory = []; // Reset batting scorecard history
+  currentPartnershipRuns = 0;
+  currentPartnershipCelebrated50 = false;
+  currentPartnershipCelebrated100 = false;
+  
   cricketState = { runs: 0, wickets: 0, balls_faced: 0, max_balls: isTestMatch ? Infinity : 12, game_over: false };
   bowlingDirection = 1;
   ballOutcomesHistory = [];
   overBowlerStyle = null;
+
+  // Initialize squad sheets based on user choices
+  battersList = [...SQUADS[userTeamCode].batters];
+  bowlersList = [...SQUADS[oppTeamCode].bowlers];
+
+  batter1 = { name: battersList[0], runs: 0, balls: 0, hasCelebrated50: false, hasCelebrated100: false };
+  batter2 = { name: battersList[1], runs: 0, balls: 0, hasCelebrated50: false, hasCelebrated100: false };
+  
+  // Clear and initialize bowlerStatsMap
+  bowlerStatsMap = {};
+  bowlersList.forEach(name => {
+    bowlerStatsMap[name] = { name: name, balls: 0, runs: 0, wickets: 0 };
+  });
+
+  const firstBowlerName = bowlersList[0];
+  currentBowler = bowlerStatsMap[firstBowlerName];
+  
+  nextBatsmanIndex = 2;
+  nextBowlerIndex = 1;
+  strikerOnStrike = 1; // batter1 starts on strike
   
   if (isAutoBowlingTimeout) {
     clearTimeout(isAutoBowlingTimeout);
@@ -649,7 +837,7 @@ function initCricket() {
   
   const commentaryLines = document.getElementById('cricket-commentary-lines');
   if (commentaryLines) {
-    commentaryLines.innerHTML = '<div class="commentary-line active">Welcome to the match! Press ENTER or click BOWL to start.</div>';
+    commentaryLines.innerHTML = `<div class="commentary-line active">Welcome to the match! ${SQUADS[userTeamCode].name} vs ${SQUADS[oppTeamCode].name}. Press ENTER or click BOWL to start.</div>`;
   }
   
   const gameHeaderTitle = cricketGameView.querySelector('.game-header h1');
@@ -657,11 +845,11 @@ function initCricket() {
   const ballsLimitEl = document.getElementById('cricket-balls-limit');
   
   if (isTestMatch) {
-    if (gameHeaderTitle) gameHeaderTitle.textContent = "Cricket Test Match";
+    if (gameHeaderTitle) gameHeaderTitle.textContent = `${SQUADS[userTeamCode].name} vs ${SQUADS[oppTeamCode].name} - Test Match`;
     if (gameHeaderDesc) gameHeaderDesc.innerHTML = 'Score as many runs as possible until <span class="highlight">10 Wickets</span> are down!';
     if (ballsLimitEl) ballsLimitEl.style.display = 'none';
   } else {
-    if (gameHeaderTitle) gameHeaderTitle.textContent = "Mini Cricket";
+    if (gameHeaderTitle) gameHeaderTitle.textContent = `${SQUADS[userTeamCode].name} vs ${SQUADS[oppTeamCode].name} - Mini Cricket`;
     if (gameHeaderDesc) gameHeaderDesc.innerHTML = 'Score as many runs as possible in <span class="highlight">2 Overs (12 balls)</span>!';
     if (ballsLimitEl) ballsLimitEl.style.display = 'inline';
   }
@@ -670,6 +858,204 @@ function initCricket() {
   
   if (cricketHowToPlayModal) {
     cricketHowToPlayModal.classList.remove('hidden');
+  }
+}
+
+function replaceOutBatter(batterNum) {
+  let outBatter = (batterNum === 1) ? batter1 : batter2;
+  if (outBatter && outBatter.name !== "No Batter") {
+    if (batter1 && batter2 && batter1.name !== "No Batter" && batter2.name !== "No Batter") {
+      addCommentary(`Partnership: ${currentPartnershipRuns} runs between ${batter1.name} and ${batter2.name} is broken.`, 'system');
+    }
+    battingScorecardHistory.push({
+      name: outBatter.name,
+      runs: outBatter.runs,
+      balls: outBatter.balls,
+      status: "Out"
+    });
+  }
+
+  // Reset partnership
+  currentPartnershipRuns = 0;
+  currentPartnershipCelebrated50 = false;
+  currentPartnershipCelebrated100 = false;
+
+  if (nextBatsmanIndex < battersList.length) {
+    let newName = battersList[nextBatsmanIndex];
+    nextBatsmanIndex++;
+    if (batterNum === 1) {
+      batter1 = { name: newName, runs: 0, balls: 0, hasCelebrated50: false, hasCelebrated100: false };
+    } else {
+      batter2 = { name: newName, runs: 0, balls: 0, hasCelebrated50: false, hasCelebrated100: false };
+    }
+  } else {
+    if (batterNum === 1) {
+      batter1 = { name: "No Batter", runs: 0, balls: 0, hasCelebrated50: false, hasCelebrated100: false };
+    } else {
+      batter2 = { name: "No Batter", runs: 0, balls: 0, hasCelebrated50: false, hasCelebrated100: false };
+    }
+  }
+}
+
+function showPostMatchScorecard() {
+  let tempBattingScorecard = [];
+  
+  battersList.forEach(name => {
+    let histEntry = battingScorecardHistory.find(b => b.name === name);
+    if (histEntry) {
+      tempBattingScorecard.push(histEntry);
+    } else if (batter1 && batter1.name === name && batter1.name !== "No Batter") {
+      tempBattingScorecard.push({ name: batter1.name, runs: batter1.runs, balls: batter1.balls, status: "Not Out" });
+    } else if (batter2 && batter2.name === name && batter2.name !== "No Batter") {
+      tempBattingScorecard.push({ name: batter2.name, runs: batter2.runs, balls: batter2.balls, status: "Not Out" });
+    } else {
+      tempBattingScorecard.push({ name: name, runs: 0, balls: 0, status: "Did Not Bat" });
+    }
+  });
+
+  let battingHtml = "";
+  tempBattingScorecard.forEach(b => {
+    let displayStatus = "";
+    let scoreDisplay = "";
+    
+    if (b.status === "Not Out") {
+      displayStatus = `<span style="color: var(--success-color); font-weight: bold;">Not Out</span>`;
+      scoreDisplay = `<span class="player-runs" style="color: var(--accent-cricket);">${b.runs} <span style="font-size: 0.85rem; font-weight: normal; color: var(--text-secondary);">(${b.balls}b)</span></span>`;
+    } else if (b.status === "Out") {
+      displayStatus = `<span style="color: var(--error-color);">Out</span>`;
+      scoreDisplay = `<span class="player-runs" style="color: var(--accent-cricket);">${b.runs} <span style="font-size: 0.85rem; font-weight: normal; color: var(--text-secondary);">(${b.balls}b)</span></span>`;
+    } else {
+      displayStatus = `<span style="color: var(--text-muted);">Did Not Bat</span>`;
+      scoreDisplay = `<span class="player-runs" style="color: var(--text-muted);">-</span>`;
+    }
+
+    battingHtml += `
+      <div class="player-stat-row" style="padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between;">
+        <span style="font-weight: 600; color: var(--text-primary);">${b.name} <span style="font-size: 0.8rem; font-weight: normal; margin-left: 6px;">(${displayStatus})</span></span>
+        ${scoreDisplay}
+      </div>
+    `;
+  });
+  const battingContainer = document.getElementById('scorecard-batting-rows');
+  if (battingContainer) battingContainer.innerHTML = battingHtml;
+
+  let bowlingHtml = "";
+  bowlersList.forEach(name => {
+    let stats = bowlerStatsMap[name];
+    if (stats && stats.balls > 0) {
+      let overs = Math.floor(stats.balls / 6) + '.' + (stats.balls % 6);
+      let econ = ((stats.runs * 6) / stats.balls).toFixed(2);
+      bowlingHtml += `
+        <div class="player-stat-row" style="padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between;">
+          <span style="font-weight: 600; color: #a5b4fc;">${name}</span>
+          <span class="player-runs" style="color: #a5b4fc;">Overs: ${overs} | Runs: ${stats.runs} | Wkts: ${stats.wickets} | Econ: ${econ}</span>
+        </div>
+      `;
+    }
+  });
+  const bowlingContainer = document.getElementById('scorecard-bowling-rows');
+  if (bowlingContainer) bowlingContainer.innerHTML = bowlingHtml;
+
+  // Activate the Batting tab by default when modal opens
+  if (scorecardTabBatting) {
+    scorecardTabBatting.click();
+  }
+
+  if (cricketScorecardModal) {
+    cricketScorecardModal.classList.remove('hidden');
+  }
+}
+
+let milestoneQueue = [];
+
+function triggerMilestoneCelebration(msg) {
+  if (isMilestoneCelebrating) {
+    milestoneQueue.push(msg);
+    return;
+  }
+  
+  // Log inside commentary in golden style
+  addCommentary(msg, 'milestone');
+  
+  // Play achievement sound
+  playSfx('success');
+  
+  isMilestoneCelebrating = true;
+  if (isAutoBowlingTimeout) {
+    clearTimeout(isAutoBowlingTimeout);
+    isAutoBowlingTimeout = null;
+  }
+  
+  if (cricketHitBtn) {
+    cricketHitBtn.disabled = true;
+    cricketHitBtn.textContent = '👏 CELEBRATING';
+    cricketHitBtn.style.opacity = '0.7';
+  }
+
+  // Visual banner toast
+  const toast = document.getElementById('cricket-milestone-toast');
+  if (toast) {
+    toast.innerHTML = `
+      <div class="milestone-badge">🏆 MILESTONE</div>
+      <div class="milestone-msg">${msg}</div>
+    `;
+    toast.classList.add('show');
+    
+    setTimeout(() => {
+      toast.classList.remove('show');
+      isMilestoneCelebrating = false;
+      
+      // Process next milestone in queue if any
+      if (milestoneQueue.length > 0) {
+        const nextMsg = milestoneQueue.shift();
+        triggerMilestoneCelebration(nextMsg);
+      } else {
+        if (!cricketState.game_over) {
+          if (cricketHitBtn) {
+            cricketHitBtn.disabled = false;
+            cricketHitBtn.textContent = 'BOWL ⚾';
+            cricketHitBtn.style.opacity = '1';
+          }
+          
+          const overEnd = cricketState.balls_faced > 0 && cricketState.balls_faced % 6 === 0;
+          const resumeMsg = overEnd ? "Over complete! Changing ends... next ball in 2.5s 🔄" : "Preparing next delivery... next ball in 2s ⚾";
+          showCricketMessage(resumeMsg, overEnd ? 'success' : 'warning');
+          
+          isAutoBowlingTimeout = setTimeout(() => {
+            bowlBall();
+          }, overEnd ? 2500 : 2000);
+        }
+      }
+    }, 4000);
+  }
+}
+
+function checkMilestonesAndPartnerships(runsScored) {
+  if (runsScored <= 0) return;
+  
+  currentPartnershipRuns += runsScored;
+  
+  if (batter1 && batter2) {
+    let activeBatter = (strikerOnStrike === 1) ? batter1 : batter2;
+    if (activeBatter.runs >= 100 && !activeBatter.hasCelebrated100) {
+      activeBatter.hasCelebrated100 = true;
+      triggerMilestoneCelebration(`🏏 HUNDRED! ${activeBatter.name} reaches a magnificent 100 runs! 🎉💯`);
+    } else if (activeBatter.runs >= 50 && !activeBatter.hasCelebrated50) {
+      activeBatter.hasCelebrated50 = true;
+      triggerMilestoneCelebration(`🏏 FIFTY! ${activeBatter.name} scores a brilliant 50 runs! 🎉👏`);
+    }
+  }
+  
+  if (currentPartnershipRuns >= 100 && !currentPartnershipCelebrated100) {
+    currentPartnershipCelebrated100 = true;
+    let b1 = batter1 ? batter1.name : "Batsman 1";
+    let b2 = batter2 ? batter2.name : "Batsman 2";
+    triggerMilestoneCelebration(`🤝 Milestone! 100-Run Partnership reached between ${b1} & ${b2}! 🎉🔥`);
+  } else if (currentPartnershipRuns >= 50 && !currentPartnershipCelebrated50) {
+    currentPartnershipCelebrated50 = true;
+    let b1 = batter1 ? batter1.name : "Batsman 1";
+    let b2 = batter2 ? batter2.name : "Batsman 2";
+    triggerMilestoneCelebration(`🤝 Milestone! 50-Run Partnership reached between ${b1} & ${b2}! 🎉🌟`);
   }
 }
 
@@ -706,13 +1092,24 @@ function resetPlayState() {
   gameState = 'IDLE';
   bowlingDirection = (Math.floor(cricketState.balls_faced / 6) % 2 === 0) ? 1 : -1;
   
-  fielders = fieldersData.map(d => new Fielder(d.id, d.name, d.x, d.y, d.speed));
+  // Get list of fielders from opponent squad (excluding current bowler)
+  const opponentPlayers = SQUADS[oppTeamCode].batters.filter(p => p !== currentBowler.name);
+  fielders = fieldersData.map((d, index) => {
+    let playerName = opponentPlayers[index % opponentPlayers.length];
+    let parts = playerName.split(' ');
+    let formattedName = parts.length > 1 ? parts[0][0] + ". " + parts.slice(1).join(' ') : playerName;
+    return new Fielder(d.id, formattedName, d.x, d.y, d.speed);
+  });
   
   const initialBallY = (bowlingDirection === 1) ? 115 : 335;
   ball = { x: 225, y: initialBallY, vx: 0, vy: 0, speed: 0, state: 'IDLE', loft: false, loftProgress: 0, loftDuration: 0, maxLoftHeight: 0 };
   
-  const b1Y = (bowlingDirection === 1) ? 305 : 145;
-  const b2Y = (bowlingDirection === 1) ? 145 : 305;
+  const strikerCreaseY = (bowlingDirection === 1) ? 305 : 145;
+  const nonStrikerCreaseY = (bowlingDirection === 1) ? 145 : 305;
+
+  const b1Y = (strikerOnStrike === 1) ? strikerCreaseY : nonStrikerCreaseY;
+  const b2Y = (strikerOnStrike === 2) ? strikerCreaseY : nonStrikerCreaseY;
+
   batsmen = {
     batsman1Y: b1Y,
     batsman2Y: b2Y,
@@ -746,6 +1143,50 @@ function updateCricketUI() {
   }
   cricketWickets.textContent = cricketState.wickets;
   cricketBalls.textContent = cricketState.balls_faced;
+
+  // Render Player scorecards HUD
+  const strikerNameEl = document.getElementById('batter-striker-name');
+  const strikerStatsEl = document.getElementById('batter-striker-stats');
+  const nonStrikerNameEl = document.getElementById('batter-nonstriker-name');
+  const nonStrikerStatsEl = document.getElementById('batter-nonstriker-stats');
+  const bowlerNameEl = document.getElementById('bowler-name');
+  const bowlerStatsEl = document.getElementById('bowler-stats');
+  const partnershipStatsEl = document.getElementById('partnership-stats');
+
+  if (batter1 && batter2 && currentBowler) {
+    const s1 = (strikerOnStrike === 1) ? batter1 : batter2;
+    const s2 = (strikerOnStrike === 1) ? batter2 : batter1;
+    
+    if (strikerNameEl) {
+      strikerNameEl.textContent = s1.name;
+      const strikerRow = document.getElementById('batter-striker-row');
+      if (strikerRow) strikerRow.className = 'player-stat-row active-batter';
+    }
+    if (strikerStatsEl) {
+      strikerStatsEl.textContent = `${s1.runs} (${s1.balls})`;
+    }
+    
+    if (nonStrikerNameEl) {
+      nonStrikerNameEl.textContent = s2.name;
+      const nonStrikerRow = document.getElementById('batter-nonstriker-row');
+      if (nonStrikerRow) nonStrikerRow.className = 'player-stat-row';
+    }
+    if (nonStrikerStatsEl) {
+      nonStrikerStatsEl.textContent = `${s2.runs} (${s2.balls})`;
+    }
+
+    if (bowlerNameEl) {
+      bowlerNameEl.textContent = currentBowler.name;
+    }
+    if (bowlerStatsEl) {
+      let overs = Math.floor(currentBowler.balls / 6) + '.' + (currentBowler.balls % 6);
+      let econ = currentBowler.balls > 0 ? ((currentBowler.runs * 6) / currentBowler.balls).toFixed(2) : "0.00";
+      bowlerStatsEl.textContent = `Overs: ${overs} | Runs: ${currentBowler.runs} | Wkts: ${currentBowler.wickets} | Econ: ${econ}`;
+    }
+    if (partnershipStatsEl) {
+      partnershipStatsEl.textContent = `${currentPartnershipRuns} runs`;
+    }
+  }
 }
 
 function updateSVGDOM() {
@@ -870,10 +1311,9 @@ function bowlBall() {
     isAutoBowlingTimeout = null;
   }
   
-  // Lock bowler style for the entire over (every 6 balls)
-  if (cricketState.balls_faced === 0 || cricketState.balls_faced % 6 === 0) {
-    overBowlerStyle = Math.random() < 0.5 ? "Off-spin" : "Fast-medium";
-  }
+  // Set bowler style based on the bowler's type (Spin -> Off-spin, Fast -> Fast-medium)
+  const bowlerType = BOWLER_TYPES[currentBowler.name] || "Fast";
+  overBowlerStyle = (bowlerType === "Spin") ? "Off-spin" : "Fast-medium";
   
   resetPlayState();
   
@@ -1424,8 +1864,12 @@ function gameLoop() {
     }
   }
 
+  // Update all fielders
+  fielders.forEach(f => {
+    f.update(ball.x, ball.y, f === activeFielder);
+  });
+
   if (activeFielder) {
-    activeFielder.update(ball.x, ball.y);
     
     let dx = ball.x - activeFielder.x;
     let dy = ball.y - activeFielder.y;
@@ -1524,6 +1968,17 @@ function handleBoundary(runs) {
     cricketState = currentShotOutcome.state;
     showCricketMessage(currentShotOutcome.message, 'success');
   }
+
+  // Update stats
+  if (batter1 && batter2 && currentBowler) {
+    let activeBatter = (strikerOnStrike === 1) ? batter1 : batter2;
+    activeBatter.runs += runs;
+    activeBatter.balls++;
+    currentBowler.balls++;
+    currentBowler.runs += runs;
+    checkMilestonesAndPartnerships(runs);
+  }
+
   ballOutcomesHistory.push(runs);
   addCommentary(getProceduralCommentary(runs, ballSpeedKmh, ballStyle), 'boundary');
   triggerBoundaryFlash();
@@ -1540,6 +1995,16 @@ function handleCaughtOut() {
     cricketState = currentShotOutcome.state;
     showCricketMessage(currentShotOutcome.message, 'error');
   }
+
+  // Update stats
+  if (batter1 && batter2 && currentBowler) {
+    let activeBatter = (strikerOnStrike === 1) ? batter1 : batter2;
+    activeBatter.balls++;
+    currentBowler.balls++;
+    currentBowler.wickets++;
+    replaceOutBatter(strikerOnStrike);
+  }
+
   ballOutcomesHistory.push('W');
   addCommentary(getProceduralCommentary('W_CAUGHT', ballSpeedKmh, ballStyle), 'wicket');
   playSfx('out');
@@ -1551,6 +2016,19 @@ function handleSafeRunsTest() {
   cricketState.balls_faced++;
   ballOutcomesHistory.push(batsmen.completedRuns);
   
+  // Update stats
+  if (batter1 && batter2 && currentBowler) {
+    let activeBatter = (strikerOnStrike === 1) ? batter1 : batter2;
+    activeBatter.runs += batsmen.completedRuns;
+    activeBatter.balls++;
+    currentBowler.balls++;
+    currentBowler.runs += batsmen.completedRuns;
+    checkMilestonesAndPartnerships(batsmen.completedRuns);
+    if (batsmen.completedRuns % 2 !== 0) {
+      strikerOnStrike = (strikerOnStrike === 1) ? 2 : 1;
+    }
+  }
+
   if (batsmen.completedRuns === 0) {
     showCricketMessage("Dot ball.", 'warning');
     addCommentary(getCommentaryDot(ballStyle), 'dot');
@@ -1581,6 +2059,20 @@ function handleSafeRuns() {
       playSfx('success');
     }
   }
+
+  // Update stats
+  if (batter1 && batter2 && currentBowler) {
+    let activeBatter = (strikerOnStrike === 1) ? batter1 : batter2;
+    activeBatter.runs += lastOutcome;
+    activeBatter.balls++;
+    currentBowler.balls++;
+    currentBowler.runs += lastOutcome;
+    checkMilestonesAndPartnerships(lastOutcome);
+    if (lastOutcome % 2 !== 0) {
+      strikerOnStrike = (strikerOnStrike === 1) ? 2 : 1;
+    }
+  }
+
   ballOutcomesHistory.push(lastOutcome);
   finishDelivery();
 }
@@ -1596,6 +2088,15 @@ function checkRunOut() {
   }
 
   if (!isSafe) {
+    let outBatterNum = 1;
+    if (ball.targetY === STUMPS_STRIKER.y) {
+      if (batsmen.target1Y === 305 && batsmen.batsman1Y < 300) outBatterNum = 1;
+      if (batsmen.target2Y === 305 && batsmen.batsman2Y < 300) outBatterNum = 2;
+    } else {
+      if (batsmen.target1Y === 145 && batsmen.batsman1Y > 150) outBatterNum = 1;
+      if (batsmen.target2Y === 145 && batsmen.batsman2Y > 150) outBatterNum = 2;
+    }
+
     if (isTestMatch) {
       cricketState.wickets++;
       cricketState.runs += batsmen.completedRuns;
@@ -1611,6 +2112,23 @@ function checkRunOut() {
       cricketState.wickets++;
       cricketState.balls_faced++;
     }
+
+    // Update stats
+    if (batter1 && batter2 && currentBowler) {
+      let activeBatter = (strikerOnStrike === 1) ? batter1 : batter2;
+      activeBatter.runs += batsmen.completedRuns;
+      activeBatter.balls++;
+      currentBowler.balls++;
+      currentBowler.runs += batsmen.completedRuns;
+      checkMilestonesAndPartnerships(batsmen.completedRuns);
+      
+      replaceOutBatter(outBatterNum);
+      
+      if (batsmen.completedRuns % 2 !== 0) {
+        strikerOnStrike = (strikerOnStrike === 1) ? 2 : 1;
+      }
+    }
+
     ballOutcomesHistory.push('W');
     addCommentary(getProceduralCommentary('W_RUNOUT', ballSpeedKmh, ballStyle), 'wicket');
     playSfx('out');
@@ -1639,12 +2157,26 @@ function handleMissOutcome() {
     showCricketMessage("OUT! Bowled! Clean bowled! 🛑", 'error');
     addCommentary(getCommentaryBowled(ballSpeedKmh, ballStyle), 'wicket');
     playSfx('out');
+
+    if (batter1 && batter2 && currentBowler) {
+      let activeBatter = (strikerOnStrike === 1) ? batter1 : batter2;
+      activeBatter.balls++;
+      currentBowler.balls++;
+      currentBowler.wickets++;
+      replaceOutBatter(strikerOnStrike);
+    }
   } else {
     cricketState.balls_faced++;
     ballOutcomesHistory.push(0);
     showCricketMessage("Dot ball. Good bowling.", 'warning');
     addCommentary(getCommentaryDot(ballStyle), 'dot');
     playSfx('fail');
+
+    if (batter1 && batter2 && currentBowler) {
+      let activeBatter = (strikerOnStrike === 1) ? batter1 : batter2;
+      activeBatter.balls++;
+      currentBowler.balls++;
+    }
   }
   
   ball.x = 225;
@@ -1659,6 +2191,7 @@ function handleMissOutcome() {
 }
 
 function handleCricketHit() {
+  if (isMilestoneCelebrating) return;
   if (cricketState.game_over) return;
   if (gameState === 'IDLE') {
     bowlBall();
@@ -1704,23 +2237,101 @@ function finishDelivery() {
       }
     }
     saveStats();
+    showPostMatchScorecard();
   } else {
-    cricketHitBtn.disabled = false;
-    cricketHitBtn.style.opacity = '1';
-    cricketHitBtn.textContent = 'BOWL ⚾';
-    
-    if (isAutoBowlingTimeout) {
-      clearTimeout(isAutoBowlingTimeout);
-      isAutoBowlingTimeout = null;
+    if (isMilestoneCelebrating) {
+      if (cricketHitBtn) {
+        cricketHitBtn.disabled = true;
+        cricketHitBtn.textContent = '👏 CELEBRATING';
+        cricketHitBtn.style.opacity = '0.7';
+      }
+      
+      if (isAutoBowlingTimeout) {
+        clearTimeout(isAutoBowlingTimeout);
+        isAutoBowlingTimeout = null;
+      }
+      
+      const overEnd = cricketState.balls_faced > 0 && cricketState.balls_faced % 6 === 0;
+      if (overEnd) {
+        strikerOnStrike = (strikerOnStrike === 1) ? 2 : 1;
+        const remainingBowlers = bowlersList.filter(name => name !== currentBowler.name);
+        let nextBowlerName = "";
+        if (remainingBowlers.length > 0) {
+          let totalWeight = 0;
+          remainingBowlers.forEach(name => {
+            totalWeight += BOWLER_WEIGHTS[name] || 3;
+          });
+          let rand = Math.random() * totalWeight;
+          let cumulativeWeight = 0;
+          for (let i = 0; i < remainingBowlers.length; i++) {
+            const name = remainingBowlers[i];
+            cumulativeWeight += BOWLER_WEIGHTS[name] || 3;
+            if (rand <= cumulativeWeight) {
+              nextBowlerName = name;
+              break;
+            }
+          }
+        } else {
+          nextBowlerName = bowlersList[0];
+        }
+        
+        if (!bowlerStatsMap[nextBowlerName]) {
+          bowlerStatsMap[nextBowlerName] = { name: nextBowlerName, balls: 0, runs: 0, wickets: 0 };
+        }
+        currentBowler = bowlerStatsMap[nextBowlerName];
+        addCommentary(`${nextBowlerName} comes on to bowl the new over from the opposite end.`, 'system');
+      }
+    } else {
+      if (cricketHitBtn) {
+        cricketHitBtn.disabled = false;
+        cricketHitBtn.style.opacity = '1';
+        cricketHitBtn.textContent = 'BOWL ⚾';
+      }
+      
+      if (isAutoBowlingTimeout) {
+        clearTimeout(isAutoBowlingTimeout);
+        isAutoBowlingTimeout = null;
+      }
+      
+      const overEnd = cricketState.balls_faced > 0 && cricketState.balls_faced % 6 === 0;
+      
+      if (overEnd) {
+        strikerOnStrike = (strikerOnStrike === 1) ? 2 : 1;
+        const remainingBowlers = bowlersList.filter(name => name !== currentBowler.name);
+        let nextBowlerName = "";
+        if (remainingBowlers.length > 0) {
+          let totalWeight = 0;
+          remainingBowlers.forEach(name => {
+            totalWeight += BOWLER_WEIGHTS[name] || 3;
+          });
+          let rand = Math.random() * totalWeight;
+          let cumulativeWeight = 0;
+          for (let i = 0; i < remainingBowlers.length; i++) {
+            const name = remainingBowlers[i];
+            cumulativeWeight += BOWLER_WEIGHTS[name] || 3;
+            if (rand <= cumulativeWeight) {
+              nextBowlerName = name;
+              break;
+            }
+          }
+        } else {
+          nextBowlerName = bowlersList[0];
+        }
+        
+        if (!bowlerStatsMap[nextBowlerName]) {
+          bowlerStatsMap[nextBowlerName] = { name: nextBowlerName, balls: 0, runs: 0, wickets: 0 };
+        }
+        currentBowler = bowlerStatsMap[nextBowlerName];
+        addCommentary(`${nextBowlerName} comes on to bowl the new over from the opposite end.`, 'system');
+      }
+
+      const msg = overEnd ? "Over complete! Changing ends... next ball in 3s 🔄" : "Preparing next delivery... next ball in 2.5s ⚾";
+      showCricketMessage(msg, overEnd ? 'success' : 'warning');
+      
+      isAutoBowlingTimeout = setTimeout(() => {
+        bowlBall();
+      }, overEnd ? 3000 : 2500);
     }
-    
-    const overEnd = cricketState.balls_faced > 0 && cricketState.balls_faced % 6 === 0;
-    const msg = overEnd ? "Over complete! Changing ends... next ball in 3s 🔄" : "Preparing next delivery... next ball in 2.5s ⚾";
-    showCricketMessage(msg, overEnd ? 'success' : 'warning');
-    
-    isAutoBowlingTimeout = setTimeout(() => {
-      bowlBall();
-    }, overEnd ? 3000 : 2500);
   }
   
   updateCricketUI();
@@ -1743,6 +2354,7 @@ function showMenu() {
   numberGuessGame.classList.add('hidden');
   hangmanGameView.classList.add('hidden');
   if (cricketGameView) cricketGameView.classList.add('hidden');
+  if (cricketScorecardModal) cricketScorecardModal.classList.add('hidden');
 }
 
 function showGame(gameId) {
@@ -2127,6 +2739,28 @@ hangmanBackBtn.addEventListener('click', showMenu);
 if (cricketHitBtn) cricketHitBtn.addEventListener('click', handleCricketHit);
 if (cricketRestartBtn) cricketRestartBtn.addEventListener('click', initCricket);
 if (cricketBackBtn) cricketBackBtn.addEventListener('click', showMenu);
+if (cricketStartMatchBtn) cricketStartMatchBtn.addEventListener('click', startMatchWithSelectedTeams);
+if (cricketCloseScorecardBtn) {
+  cricketCloseScorecardBtn.addEventListener('click', () => {
+    if (cricketScorecardModal) {
+      cricketScorecardModal.classList.add('hidden');
+    }
+  });
+}
+if (scorecardTabBatting && scorecardTabBowling && scorecardSectionBatting && scorecardSectionBowling) {
+  scorecardTabBatting.addEventListener('click', () => {
+    scorecardTabBatting.classList.add('active');
+    scorecardTabBowling.classList.remove('active');
+    scorecardSectionBatting.classList.remove('hidden');
+    scorecardSectionBowling.classList.add('hidden');
+  });
+  scorecardTabBowling.addEventListener('click', () => {
+    scorecardTabBowling.classList.add('active');
+    scorecardTabBatting.classList.remove('active');
+    scorecardSectionBowling.classList.remove('hidden');
+    scorecardSectionBatting.classList.add('hidden');
+  });
+}
 if (cricketCloseHelpBtn) {
   cricketCloseHelpBtn.addEventListener('click', () => {
     if (cricketHowToPlayModal) {
@@ -2136,10 +2770,89 @@ if (cricketCloseHelpBtn) {
   });
 }
 
+// ===== CUSTOM DROPDOWN TEAM SELECTION LOGIC =====
+function setupTeamDropdown(dropdownId, optionsId, selectId, flagId, nameId) {
+  const container = document.getElementById(dropdownId);
+  const optionsPanel = document.getElementById(optionsId);
+  const hiddenSelect = document.getElementById(selectId);
+  const flagEl = document.getElementById(flagId);
+  const nameEl = document.getElementById(nameId);
+  if (!container || !optionsPanel) return;
+
+  const trigger = container.querySelector('.team-select-trigger');
+
+  // Toggle open
+  trigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    // Close any other open dropdowns
+    document.querySelectorAll('.team-custom-select.open').forEach(el => {
+      if (el !== container) el.classList.remove('open');
+    });
+    container.classList.toggle('open');
+  });
+
+  // Select option
+  optionsPanel.querySelectorAll('.team-select-option').forEach(opt => {
+    opt.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (opt.classList.contains('disabled-option')) return;
+
+      const val = opt.getAttribute('data-value');
+      const flag = opt.getAttribute('data-flag');
+      const name = opt.getAttribute('data-name');
+
+      // Update trigger display
+      if (flagEl) flagEl.textContent = flag;
+      if (nameEl) nameEl.textContent = name;
+
+      // Update hidden select
+      if (hiddenSelect) hiddenSelect.value = val;
+
+      // Mark selected
+      optionsPanel.querySelectorAll('.team-select-option').forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+
+      // Close dropdown
+      container.classList.remove('open');
+
+      // Clear error if now valid
+      const errorEl = document.getElementById('team-select-error');
+      const otherVal = selectId === 'cricket-user-team'
+        ? document.getElementById('cricket-opp-team')?.value
+        : document.getElementById('cricket-user-team')?.value;
+      if (errorEl && val !== otherVal) errorEl.classList.add('hidden');
+
+      updateTeamCardCrossHighlight();
+    });
+  });
+}
+
+// Init both dropdowns
+setupTeamDropdown('user-team-dropdown', 'user-team-options', 'cricket-user-team', 'user-select-flag', 'user-select-name');
+setupTeamDropdown('opp-team-dropdown', 'opp-team-options', 'cricket-opp-team', 'opp-select-flag', 'opp-select-name');
+
+// Close all dropdowns when clicking outside
+document.addEventListener('click', () => {
+  document.querySelectorAll('.team-custom-select.open').forEach(el => el.classList.remove('open'));
+});
+
+// Initial cross-highlight on load
+updateTeamCardCrossHighlight();
+
+
 window.addEventListener('keydown', (e) => {
   if (cricketGameView && !cricketGameView.classList.contains('hidden')) {
+    if (isMilestoneCelebrating) {
+      if (e.key === 'Enter' || e.key === '5' || e.code === 'Numpad5' || e.key === 'Clear' || e.key.toLowerCase() === 'w' || e.key.toLowerCase() === 's') {
+        e.preventDefault();
+      }
+      return;
+    }
     if (e.key === 'Enter') {
-      if (cricketHowToPlayModal && !cricketHowToPlayModal.classList.contains('hidden')) {
+      if (cricketTeamSelectModal && !cricketTeamSelectModal.classList.contains('hidden')) {
+        e.preventDefault();
+        startMatchWithSelectedTeams();
+      } else if (cricketHowToPlayModal && !cricketHowToPlayModal.classList.contains('hidden')) {
         cricketHowToPlayModal.classList.add('hidden');
         e.preventDefault();
         showCricketMessage("Press ENTER to start the match! 🏏", "warning");

@@ -126,8 +126,27 @@ body::after {
   box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), var(--launcher-glow);
   text-align: center;
   backdrop-filter: blur(20px);
-  transition: all 0.4s ease;
   animation: floatIn 0.8s ease-out;
+}
+
+.logo-wrapper {
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.main-menu-logo {
+  width: 140px;
+  height: 140px;
+  filter: drop-shadow(0 8px 24px rgba(99, 102, 241, 0.45));
+  animation: logoFloat 4s ease-in-out infinite;
+  border-radius: 32px;
+}
+
+@keyframes logoFloat {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-10px) scale(1.03); filter: drop-shadow(0 15px 30px rgba(99, 102, 241, 0.6)); }
 }
 
 .menu-header h1 {
@@ -991,3 +1010,68 @@ body::after {
     gap: 20px;
   }
 }
+
+/* --- Cricket Commentary Styling --- */
+.cricket-commentary-box {
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  padding: 16px;
+  margin-top: 20px;
+  box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
+}
+
+.commentary-lines {
+  height: 100px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  scroll-behavior: smooth;
+  padding-right: 8px;
+}
+
+/* Custom Scrollbar */
+.commentary-lines::-webkit-scrollbar {
+  width: 6px;
+}
+.commentary-lines::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+.commentary-lines::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+.commentary-lines::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.commentary-line {
+  padding-bottom: 6px;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
+  line-height: 1.4;
+  animation: slideUp 0.2s ease-out;
+}
+
+.commentary-line.active {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.commentary-line.wicket {
+  color: #fca5a5;
+  border-left: 3px solid var(--error-color);
+  padding-left: 8px;
+}
+
+.commentary-line.boundary {
+  color: #6ee7b7;
+  border-left: 3px solid var(--success-color);
+  padding-left: 8px;
+}
+

@@ -17,7 +17,7 @@ function createWindow() {
     },
     autoHideMenuBar: true, // Hides the top menu for a clean look
     title: "DPR Mini Games",
-    icon: path.join(__dirname, '../public/vite.svg')
+    icon: path.join(__dirname, '../public/logo.svg')
   });
 
   // Depending on whether we are in dev mode or built mode

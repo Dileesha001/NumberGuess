@@ -344,6 +344,16 @@ const cricketCloseHelpBtn = document.getElementById('cricket-close-help-btn');
 let bowlingDirection = 1; // 1 = top-to-bottom, -1 = bottom-to-top
 let isAutoBowlingTimeout = null;
 
+// Bowling Physics & Styling
+let currentBallSpeedY = 4.5;
+let currentBallSpeedX = 0;
+let ballStyle = "Fast-medium";
+let ballSpeedKmh = 140;
+let hasBounced = false;
+let bouncePointY = 220;
+let spinBreakDirection = 1;
+let overBowlerStyle = null;
+
 // Wickets position
 const STUMPS_STRIKER = { x: 225, y: 315 };
 const STUMPS_NON_STRIKER = { x: 225, y: 135 };
@@ -427,20 +437,124 @@ function showCricketMessage(text, type) {
   }
 }
 
+/* Commentary Feed Helpers */
+function addCommentary(text, type = '') {
+  const container = document.getElementById('cricket-commentary-lines');
+  if (!container) return;
+  
+  const prevActive = container.querySelector('.commentary-line.active');
+  if (prevActive) {
+    prevActive.classList.remove('active');
+  }
+  
+  const line = document.createElement('div');
+  line.className = `commentary-line active ${type}`;
+  line.innerHTML = text;
+  container.appendChild(line);
+  
+  container.scrollTop = container.scrollHeight;
+}
+
+function getCommentaryBowled(speed, style) {
+  const msgs = [
+    `OUT! Clean bowled! Beaten by the pace @ ${speed.toFixed(1)} km/h. 🛑`,
+    `OUT! Bowled him! The ball spins right past the bat and clips the bails! 🛑`,
+    `OUT! Castled! Swing beats the outside edge and crashes into the middle stump! 🛑`
+  ];
+  return msgs[Math.floor(Math.random() * msgs.length)];
+}
+
+function getCommentaryDot(style) {
+  const msgs = [
+    `Dot ball. The batsman defends it forward.`,
+    `Good length delivery, batsman blocks it back carefully.`,
+    `Slightly wide, left alone to the keeper.`,
+    `Beaten by the ${style.toLowerCase()} movement.`
+  ];
+  return msgs[Math.floor(Math.random() * msgs.length)];
+}
+
+function getProceduralCommentary(outcome, speed, style) {
+  const catchMsgs = [
+    `In the air and CAUGHT! Excellent catch in the deep! 🛑`,
+    `WICKET! A lofted shot straight down the throat of the fielder! 🛑`,
+    `OUT! Plucked out of thin air by a diving cover fielder! 🛑`
+  ];
+  
+  const runoutMsgs = [
+    `WICKET! Direct hit! The batsman is short of the crease. Brilliant fielding! 🛑`,
+    `OUT! Brilliant throw to the stumps, batsman run out by a fraction of an inch! 🛑`
+  ];
+  
+  const runMsgs = {
+    1: [
+      `Flicked away for a quick single.`,
+      `Pushed into the gap for a single.`,
+      `Guided down to third man for one run.`,
+      `Smart running! They steal a single.`
+    ],
+    2: [
+      `Driven through covers, they run hard for two!`,
+      `Shot played into the outfield, easy double taken.`,
+      `Tucked away to fine leg, excellent running to get two runs.`
+    ],
+    3: [
+      `Superb cover drive! Sweeper chases it down, they complete three runs.`,
+      `Whipped off the pads! Great effort by the boundary fielder, but they get three.`
+    ]
+  };
+  
+  const fourMsgs = [
+    `FOUR! Cracked through the covers! Beautiful shot. 🏏`,
+    `FOUR! Edged and past the slips to the boundary rope! 🏏`,
+    `FOUR! Pulled away behind square, runs away to the fence! 🏏`,
+    `FOUR! Shot of the day! Perfectly timed bounce and over the rope. 🏏`
+  ];
+  
+  const sixMsgs = [
+    `SIX! Smashed high and deep! Out of the ground! 💥`,
+    `SIX! Picked up effortlessly and sailed over the mid-wicket boundary! 💥`,
+    `SIX! Monumental strike! The crowd is going wild! 💥`
+  ];
+
+  if (outcome === 'W_BOWLED') return getCommentaryBowled(speed, style);
+  if (outcome === 'W_CAUGHT') return catchMsgs[Math.floor(Math.random() * catchMsgs.length)];
+  if (outcome === 'W_RUNOUT') return runoutMsgs[Math.floor(Math.random() * runoutMsgs.length)];
+  if (outcome === 0 || outcome === '0') return getCommentaryDot(style);
+  if (outcome === 4) return fourMsgs[Math.floor(Math.random() * fourMsgs.length)];
+  if (outcome === 6) return sixMsgs[Math.floor(Math.random() * sixMsgs.length)];
+  
+  if (runMsgs[outcome]) {
+    const list = runMsgs[outcome];
+    return list[Math.floor(Math.random() * list.length)];
+  }
+  
+  return `Runs scored: ${outcome}.`;
+}
+
 function generateBowlingSpeed() {
   const speedVal = document.getElementById('cricket-speed-val');
   if (!speedVal) return;
-  const isSpin = Math.random() < 0.35;
-  let speed = 0;
-  let style = "";
-  if (isSpin) {
-    speed = (85 + Math.random() * 20).toFixed(1);
-    style = "Off-spin";
-  } else {
-    speed = (130 + Math.random() * 22).toFixed(1);
-    style = "Fast-medium";
+  
+  if (!overBowlerStyle) {
+    overBowlerStyle = Math.random() < 0.5 ? "Off-spin" : "Fast-medium";
   }
-  speedVal.innerHTML = `${style} @ <span class="highlight">${speed} km/h</span>`;
+  ballStyle = overBowlerStyle;
+  
+  if (ballStyle === "Off-spin") {
+    ballSpeedKmh = 85 + Math.random() * 20;
+    currentBallSpeedY = 3.2 + ((ballSpeedKmh - 85) / 20) * 0.6;
+    spinBreakDirection = Math.random() < 0.5 ? 1 : -1;
+    currentBallSpeedX = -spinBreakDirection * (0.4 + Math.random() * 0.3); // drift wide
+  } else {
+    ballSpeedKmh = 130 + Math.random() * 22;
+    currentBallSpeedY = 5.4 + ((ballSpeedKmh - 130) / 22) * 1.0;
+    currentBallSpeedX = (Math.random() - 0.5) * 0.4; // slight initial angle
+  }
+  hasBounced = false;
+  bouncePointY = 190 + Math.random() * 50; // bounce point Y
+  
+  speedVal.innerHTML = `${ballStyle} @ <span class="highlight">${ballSpeedKmh.toFixed(1)} km/h</span>`;
 }
 
 function updateOverHistoryUI() {
@@ -512,6 +626,7 @@ function initCricket() {
   cricketState = { runs: 0, wickets: 0, balls_faced: 0, max_balls: isTestMatch ? Infinity : 12, game_over: false };
   bowlingDirection = 1;
   ballOutcomesHistory = [];
+  overBowlerStyle = null;
   
   if (isAutoBowlingTimeout) {
     clearTimeout(isAutoBowlingTimeout);
@@ -531,6 +646,11 @@ function initCricket() {
   cricketMessage.className = 'message-container hidden';
   cricketMessage.innerHTML = '';
   cricketRestartBtn.classList.add('hidden');
+  
+  const commentaryLines = document.getElementById('cricket-commentary-lines');
+  if (commentaryLines) {
+    commentaryLines.innerHTML = '<div class="commentary-line active">Welcome to the match! Press ENTER or click BOWL to start.</div>';
+  }
   
   const gameHeaderTitle = cricketGameView.querySelector('.game-header h1');
   const gameHeaderDesc = cricketGameView.querySelector('.game-header p');
@@ -645,16 +765,50 @@ function updateSVGDOM() {
     }
     ballEl.setAttribute('r', radius);
     ballEl.style.opacity = (ball.state === 'IDLE') ? '0' : '1';
+    ballEl.setAttribute('fill', isTestMatch ? '#be123c' : '#ffffff');
+  }
+
+  let strikerFill = '#3b82f6'; // default blue
+  let nonStrikerFill = '#60a5fa'; // default light blue
+  let bowlerFill = '#ef4444'; // default red
+  
+  if (isTestMatch) {
+    strikerFill = '#fafaf9'; // traditional cream/white
+    nonStrikerFill = '#fafaf9';
+    bowlerFill = '#fafaf9';
+  }
+  
+  if (batsmen.isRunning) {
+    // Batsman 1 safety check
+    let b1Safe = true;
+    if (batsmen.target1Y === 305) {
+      b1Safe = batsmen.batsman1Y >= 300;
+    } else {
+      b1Safe = batsmen.batsman1Y <= 150;
+    }
+    strikerFill = b1Safe ? '#10b981' : '#f59e0b'; // green if safe, orange if running
+    
+    // Batsman 2 safety check
+    let b2Safe = true;
+    if (batsmen.target2Y === 305) {
+      b2Safe = batsmen.batsman2Y >= 300;
+    } else {
+      b2Safe = batsmen.batsman2Y <= 150;
+    }
+    nonStrikerFill = b2Safe ? '#10b981' : '#f59e0b'; // green if safe, orange if running
   }
   
   if (strikerEl) {
     strikerEl.setAttribute('cy', batsmen.batsman1Y);
+    strikerEl.setAttribute('fill', strikerFill);
   }
   if (nonStrikerEl) {
     nonStrikerEl.setAttribute('cy', batsmen.batsman2Y);
+    nonStrikerEl.setAttribute('fill', nonStrikerFill);
   }
   if (bowlerEl) {
     bowlerEl.setAttribute('cy', (bowlingDirection === 1) ? 115 : 335);
+    bowlerEl.setAttribute('fill', bowlerFill);
   }
   
   if (batEl) {
@@ -716,12 +870,39 @@ function bowlBall() {
     isAutoBowlingTimeout = null;
   }
   
+  // Lock bowler style for the entire over (every 6 balls)
+  if (cricketState.balls_faced === 0 || cricketState.balls_faced % 6 === 0) {
+    overBowlerStyle = Math.random() < 0.5 ? "Off-spin" : "Fast-medium";
+  }
+  
   resetPlayState();
   
   gameState = 'BOWLING';
   ball.state = 'BOWLED';
   ball.x = 225;
   ball.y = (bowlingDirection === 1) ? 115 : 335;
+
+  // Visual sweet spot shifting in gauge
+  const sweetSpot = document.getElementById('timing-sweet-spot');
+  const earlyZone = document.getElementById('timing-early-zone');
+  const lateZone = document.getElementById('timing-late-zone');
+  const indicator = document.getElementById('timing-indicator');
+  
+  if (sweetSpot && earlyZone && lateZone) {
+    if (bowlingDirection === 1) {
+      sweetSpot.setAttribute('y', '190');
+      earlyZone.setAttribute('y', '170');
+      lateZone.setAttribute('y', '230');
+    } else {
+      sweetSpot.setAttribute('y', '20');
+      earlyZone.setAttribute('y', '60');
+      lateZone.setAttribute('y', '5');
+    }
+  }
+  if (indicator) {
+    indicator.style.opacity = '1';
+    indicator.setAttribute('cy', bowlingDirection === 1 ? '10' : '240');
+  }
   
   playSfx('bowl');
   generateBowlingSpeed();
@@ -733,27 +914,6 @@ function bowlBall() {
   
   gameLoopActive = true;
   gameLoopId = requestAnimationFrame(gameLoop);
-}
-
-function runLocalSimulationFallback() {
-  console.warn("Python execution failed or not available. Falling back to local JS simulation.");
-  const fakeOutcomes = [0, 1, 2, 4, 6, 'W'];
-  const fakeWeights = [20, 30, 20, 10, 10, 10];
-  const idx = rollWeighted(fakeWeights);
-  const resVal = fakeOutcomes[idx];
-  let fakeMsg = "";
-  let nextState = {...cricketState};
-  nextState.balls_faced++;
-  if (resVal === 'W') {
-    nextState.wickets++;
-    fakeMsg = "OUT! What a catch!";
-  } else {
-    nextState.runs += resVal;
-    fakeMsg = resVal === 0 ? "Dot ball." : resVal === 4 ? "FOUR!" : resVal === 6 ? "SIX!" : `You ran ${resVal}.`;
-  }
-  setTimeout(() => {
-    processHitResponse({ state: nextState, message: fakeMsg });
-  }, 200);
 }
 
 function attemptHit() {
@@ -769,12 +929,44 @@ function attemptHit() {
     cricketHitBtn.textContent = 'IN PLAY';
     
     gameLoopActive = false;
-    showCricketMessage("Timing: PERFECT! 💥", 'success');
-    playSfx('hit');
+    
+    // Hide the timing indicator gauge dot
+    const indicator = document.getElementById('timing-indicator');
+    if (indicator) {
+      indicator.style.opacity = '0';
+    }
+
+    // Precise skill-based timing zone calculation
+    const creasePoint = (bowlingDirection === 1) ? 305 : 145;
+    const diff = Math.abs(ball.y - creasePoint);
+    
+    let timingQuality = "POOR";
+    let timingMsg = "Timing: POOR! ❌";
+    let messageType = "error";
+    
+    if (diff <= 8) {
+      timingQuality = "PERFECT";
+      timingMsg = "Timing: PERFECT! 💥";
+      messageType = "success";
+    } else if (diff <= 16) {
+      timingQuality = "GOOD";
+      timingMsg = "Timing: GOOD! 🏏";
+      messageType = "success";
+    } else if (diff <= 24) {
+      timingQuality = "DECENT";
+      timingMsg = "Timing: DECENT! ⚾";
+      messageType = "warning";
+    }
+    
+    showCricketMessage(timingMsg, messageType);
+    playSfx(timingQuality === "POOR" ? 'fail' : 'hit');
     
     const speedVal = document.getElementById('cricket-speed-val');
     if (speedVal) {
-      speedVal.innerHTML += ` | Timing: <span style="color: var(--success-color); font-weight: bold;">PERFECT</span>`;
+      let color = timingQuality === "PERFECT" ? "var(--success-color)" : 
+                  timingQuality === "GOOD" ? "#60a5fa" : 
+                  timingQuality === "DECENT" ? "var(--warning-color)" : "var(--error-color)";
+      speedVal.innerHTML += ` | Timing: <span style="color: ${color}; font-weight: bold;">${timingQuality}</span>`;
     }
     
     const batEl = document.getElementById('cricket-bat');
@@ -782,60 +974,109 @@ function attemptHit() {
       batEl.style.transform = 'rotate(-75deg)';
     }
 
-    let scriptPath = '../cricket_logic.py';
-    if (pathModule && fsModule && processModule) {
-       const resourcesPath = processModule.resourcesPath || processModule.cwd();
-       const pathsToTry = [
-         pathModule.join(resourcesPath, 'cricket_logic.py'),
-         pathModule.join(processModule.cwd(), 'cricket_logic.py'),
-         pathModule.join(processModule.cwd(), '../cricket_logic.py')
-       ];
-       
-       for (const p of pathsToTry) {
-         if (fsModule.existsSync(p)) {
-           scriptPath = p;
-           break;
-         }
-       }
+    // Direct client-side physical outcome calculation (instant, lag-free)
+    let result = 0; // 0, 1, 2, 3, 4, 6, 'W'
+    let isWicket = false;
+    let runMessage = "";
+    
+    if (timingQuality === "PERFECT") {
+      const r = Math.random();
+      if (r < 0.40) {
+        result = 6;
+        runMessage = "SIX! Clear over the boundary ropes!";
+      } else if (r < 0.75) {
+        result = 4;
+        runMessage = "FOUR! Pierces the fielders beautifully!";
+      } else if (r < 0.90) {
+        result = 2;
+        runMessage = "Runs: 2. Played gently into the outfield.";
+      } else {
+        result = 1;
+        runMessage = "Runs: 1. Pushed to mid-off for a single.";
+      }
+    } 
+    else if (timingQuality === "GOOD") {
+      const r = Math.random();
+      if (r < 0.15) {
+        result = 4;
+        runMessage = "FOUR! Shouts of catch but it beats the fielder!";
+      } else if (r < 0.50) {
+        result = 2;
+        runMessage = "Runs: 2. Batsmen running hard.";
+      } else if (r < 0.85) {
+        result = 1;
+        runMessage = "Runs: 1. Played down the ground.";
+      } else {
+        result = 'W';
+        isWicket = true;
+        runMessage = "OUT! Sliced high and caught in the deep!";
+      }
+    } 
+    else if (timingQuality === "DECENT") {
+      const r = Math.random();
+      if (r < 0.10) {
+        result = 2;
+        runMessage = "Runs: 2. Misfield allows an extra single.";
+      } else if (r < 0.55) {
+        result = 1;
+        runMessage = "Runs: 1. Batsman turns it away for a single.";
+      } else if (r < 0.80) {
+        result = 0;
+        runMessage = "Dot ball. Clean stop by the cover fielder.";
+      } else {
+        result = 'W';
+        isWicket = true;
+        runMessage = "OUT! Leading edge, caught by the bowler!";
+      }
+    } 
+    else { // POOR
+      const r = Math.random();
+      if (r < 0.10) {
+        result = 1;
+        runMessage = "Runs: 1. Thick edge runs away.";
+      } else if (r < 0.65) {
+        result = 0;
+        runMessage = "Dot ball. Beaten completely by pace.";
+      } else {
+        result = 'W';
+        isWicket = true;
+        runMessage = "OUT! Played on! Dragged onto the stumps!";
+      }
     }
     
-    const stateStr = JSON.stringify(cricketState);
-    if (!execFile) {
-      runLocalSimulationFallback();
-      return;
+    // Build new state
+    let nextState = { ...cricketState };
+    if (!isTestMatch) {
+      nextState.balls_faced++;
+      if (isWicket) {
+        nextState.wickets++;
+      } else {
+        nextState.runs += result;
+      }
     }
     
-    const base64State = typeof btoa === 'function' ? btoa(stateStr) : Buffer.from(stateStr).toString('base64');
-    execFile('py', [scriptPath, '--action', 'hit', '--state', base64State], (error, stdout) => {
-      if (error) {
-        execFile('python', [scriptPath, '--action', 'hit', '--state', base64State], (err2, out2) => {
-          if (err2) {
-             console.error("Failed to run python or py launcher:", err2);
-             runLocalSimulationFallback();
-             return;
-          }
-          try {
-            processHitResponse(JSON.parse(out2.trim()));
-          } catch(e) {
-            console.error("Failed to parse python response:", e);
-            runLocalSimulationFallback();
-          }
-        });
-        return;
-      }
-      try {
-        processHitResponse(JSON.parse(stdout.trim()));
-      } catch(e) {
-        console.error("Failed to parse py response:", e);
-        runLocalSimulationFallback();
-      }
-    });
+    const outcomeRes = {
+      state: nextState,
+      message: runMessage,
+      result: result,
+      timing: timingQuality
+    };
+    
+    setTimeout(() => {
+      processHitResponse(outcomeRes);
+    }, 150);
   } else {
     gameState = 'PLAYING';
     cricketHitBtn.disabled = true;
     cricketHitBtn.style.opacity = '0.5';
     cricketHitBtn.textContent = 'IN PLAY';
     
+    // Hide the timing indicator gauge dot on miss
+    const indicator = document.getElementById('timing-indicator');
+    if (indicator) {
+      indicator.style.opacity = '0';
+    }
+
     let diff = (bowlingDirection === 1) ? (ball.y - 305) : (145 - ball.y);
     let timingMsg = diff < 0 ? "Timing: TOO EARLY! ❌" : "Timing: TOO LATE! ❌";
     showCricketMessage(timingMsg, 'error');
@@ -869,14 +1110,26 @@ function processHitResponse(res) {
   
   currentShotOutcome = res;
   const msg = res.message;
+  const result = res.result;
   
   ball.state = 'HIT';
   
   let angleDeg = (Math.random() - 0.5) * 130;
   let angleRad = (angleDeg * Math.PI) / 180;
   
+  // Custom commentary text output
+  let commentaryType = '';
+  if (result === 'W') commentaryType = 'wicket';
+  else if (result === 4 || result === 6) commentaryType = 'boundary';
+  
+  let finalOutcomeSymbol = result;
+  if (result === 'W') {
+    finalOutcomeSymbol = 'W_CAUGHT'; // for commentary selection
+  }
+  addCommentary(getProceduralCommentary(finalOutcomeSymbol, ballSpeedKmh, ballStyle), commentaryType);
+
   if (isTestMatch) {
-    if (msg.includes('SIX')) {
+    if (result === 6) {
       let speed = 6.8 + Math.random() * 1.2;
       ball.vx = Math.sin(angleRad) * speed;
       ball.vy = -bowlingDirection * Math.cos(angleRad) * speed;
@@ -888,7 +1141,7 @@ function processHitResponse(res) {
       batsmen.isRunning = false;
       batsmen.completedRuns = 0;
     } 
-    else if (msg.includes('FOUR')) {
+    else if (result === 4) {
       let speed = 5.2 + Math.random() * 0.8;
       ball.vx = Math.sin(angleRad) * speed;
       ball.vy = -bowlingDirection * Math.cos(angleRad) * speed;
@@ -897,13 +1150,12 @@ function processHitResponse(res) {
       batsmen.isRunning = false;
       batsmen.completedRuns = 0;
     }
-    else if (msg.includes('OUT')) {
+    else if (result === 'W') {
       let isCaught = Math.random() < 0.65;
       if (isCaught) {
         let targetFielder = fielders[1 + Math.floor(Math.random() * (fielders.length - 1))];
         let dx = targetFielder.x - ball.x;
         let dy = targetFielder.y - ball.y;
-        let dist = Math.sqrt(dx * dx + dy * dy);
         
         let flightFrames = 50;
         ball.vx = dx / flightFrames;
@@ -918,6 +1170,7 @@ function processHitResponse(res) {
         batsmen.isRunning = false;
         batsmen.completedRuns = 0;
       } else {
+        // Drop catch, play normal hit, they can run!
         let speed = 3.2;
         ball.vx = Math.sin(angleRad) * speed;
         ball.vy = -bowlingDirection * Math.cos(angleRad) * speed;
@@ -928,17 +1181,18 @@ function processHitResponse(res) {
         batsmen.isRunning = false;
         batsmen.completedRuns = 0;
         batsmen.speed = 2.45;
-        showCricketMessage("Hit! Press W to run, S to return.", 'success');
+        showCricketMessage("Dropped catch! Press W to run, S to return.", 'success');
+        addCommentary("Dropped catch! The fielder fumbles it in the field!");
       }
     }
     else {
-      let speed = msg.includes('Dot') ? 2.8 : 3.5;
+      let speed = result === 0 ? 2.8 : 3.5;
       let targetFielder = fielders[1 + Math.floor(Math.random() * (fielders.length - 1))];
       let dx = targetFielder.x - ball.x;
       let dy = targetFielder.y - ball.y;
       let dist = Math.sqrt(dx * dx + dy * dy);
       
-      if (msg.includes('Dot')) {
+      if (result === 0) {
         ball.vx = (dx / dist) * speed;
         ball.vy = (dy / dist) * speed;
       } else {
@@ -955,7 +1209,8 @@ function processHitResponse(res) {
       showCricketMessage("Hit! Press W to run, S to return.", 'success');
     }
   } else {
-    if (msg.includes('SIX')) {
+    // Limited overs Mini Cricket
+    if (result === 6) {
       let speed = 6.8 + Math.random() * 1.2;
       ball.vx = Math.sin(angleRad) * speed;
       ball.vy = -bowlingDirection * Math.cos(angleRad) * speed;
@@ -964,13 +1219,13 @@ function processHitResponse(res) {
       ball.loftProgress = 0;
       ball.maxLoftHeight = 35;
     } 
-    else if (msg.includes('FOUR')) {
+    else if (result === 4) {
       let speed = 5.2 + Math.random() * 0.8;
       ball.vx = Math.sin(angleRad) * speed;
       ball.vy = -bowlingDirection * Math.cos(angleRad) * speed;
       ball.loft = false;
     }
-    else if (msg.includes('Dot ball')) {
+    else if (result === 0) {
       let targetFielder = fielders[1 + Math.floor(Math.random() * (fielders.length - 1))];
       let dx = targetFielder.x - ball.x;
       let dy = targetFielder.y - ball.y;
@@ -983,13 +1238,12 @@ function processHitResponse(res) {
       
       selectActiveFielder();
     }
-    else if (msg.includes('OUT')) {
+    else if (result === 'W') {
       let isCaught = Math.random() < 0.65;
       if (isCaught) {
         let targetFielder = fielders[1 + Math.floor(Math.random() * (fielders.length - 1))];
         let dx = targetFielder.x - ball.x;
         let dy = targetFielder.y - ball.y;
-        let dist = Math.sqrt(dx * dx + dy * dy);
         
         let flightFrames = 50;
         ball.vx = dx / flightFrames;
@@ -1016,10 +1270,7 @@ function processHitResponse(res) {
         batsmen.target2Y = (batsmen.batsman2Y === 305) ? 145 : 305;
       }
     }
-    else if (msg.includes('You ran')) {
-      let runMatch = msg.match(/\d+/);
-      let targetRuns = runMatch ? parseInt(runMatch[0], 10) : 1;
-      
+    else { // run runs
       let speed = 3.5;
       ball.vx = Math.sin(angleRad) * speed;
       ball.vy = -bowlingDirection * Math.cos(angleRad) * speed;
@@ -1030,7 +1281,7 @@ function processHitResponse(res) {
       batsmen.isRunning = true;
       batsmen.speed = 2.45;
       batsmen.completedRuns = 0;
-      batsmen.targetRuns = targetRuns;
+      batsmen.targetRuns = result;
       batsmen.target1Y = (batsmen.batsman1Y === 305) ? 145 : 305;
       batsmen.target2Y = (batsmen.batsman2Y === 305) ? 145 : 305;
     }
@@ -1056,24 +1307,78 @@ function selectActiveFielder() {
   }
 }
 
+function triggerFloatingRuns(runCount) {
+  const floatingText = document.getElementById('runs-completed-text');
+  if (floatingText) {
+    floatingText.textContent = `+${runCount} Run${runCount > 1 ? 's' : ''}`;
+    floatingText.style.opacity = '1';
+    floatingText.setAttribute('y', '240');
+    
+    let opacity = 1.0;
+    let textY = 240;
+    let animId = setInterval(() => {
+      textY -= 1.5;
+      opacity -= 0.05;
+      floatingText.setAttribute('y', textY);
+      floatingText.style.opacity = opacity;
+      if (opacity <= 0) {
+        clearInterval(animId);
+        floatingText.style.opacity = '0';
+      }
+    }, 30);
+  }
+}
+
 function gameLoop() {
   if (!gameLoopActive) return;
 
   if (ball.state === 'BOWLED') {
     if (bowlingDirection === 1) {
-      ball.y += 4.5;
+      ball.y += currentBallSpeedY;
+      
+      // Dynamic swing/spin physics
+      if (ballStyle === "Off-spin") {
+        if (!hasBounced && ball.y >= bouncePointY) {
+          hasBounced = true;
+          currentBallSpeedX = spinBreakDirection * (0.8 + Math.random() * 0.6);
+          playSfx('click'); // bounce sound
+        }
+      } else {
+        currentBallSpeedX += Math.sin(ball.y / 25) * 0.05;
+      }
+      ball.x += currentBallSpeedX;
+
       if (ball.y >= 315) {
         ball.y = 315;
         ball.state = 'DEAD';
         handleMissOutcome();
       }
     } else {
-      ball.y -= 4.5;
+      ball.y -= currentBallSpeedY;
+      
+      if (ballStyle === "Off-spin") {
+        if (!hasBounced && ball.y <= bouncePointY) {
+          hasBounced = true;
+          currentBallSpeedX = spinBreakDirection * (0.8 + Math.random() * 0.6);
+          playSfx('click'); // bounce sound
+        }
+      } else {
+        currentBallSpeedX += Math.sin((450 - ball.y) / 25) * 0.05;
+      }
+      ball.x += currentBallSpeedX;
+
       if (ball.y <= 135) {
         ball.y = 135;
         ball.state = 'DEAD';
         handleMissOutcome();
       }
+    }
+    
+    // Update timing indicator dot in SVG gauge
+    const indicator = document.getElementById('timing-indicator');
+    if (indicator) {
+      let gy = ((ball.y - 115) / 220) * 250;
+      indicator.setAttribute('cy', gy);
     }
   } else if (ball.state === 'HIT') {
     ball.x += ball.vx;
@@ -1180,6 +1485,7 @@ function gameLoop() {
           batsmen.start1Y = batsmen.target1Y;
           batsmen.start2Y = batsmen.target2Y;
           showCricketMessage(`Completed ${batsmen.completedRuns} run(s). Press W to run another or stay safe!`, 'success');
+          triggerFloatingRuns(batsmen.completedRuns);
         } else {
           showCricketMessage(`Returned to crease safely. Total runs: ${batsmen.completedRuns}`, 'warning');
         }
@@ -1187,6 +1493,7 @@ function gameLoop() {
         updateCricketUI();
       } else {
         batsmen.completedRuns++;
+        triggerFloatingRuns(batsmen.completedRuns);
         
         let temp = batsmen.target1Y;
         batsmen.target1Y = batsmen.target2Y;
@@ -1218,6 +1525,7 @@ function handleBoundary(runs) {
     showCricketMessage(currentShotOutcome.message, 'success');
   }
   ballOutcomesHistory.push(runs);
+  addCommentary(getProceduralCommentary(runs, ballSpeedKmh, ballStyle), 'boundary');
   triggerBoundaryFlash();
   playSfx('boundary');
   finishDelivery();
@@ -1233,6 +1541,7 @@ function handleCaughtOut() {
     showCricketMessage(currentShotOutcome.message, 'error');
   }
   ballOutcomesHistory.push('W');
+  addCommentary(getProceduralCommentary('W_CAUGHT', ballSpeedKmh, ballStyle), 'wicket');
   playSfx('out');
   finishDelivery();
 }
@@ -1244,9 +1553,11 @@ function handleSafeRunsTest() {
   
   if (batsmen.completedRuns === 0) {
     showCricketMessage("Dot ball.", 'warning');
+    addCommentary(getCommentaryDot(ballStyle), 'dot');
     playSfx('fail');
   } else {
     showCricketMessage(`Safe! You scored ${batsmen.completedRuns} run(s).`, 'success');
+    addCommentary(`Safe! The batsmen complete ${batsmen.completedRuns} run(s) with excellent running.`);
     playSfx('success');
   }
   finishDelivery();
@@ -1261,10 +1572,12 @@ function handleSafeRuns() {
     
     if (isDot) {
       lastOutcome = 0;
+      addCommentary(getCommentaryDot(ballStyle), 'dot');
       playSfx('fail');
     } else {
       let runMatch = currentShotOutcome.message.match(/\d+/);
       lastOutcome = runMatch ? parseInt(runMatch[0], 10) : 1;
+      addCommentary(getProceduralCommentary(lastOutcome, ballSpeedKmh, ballStyle));
       playSfx('success');
     }
   }
@@ -1299,6 +1612,7 @@ function checkRunOut() {
       cricketState.balls_faced++;
     }
     ballOutcomesHistory.push('W');
+    addCommentary(getProceduralCommentary('W_RUNOUT', ballSpeedKmh, ballStyle), 'wicket');
     playSfx('out');
     finishDelivery();
   } else {
@@ -1314,17 +1628,22 @@ function handleMissOutcome() {
   gameLoopActive = false;
   if (gameLoopId) cancelAnimationFrame(gameLoopId);
   
-  let isBowled = Math.random() < 0.45;
+  // Fairer bowled penalty on miss: 15% for spin, 20% for fast
+  const bowledRate = (ballStyle === "Off-spin") ? 0.15 : 0.20;
+  let isBowled = Math.random() < bowledRate;
+  
   if (isBowled) {
     cricketState.wickets++;
     cricketState.balls_faced++;
     ballOutcomesHistory.push('W');
     showCricketMessage("OUT! Bowled! Clean bowled! 🛑", 'error');
+    addCommentary(getCommentaryBowled(ballSpeedKmh, ballStyle), 'wicket');
     playSfx('out');
   } else {
     cricketState.balls_faced++;
     ballOutcomesHistory.push(0);
     showCricketMessage("Dot ball. Good bowling.", 'warning');
+    addCommentary(getCommentaryDot(ballStyle), 'dot');
     playSfx('fail');
   }
   

@@ -66,13 +66,16 @@ A standalone desktop application featuring a main menu and multiple games (Numbe
   - Interactive UI with letter placeholders.
   - Dynamic SVG drawing for the hangman figure based on wrong guesses.
   - Win/Loss tracking and messages.
-- **Mini Cricket**:
-  - Top-down vector graphics SVG stadium that dynamically resizes to fit the viewport.
-  - Fully FSM-driven 11-member fielding AI with `IDLE`, `CHASING`, and `THROWING` states.
-  - Keyboard-driven controls: **Enter** to bowl/start and standard/Numpad **5** to bat.
+- **Mini Cricket & Cricket Test**:
+  - Top-down vector graphics SVG stadium with concentric spectator stands, advert boards, rough pitches, and corner floodlights.
+  - Fully FSM-driven 11-member fielding AI where **all fielders react dynamically** and run to back up if the ball comes near them (within 120px).
+  - Keyboard-driven controls: **Enter** to bowl/start, **5** key to bat, **W** to run manually, and **S** to turn back.
   - Over-by-over transition changing ends (reverses bowling direction and bat/crease locations every 6 balls).
-  - Real-time run/wicket tracking and run-out simulation.
-- **Modern UI**: Smooth animations, clean layouts, and interactive elements across all games.
+  - Real-time run/wicket tracking, cumulative bowler spell tracking, and run-out simulation.
+  - **Bowler Economy Rate (Econ)** tracked dynamically in the HUD and scorecards.
+  - **Dynamic Milestone Celebrations**: Golden TV-broadcast celebration banner flashes and custom golden commentary logs are created when a batsman scores a **Fifty (50)** or **Hundred (100)**, or when a **50/100 Partnership** is built.
+  - **Tabbed Post-Match Scorecard**: Shows separate scrollable panels for Batting Innings (listing all 11 players in order with Out, Not Out, and Did Not Bat statuses) and Bowling Performance (Overs, Runs, Wickets, and Econ).
+- **Modern UI**: Smooth glassmorphism styles, harmonic color palettes, micro-animations, and interactive elements across all games.
 
 ## Tech Stack
 

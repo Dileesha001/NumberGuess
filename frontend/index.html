@@ -189,6 +189,177 @@
           <button id="cricket-back-btn" class="back-btn">← Back to Menu</button>
         </div>
         <main class="game-container">
+          <!-- Team Selection Overlay Modal -->
+          <div id="cricket-team-select-modal" class="how-to-play-overlay hidden">
+            <div class="team-select-modal-box">
+              <!-- Header -->
+              <div class="team-modal-header">
+                <div class="team-modal-icon">🏏</div>
+                <h2 class="team-modal-title">Select Teams</h2>
+                <p class="team-modal-subtitle">Choose your batting team and the bowling opponent</p>
+              </div>
+
+              <!-- Batting Team Dropdown -->
+              <div class="team-dropdown-group">
+                <label class="team-dropdown-label">
+                  <span class="team-dropdown-label-badge batting">BAT</span>
+                  Your Batting Team
+                </label>
+                <div class="team-custom-select" id="user-team-dropdown" data-select="cricket-user-team">
+                  <div class="team-select-trigger" id="user-team-trigger">
+                    <span class="select-flag" id="user-select-flag">🇦🇺</span>
+                    <span class="select-name" id="user-select-name">Australia</span>
+                    <span class="select-arrow">▾</span>
+                  </div>
+                  <div class="team-select-dropdown" id="user-team-options">
+                    <div class="team-select-option" data-value="IND" data-flag="🇮🇳" data-name="India">
+                      <span class="opt-flag">🇮🇳</span>
+                      <div class="opt-info">
+                        <span class="opt-name">India</span>
+                        <span class="opt-code">IND</span>
+                      </div>
+                    </div>
+                    <div class="team-select-option selected" data-value="AUS" data-flag="🇦🇺" data-name="Australia">
+                      <span class="opt-flag">🇦🇺</span>
+                      <div class="opt-info">
+                        <span class="opt-name">Australia</span>
+                        <span class="opt-code">AUS</span>
+                      </div>
+                    </div>
+                    <div class="team-select-option" data-value="ENG" data-flag="🏴󠁧󠁢󠁥󠁮󠁧󠁿" data-name="England">
+                      <span class="opt-flag">🏴󠁧󠁢󠁥󠁮󠁧󠁿</span>
+                      <div class="opt-info">
+                        <span class="opt-name">England</span>
+                        <span class="opt-code">ENG</span>
+                      </div>
+                    </div>
+                    <div class="team-select-option" data-value="SL" data-flag="🇱🇰" data-name="Sri Lanka">
+                      <span class="opt-flag">🇱🇰</span>
+                      <div class="opt-info">
+                        <span class="opt-name">Sri Lanka</span>
+                        <span class="opt-code">SL</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- VS Divider -->
+              <div class="team-vs-row">
+                <div class="team-vs-line"></div>
+                <div class="team-vs-badge">VS</div>
+                <div class="team-vs-line"></div>
+              </div>
+
+              <!-- Bowling Team Dropdown -->
+              <div class="team-dropdown-group">
+                <label class="team-dropdown-label">
+                  <span class="team-dropdown-label-badge bowling">BOWL</span>
+                  Opponent Bowling Team
+                </label>
+                <div class="team-custom-select" id="opp-team-dropdown" data-select="cricket-opp-team">
+                  <div class="team-select-trigger" id="opp-team-trigger">
+                    <span class="select-flag" id="opp-select-flag">🇮🇳</span>
+                    <span class="select-name" id="opp-select-name">India</span>
+                    <span class="select-arrow">▾</span>
+                  </div>
+                  <div class="team-select-dropdown" id="opp-team-options">
+                    <div class="team-select-option selected" data-value="IND" data-flag="🇮🇳" data-name="India">
+                      <span class="opt-flag">🇮🇳</span>
+                      <div class="opt-info">
+                        <span class="opt-name">India</span>
+                        <span class="opt-code">IND</span>
+                      </div>
+                    </div>
+                    <div class="team-select-option" data-value="AUS" data-flag="🇦🇺" data-name="Australia">
+                      <span class="opt-flag">🇦🇺</span>
+                      <div class="opt-info">
+                        <span class="opt-name">Australia</span>
+                        <span class="opt-code">AUS</span>
+                      </div>
+                    </div>
+                    <div class="team-select-option" data-value="ENG" data-flag="🏴󠁧󠁢󠁥󠁮󠁧󠁿" data-name="England">
+                      <span class="opt-flag">🏴󠁧󠁢󠁥󠁮󠁧󠁿</span>
+                      <div class="opt-info">
+                        <span class="opt-name">England</span>
+                        <span class="opt-code">ENG</span>
+                      </div>
+                    </div>
+                    <div class="team-select-option" data-value="SL" data-flag="🇱🇰" data-name="Sri Lanka">
+                      <span class="opt-flag">🇱🇰</span>
+                      <div class="opt-info">
+                        <span class="opt-name">Sri Lanka</span>
+                        <span class="opt-code">SL</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Matchup Preview Strip -->
+              <div class="team-matchup-preview" id="team-matchup-preview">
+                <span id="matchup-bat-flag">🇦🇺</span>
+                <span id="matchup-bat-name">AUS</span>
+                <span class="matchup-vs">batting vs</span>
+                <span id="matchup-bowl-flag">🇮🇳</span>
+                <span id="matchup-bowl-name">IND</span>
+                <span class="matchup-vs">bowling</span>
+              </div>
+
+              <!-- Error message -->
+              <div id="team-select-error" class="team-select-error-msg hidden">
+                ⚠️ Batting and Bowling teams cannot be the same!
+              </div>
+
+              <!-- Hidden selects for JS compatibility -->
+              <select id="cricket-user-team" style="display:none;">
+                <option value="IND">India</option>
+                <option value="AUS" selected>Australia</option>
+                <option value="ENG">England</option>
+                <option value="SL">Sri Lanka</option>
+              </select>
+              <select id="cricket-opp-team" style="display:none;">
+                <option value="IND" selected>India</option>
+                <option value="AUS">Australia</option>
+                <option value="ENG">England</option>
+                <option value="SL">Sri Lanka</option>
+              </select>
+
+              <button id="cricket-start-match-btn" class="team-start-btn">Start Match 🏏</button>
+            </div>
+          </div>
+
+          <!-- Match Scorecard Overlay Modal -->
+          <div id="cricket-scorecard-modal" class="how-to-play-overlay hidden">
+            <div class="how-to-play-content" style="max-width: 600px; width: 92%; max-height: 90vh; overflow-y: auto;">
+              <h2 style="margin-bottom: 12px; background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">🏆 Match Scorecard</h2>
+              
+              <!-- Tab Navigation -->
+              <div class="scorecard-tabs">
+                <button id="scorecard-tab-batting" class="scorecard-tab-btn active">Batting Innings</button>
+                <button id="scorecard-tab-bowling" class="scorecard-tab-btn">Bowling Performance</button>
+              </div>
+
+              <!-- Batting Section -->
+              <div id="scorecard-section-batting" class="scorecard-section" style="margin-top: 15px; text-align: left;">
+                <h3 style="color: var(--accent-cricket); border-bottom: 2px solid var(--accent-cricket); padding-bottom: 4px; margin-bottom: 10px; font-size: 1.1rem;">Batting Innings</h3>
+                <div id="scorecard-batting-rows" style="display: flex; flex-direction: column; gap: 8px;">
+                  <!-- Batting rows generated dynamically -->
+                </div>
+              </div>
+              
+              <!-- Bowling Section -->
+              <div id="scorecard-section-bowling" class="scorecard-section hidden" style="margin-top: 15px; text-align: left;">
+                <h3 style="color: #a5b4fc; border-bottom: 2px solid #a5b4fc; padding-bottom: 4px; margin-bottom: 10px; font-size: 1.1rem;">Bowling Performance</h3>
+                <div id="scorecard-bowling-rows" style="display: flex; flex-direction: column; gap: 8px;">
+                  <!-- Bowling rows generated dynamically -->
+                </div>
+              </div>
+              
+              <button id="cricket-close-scorecard-btn" class="guess-btn" style="margin-top: 24px; width: 100%; cursor: pointer;">Close Scorecard 🏏</button>
+            </div>
+          </div>
+
           <!-- How to Play Overlay Modal -->
           <div id="cricket-how-to-play-modal" class="how-to-play-overlay hidden">
             <div class="how-to-play-content">
@@ -208,172 +379,283 @@
             <p>Score as many runs as possible in <span class="highlight">2 Overs (12 balls)</span>!</p>
           </header>
 
-          <div class="game-body">
-            <!-- Cricket Graphics -->
-            <div class="cricket-graphics" style="margin-bottom: 20px; text-align: center;">
-              <svg viewBox="0 0 480 450" id="cricket-svg">
-                <defs>
-                  <!-- Outfield grass radial pattern -->
-                  <radialGradient id="outfield-grad" cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stop-color="#15803d" />
-                    <stop offset="60%" stop-color="#166534" />
-                    <stop offset="100%" stop-color="#14532d" />
-                  </radialGradient>
+          <div class="game-body cricket-split-layout">
+            <!-- Left Panel: Ground & Graphics -->
+            <div class="cricket-left-panel">
+              <div class="cricket-graphics" style="width: 100%; text-align: center;">
+                <svg viewBox="-45 -30 540 510" id="cricket-svg">
+                  <defs>
+                    <!-- Outfield grass radial pattern -->
+                    <radialGradient id="outfield-grad" cx="50%" cy="50%" r="50%">
+                      <stop offset="0%" stop-color="#15803d" />
+                      <stop offset="60%" stop-color="#166534" />
+                      <stop offset="100%" stop-color="#14532d" />
+                    </radialGradient>
+                    
+                    <!-- Striped lawn pattern (vertical stripes) -->
+                    <pattern id="grass-stripes" width="40" height="450" patternUnits="userSpaceOnUse">
+                      <rect x="0" width="20" height="450" fill="#16a34a" opacity="0.1" />
+                      <rect x="20" width="20" height="450" fill="#15803d" opacity="0.15" />
+                    </pattern>
+
+                    <!-- Pitch texture gradient -->
+                    <linearGradient id="pitch-grad" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stop-color="#edd9b4" />
+                      <stop offset="10%" stop-color="#e2cca0" />
+                      <stop offset="50%" stop-color="#f0dfc1" />
+                      <stop offset="90%" stop-color="#e2cca0" />
+                      <stop offset="100%" stop-color="#edd9b4" />
+                    </linearGradient>
+
+                    <!-- Ball glow filter -->
+                    <filter id="ball-shadow" x="-30%" y="-30%" width="160%" height="160%">
+                      <feDropShadow dx="0" dy="3" stdDeviation="2" flood-color="#000000" flood-opacity="0.5"/>
+                    </filter>
+                  </defs>
+
+                  <!-- Stadium Seating Stands -->
+                  <circle cx="225" cy="225" r="226" fill="none" stroke="#0f172a" stroke-width="2" />
+                  <circle cx="225" cy="225" r="231" fill="none" stroke="#ef4444" stroke-width="6" stroke-dasharray="2 3" opacity="0.65" />
+                  <circle cx="225" cy="225" r="238" fill="none" stroke="#3b82f6" stroke-width="6" stroke-dasharray="3 3.5" opacity="0.65" />
+                  <circle cx="225" cy="225" r="245" fill="none" stroke="#eab308" stroke-width="6" stroke-dasharray="2 4" opacity="0.65" />
+                  <circle cx="225" cy="225" r="249" fill="none" stroke="#1e293b" stroke-width="2" />
+
+                  <!-- Boundary Advertising Boards -->
+                  <g id="ads-boards" opacity="0.75">
+                    <g transform="rotate(25, 225, 225)">
+                      <rect x="195" y="6" width="60" height="5.5" fill="#1e1b4b" rx="1.2" />
+                      <text x="225" y="10.5" font-family="sans-serif" font-size="4.2" fill="#818cf8" text-anchor="middle" font-weight="900">VITE BUILD</text>
+                    </g>
+                    <g transform="rotate(85, 225, 225)">
+                      <rect x="195" y="6" width="60" height="5.5" fill="#14532d" rx="1.2" />
+                      <text x="225" y="10.5" font-family="sans-serif" font-size="4.2" fill="#10b981" text-anchor="middle" font-weight="900">DPR MINI GAMES</text>
+                    </g>
+                    <g transform="rotate(145, 225, 225)">
+                      <rect x="195" y="6" width="60" height="5.5" fill="#451a03" rx="1.2" />
+                      <text x="225" y="10.5" font-family="sans-serif" font-size="4.2" fill="#fbbf24" text-anchor="middle" font-weight="900">KOOKABURRA</text>
+                    </g>
+                    <g transform="rotate(205, 225, 225)">
+                      <rect x="195" y="6" width="60" height="5.5" fill="#0f172a" rx="1.2" />
+                      <text x="225" y="10.5" font-family="sans-serif" font-size="4.2" fill="#f8fafc" text-anchor="middle" font-weight="900">CRICKET TEST</text>
+                    </g>
+                    <g transform="rotate(265, 225, 225)">
+                      <rect x="195" y="6" width="60" height="5.5" fill="#311042" rx="1.2" />
+                      <text x="225" y="10.5" font-family="sans-serif" font-size="4.2" fill="#e0aaff" text-anchor="middle" font-weight="900">ELECTRON</text>
+                    </g>
+                    <g transform="rotate(325, 225, 225)">
+                      <rect x="195" y="6" width="60" height="5.5" fill="#580816" rx="1.2" />
+                      <text x="225" y="10.5" font-family="sans-serif" font-size="4.2" fill="#fca5a5" text-anchor="middle" font-weight="900">MRF TYRES</text>
+                    </g>
+                  </g>
+
+                  <!-- Ground background -->
+                  <circle cx="225" cy="225" r="220" fill="url(#outfield-grad)" stroke="#14532d" stroke-width="4" />
+                  <circle cx="225" cy="225" r="220" fill="url(#grass-stripes)" />
                   
-                  <!-- Striped lawn pattern (vertical stripes) -->
-                  <pattern id="grass-stripes" width="40" height="450" patternUnits="userSpaceOnUse">
-                    <rect x="0" width="20" height="450" fill="#16a34a" opacity="0.1" />
-                    <rect x="20" width="20" height="450" fill="#15803d" opacity="0.15" />
-                  </pattern>
+                  <!-- Lawn cut pattern rings -->
+                  <circle cx="225" cy="225" r="180" fill="none" stroke="#22c55e" stroke-width="12" opacity="0.08" />
+                  <circle cx="225" cy="225" r="148" fill="none" stroke="#16a34a" stroke-width="12" opacity="0.08" />
+                  <circle cx="225" cy="225" r="110" fill="none" stroke="#22c55e" stroke-width="12" opacity="0.08" />
+                  <circle cx="225" cy="225" r="70" fill="none" stroke="#16a34a" stroke-width="12" opacity="0.08" />
 
-                  <!-- Pitch texture gradient -->
-                  <linearGradient id="pitch-grad" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stop-color="#edd9b4" />
-                    <stop offset="10%" stop-color="#e2cca0" />
-                    <stop offset="50%" stop-color="#f0dfc1" />
-                    <stop offset="90%" stop-color="#e2cca0" />
-                    <stop offset="100%" stop-color="#edd9b4" />
-                  </linearGradient>
+                  <!-- Inner circle (30-yard circle) -->
+                  <circle cx="225" cy="225" r="130" fill="none" stroke="#22c55e" stroke-width="2" stroke-dasharray="6 6" opacity="0.3" />
+                  
+                  <!-- Boundary Rope -->
+                  <circle cx="225" cy="225" r="212" fill="none" stroke="#f1f5f9" stroke-width="3" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));" />
+                  <circle cx="225" cy="225" r="212" fill="none" stroke="#ef4444" stroke-width="3" stroke-dasharray="10 10" opacity="0.5" />
 
-                  <!-- Ball glow filter -->
-                  <filter id="ball-shadow" x="-30%" y="-30%" width="160%" height="160%">
-                    <feDropShadow dx="0" dy="3" stdDeviation="2" flood-color="#000000" flood-opacity="0.5"/>
-                  </filter>
-                </defs>
+                  <!-- Pitch -->
+                  <rect x="205" y="115" width="40" height="220" fill="url(#pitch-grad)" rx="4" style="filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3));" />
+                  
+                  <!-- Pitch rough/bounce zone -->
+                  <ellipse cx="225" cy="220" rx="14" ry="7" fill="#d4b483" opacity="0.4" style="filter: blur(2px);" />
+                  <ellipse cx="225" cy="220" rx="10" ry="4" fill="#a07850" opacity="0.3" style="filter: blur(1px);" />
 
-                <!-- Ground background -->
-                <circle cx="225" cy="225" r="220" fill="url(#outfield-grad)" stroke="#14532d" stroke-width="4" />
-                <circle cx="225" cy="225" r="220" fill="url(#grass-stripes)" />
-                
-                <!-- Inner circle (30-yard circle) -->
-                <circle cx="225" cy="225" r="130" fill="none" stroke="#22c55e" stroke-width="2" stroke-dasharray="6 6" opacity="0.3" />
-                
-                <!-- Boundary Rope -->
-                <circle cx="225" cy="225" r="212" fill="none" stroke="#f1f5f9" stroke-width="3" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));" />
-                <circle cx="225" cy="225" r="212" fill="none" stroke="#ef4444" stroke-width="3" stroke-dasharray="10 10" opacity="0.5" />
+                  <!-- Crease safe zones shaded -->
+                  <rect x="205" y="115" width="40" height="35" fill="#f0dfc1" opacity="0.4" />
+                  <rect x="205" y="300" width="40" height="35" fill="#f0dfc1" opacity="0.4" />
+                  
+                  <line x1="195" y1="300" x2="255" y2="300" stroke="#ffffff" stroke-width="2.5" />
+                  <line x1="195" y1="150" x2="255" y2="150" stroke="#ffffff" stroke-width="2.5" />
+                  
+                  <!-- Crease wide marks (return creases) -->
+                  <line x1="195" y1="300" x2="195" y2="320" stroke="#ffffff" stroke-width="2" />
+                  <line x1="255" y1="300" x2="255" y2="320" stroke="#ffffff" stroke-width="2" />
+                  <line x1="195" y1="150" x2="195" y2="130" stroke="#ffffff" stroke-width="2" />
+                  <line x1="255" y1="150" x2="255" y2="130" stroke="#ffffff" stroke-width="2" />
 
-                <!-- Pitch -->
-                <rect x="205" y="115" width="40" height="220" fill="url(#pitch-grad)" rx="4" style="filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3));" />
-                
-                <!-- Crease safe zones shaded -->
-                <rect x="205" y="115" width="40" height="35" fill="#f0dfc1" opacity="0.4" />
-                <rect x="205" y="300" width="40" height="35" fill="#f0dfc1" opacity="0.4" />
-                
-                <line x1="195" y1="300" x2="255" y2="300" stroke="#ffffff" stroke-width="2.5" />
-                <line x1="195" y1="150" x2="255" y2="150" stroke="#ffffff" stroke-width="2.5" />
-                
-                <!-- Crease wide marks (return creases) -->
-                <line x1="195" y1="300" x2="195" y2="320" stroke="#ffffff" stroke-width="2" />
-                <line x1="255" y1="300" x2="255" y2="320" stroke="#ffffff" stroke-width="2" />
-                <line x1="195" y1="150" x2="195" y2="130" stroke="#ffffff" stroke-width="2" />
-                <line x1="255" y1="150" x2="255" y2="130" stroke="#ffffff" stroke-width="2" />
+                  <!-- Wickets Striker End (Bottom) -->
+                  <g id="stumps-striker">
+                    <!-- Base line -->
+                    <line x1="219" y1="315" x2="231" y2="315" stroke="#451a03" stroke-width="2"/>
+                    <!-- Stumps -->
+                    <rect x="219.5" y="312" width="2" height="6" fill="#b45309" rx="0.5" />
+                    <rect x="224" y="312" width="2" height="6" fill="#b45309" rx="0.5" />
+                    <rect x="228.5" y="312" width="2" height="6" fill="#b45309" rx="0.5" />
+                    <!-- Bails -->
+                    <rect x="218" y="311" width="14" height="1.5" fill="#dc2626" rx="0.3" id="bail-striker" />
+                  </g>
 
-                <!-- Wickets Striker End (Bottom) -->
-                <g id="stumps-striker">
-                  <!-- Base line -->
-                  <line x1="219" y1="315" x2="231" y2="315" stroke="#451a03" stroke-width="2"/>
-                  <!-- Stumps (drawn with small vertical paths for realism) -->
-                  <rect x="219.5" y="312" width="2" height="6" fill="#b45309" rx="0.5" />
-                  <rect x="224" y="312" width="2" height="6" fill="#b45309" rx="0.5" />
-                  <rect x="228.5" y="312" width="2" height="6" fill="#b45309" rx="0.5" />
-                  <!-- Bails (horizontal) -->
-                  <rect x="218" y="311" width="14" height="1.5" fill="#dc2626" rx="0.3" id="bail-striker" />
-                </g>
+                  <!-- Wickets Non-Striker End (Top) -->
+                  <g id="stumps-nonstriker">
+                    <line x1="219" y1="135" x2="231" y2="135" stroke="#451a03" stroke-width="2"/>
+                    <rect x="219.5" y="132" width="2" height="6" fill="#b45309" rx="0.5" />
+                    <rect x="224" y="132" width="2" height="6" fill="#b45309" rx="0.5" />
+                    <rect x="228.5" y="132" width="2" height="6" fill="#b45309" rx="0.5" />
+                    <rect x="218" y="131" width="14" height="1.5" fill="#dc2626" rx="0.3" id="bail-nonstriker" />
+                  </g>
 
-                <!-- Wickets Non-Striker End (Top) -->
-                <g id="stumps-nonstriker">
-                  <line x1="219" y1="135" x2="231" y2="135" stroke="#451a03" stroke-width="2"/>
-                  <rect x="219.5" y="132" width="2" height="6" fill="#b45309" rx="0.5" />
-                  <rect x="224" y="132" width="2" height="6" fill="#b45309" rx="0.5" />
-                  <rect x="228.5" y="132" width="2" height="6" fill="#b45309" rx="0.5" />
-                  <rect x="218" y="131" width="14" height="1.5" fill="#dc2626" rx="0.3" id="bail-nonstriker" />
-                </g>
+                  <!-- Running runs completed floating text overlay -->
+                  <text id="runs-completed-text" x="225" y="240" font-family="monospace" font-size="20" font-weight="900" fill="#fbbf24" text-anchor="middle" style="opacity: 0; filter: drop-shadow(0 2px 4px #000); pointer-events: none;">+1 Run</text>
 
-                <!-- Running runs completed floating text overlay -->
-                <text id="runs-completed-text" x="225" y="240" font-family="monospace" font-size="20" font-weight="900" fill="#fbbf24" text-anchor="middle" style="opacity: 0; filter: drop-shadow(0 2px 4px #000); pointer-events: none;">+1 Run</text>
+                  <!-- Ball -->
+                  <circle id="cricket-ball" cx="225" cy="135" r="5" fill="#ef4444" stroke="#ffffff" stroke-width="1.5" filter="url(#ball-shadow)" style="opacity: 0;"/>
+                  
+                  <!-- Bowler -->
+                  <circle id="cricket-bowler" cx="225" cy="115" r="8" fill="#ef4444" stroke="#ffffff" stroke-width="2" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));"/>
+                  
+                  <!-- Striker -->
+                  <circle id="cricket-striker" cx="225" cy="305" r="8" fill="#3b82f6" stroke="#ffffff" stroke-width="2" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));"/>
+                  <!-- Bat -->
+                  <line id="cricket-bat" x1="225" y1="305" x2="238" y2="292" stroke="#b45309" stroke-width="4.5" stroke-linecap="round" style="transform-origin: 225px 305px; transition: transform 0.1s ease; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));"/>
+                  
+                  <!-- Non Striker -->
+                  <circle id="cricket-nonstriker" cx="215" cy="145" r="8" fill="#60a5fa" stroke="#ffffff" stroke-width="2" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));"/>
+                  
+                  <!-- Fielders container -->
+                  <g id="cricket-fielders-group"></g>
 
-                <!-- Ball -->
-                <circle id="cricket-ball" cx="225" cy="135" r="5" fill="#ef4444" stroke="#ffffff" stroke-width="1.5" filter="url(#ball-shadow)" style="opacity: 0;"/>
-                
-                <!-- Bowler -->
-                <circle id="cricket-bowler" cx="225" cy="115" r="8" fill="#ef4444" stroke="#ffffff" stroke-width="2" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));"/>
-                
-                <!-- Striker -->
-                <circle id="cricket-striker" cx="225" cy="305" r="8" fill="#3b82f6" stroke="#ffffff" stroke-width="2" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));"/>
-                <!-- Bat -->
-                <line id="cricket-bat" x1="225" y1="305" x2="238" y2="292" stroke="#b45309" stroke-width="4.5" stroke-linecap="round" style="transform-origin: 225px 305px; transition: transform 0.1s ease; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));"/>
-                
-                <!-- Non Striker -->
-                <circle id="cricket-nonstriker" cx="215" cy="145" r="8" fill="#60a5fa" stroke="#ffffff" stroke-width="2" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));"/>
-                
-                <!-- Fielders container -->
-                <g id="cricket-fielders-group"></g>
+                  <!-- Stadium Corner Floodlights -->
+                  <g id="stadium-floodlights" opacity="0.95">
+                    <!-- Top-Left Tower -->
+                    <g transform="translate(-35, -25)">
+                      <line x1="0" y1="0" x2="25" y2="25" stroke="#475569" stroke-width="4.5" />
+                      <polygon points="12,12 32,12 22,32" fill="#334155" stroke="#1e293b" stroke-width="1" />
+                      <circle cx="22" cy="22" r="7" fill="#ffffff" style="filter: drop-shadow(0 0 10px #ffffff);" />
+                      <polygon points="22,22 130,320 320,130" fill="rgba(255, 255, 255, 0.04)" style="pointer-events: none;" />
+                    </g>
+                    <!-- Top-Right Tower -->
+                    <g transform="translate(485, -25)">
+                      <line x1="0" y1="0" x2="-25" y2="25" stroke="#475569" stroke-width="4.5" />
+                      <polygon points="-12,12 -32,12 -22,32" fill="#334155" stroke="#1e293b" stroke-width="1" />
+                      <circle cx="-22" cy="22" r="7" fill="#ffffff" style="filter: drop-shadow(0 0 10px #ffffff);" />
+                      <polygon points="-22,22 -130,320 -320,130" fill="rgba(255, 255, 255, 0.04)" style="pointer-events: none;" />
+                    </g>
+                    <!-- Bottom-Left Tower -->
+                    <g transform="translate(-35, 475)">
+                      <line x1="0" y1="0" x2="25" y2="-25" stroke="#475569" stroke-width="4.5" />
+                      <polygon points="12,-12 32,-12 22,-32" fill="#334155" stroke="#1e293b" stroke-width="1" />
+                      <circle cx="22" cy="-22" r="7" fill="#ffffff" style="filter: drop-shadow(0 0 10px #ffffff);" />
+                      <polygon points="22,-22 130,-320 320,-130" fill="rgba(255, 255, 255, 0.04)" style="pointer-events: none;" />
+                    </g>
+                    <!-- Bottom-Right Tower -->
+                    <g transform="translate(485, 475)">
+                      <line x1="0" y1="0" x2="-25" y2="-25" stroke="#475569" stroke-width="4.5" />
+                      <polygon points="-12,-12 -32,-12 -22,-32" fill="#334155" stroke="#1e293b" stroke-width="1" />
+                      <circle cx="-22" cy="-22" r="7" fill="#ffffff" style="filter: drop-shadow(0 0 10px #ffffff);" />
+                      <polygon points="-22,-22 -130,-320 -320,-130" fill="rgba(255, 255, 255, 0.04)" style="pointer-events: none;" />
+                    </g>
+                  </g>
 
-                <!-- Batting Timing Zone Helper Gauge (Positioned outside the circular ground) -->
-                <g id="timing-gauge" transform="translate(452, 100)" style="opacity: 0.95;">
-                  <!-- Background slot -->
-                  <rect x="0" y="0" width="14" height="250" fill="rgba(0,0,0,0.6)" rx="7" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" />
-                  <!-- Timing sweet spot marker (green) -->
-                  <rect id="timing-sweet-spot" x="0" y="190" width="14" height="40" fill="#10b981" rx="3" style="filter: drop-shadow(0 0 8px #10b981);" />
-                  <!-- Slightly early/late zones (orange) -->
-                  <rect id="timing-early-zone" x="0" y="170" width="14" height="20" fill="#f59e0b" rx="2" />
-                  <rect id="timing-late-zone" x="0" y="230" width="14" height="15" fill="#f59e0b" rx="2" />
-                  <!-- Moving indicator dot (tracks ball.y) -->
-                  <circle id="timing-indicator" cx="7" cy="10" r="6" fill="#ef4444" stroke="#ffffff" stroke-width="1.5" style="opacity: 0; filter: drop-shadow(0 0 5px #ef4444);" />
-                  <text x="7" y="-12" font-family="sans-serif" font-size="9" font-weight="900" fill="#fbbf24" text-anchor="middle" letter-spacing="1">SHOT</text>
-                  <text x="-8" y="213" font-family="sans-serif" font-size="9" font-weight="900" fill="#10b981" text-anchor="end">SWEET</text>
-                  <text x="7" y="272" font-family="sans-serif" font-size="9" font-weight="900" fill="#fbbf24" text-anchor="middle" letter-spacing="1">METER</text>
-                </g>
-              </svg>
-            </div>
-
-            <div class="cricket-scoreboard">
-              <div class="score-item">
-                <span class="score-label">Runs</span>
-                <span id="cricket-runs" class="score-value">0</span>
+                  <!-- Batting Timing Zone Helper Gauge -->
+                  <g id="timing-gauge" transform="translate(452, 100)" style="opacity: 0.95;">
+                    <!-- Background slot -->
+                    <rect x="0" y="0" width="14" height="250" fill="rgba(0,0,0,0.6)" rx="7" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" />
+                    <!-- Timing sweet spot marker (green) -->
+                    <rect id="timing-sweet-spot" x="0" y="190" width="14" height="40" fill="#10b981" rx="3" style="filter: drop-shadow(0 0 8px #10b981);" />
+                    <!-- Slightly early/late zones (orange) -->
+                    <rect id="timing-early-zone" x="0" y="170" width="14" height="20" fill="#f59e0b" rx="2" />
+                    <rect id="timing-late-zone" x="0" y="230" width="14" height="15" fill="#f59e0b" rx="2" />
+                    <!-- Moving indicator dot -->
+                    <circle id="timing-indicator" cx="7" cy="10" r="6" fill="#ef4444" stroke="#ffffff" stroke-width="1.5" style="opacity: 0; filter: drop-shadow(0 0 5px #ef4444);" />
+                    <text x="7" y="-12" font-family="sans-serif" font-size="9" font-weight="900" fill="#fbbf24" text-anchor="middle" letter-spacing="1">SHOT</text>
+                    <text x="-8" y="213" font-family="sans-serif" font-size="9" font-weight="900" fill="#10b981" text-anchor="end">SWEET</text>
+                    <text x="7" y="272" font-family="sans-serif" font-size="9" font-weight="900" fill="#fbbf24" text-anchor="middle" letter-spacing="1">METER</text>
+                  </g>
+                </svg>
               </div>
-              <div class="score-item">
-                <span class="score-label">Wickets</span>
-                <span id="cricket-wickets" class="score-value">0</span>
+              <!-- Milestone Celebration Banner -->
+              <div id="cricket-milestone-toast" class="milestone-toast"></div>
+            </div>
+
+            <!-- Right Panel: Scoreboard, Stats HUD, History, Commentary & Controls -->
+            <div class="cricket-right-panel">
+              <!-- Scorecard dashboard -->
+              <div class="cricket-scoreboard">
+                <div class="score-item">
+                  <span class="score-label">Runs</span>
+                  <span id="cricket-runs" class="score-value">0</span>
+                </div>
+                <div class="score-item">
+                  <span class="score-label">Wickets</span>
+                  <span id="cricket-wickets" class="score-value">0</span>
+                </div>
+                <div class="score-item">
+                  <span class="score-label">Balls</span>
+                  <span><span id="cricket-balls" class="score-value">0</span><span id="cricket-balls-limit"> / 12</span></span>
+                </div>
               </div>
-              <div class="score-item">
-                <span class="score-label">Balls</span>
-                <span><span id="cricket-balls" class="score-value">0</span><span id="cricket-balls-limit"> / 12</span></span>
+
+              <!-- Player scorecards HUD -->
+              <div class="cricket-players-stats">
+                <div class="player-stat-row active-batter" id="batter-striker-row">
+                  <span class="player-name" id="batter-striker-name">Virat*</span>
+                  <span class="player-runs" id="batter-striker-stats">0 (0)</span>
+                </div>
+                <div class="player-stat-row" id="batter-nonstriker-row">
+                  <span class="player-name" id="batter-nonstriker-name">Rohit</span>
+                  <span class="player-runs" id="batter-nonstriker-stats">0 (0)</span>
+                </div>
+                <div class="player-stat-row bowler-row">
+                  <span class="player-name" id="bowler-name">Bumrah</span>
+                  <span class="player-runs" id="bowler-stats">0.0 - 0 - 0 - 0</span>
+                </div>
+                <div class="player-stat-row partnership-row" style="color: #fda4af; border-top: 1px dashed rgba(255,255,255,0.1); margin-top: 4px; padding-top: 6px;">
+                  <span class="player-name">Partnership</span>
+                  <span class="player-runs" id="partnership-stats">0 runs</span>
+                </div>
               </div>
-            </div>
 
-            <div class="cricket-broadcast-strip">
-              <span>Delivery Details</span>
-              <span id="cricket-speed-val" class="broadcast-val">-</span>
-            </div>
-
-            <div class="over-history-container">
-              <div class="score-label" style="text-align: left; margin-bottom: 6px;">Over History</div>
-              <div id="cricket-over-balls" class="over-history-balls">
-                <!-- Ball circles will be generated here -->
+              <!-- Speed details -->
+              <div class="cricket-broadcast-strip">
+                <span>Delivery Details</span>
+                <span id="cricket-speed-val" class="broadcast-val">-</span>
               </div>
-            </div>
 
-            <div id="cricket-message" class="message-container hidden" style="margin-top: 20px;">
-              <!-- Messages will be injected here via JS -->
-            </div>
-
-            <!-- Commentary Feed -->
-            <div class="cricket-commentary-box">
-              <div class="score-label" style="text-align: left; margin-bottom: 8px;">Live Commentary</div>
-              <div id="cricket-commentary-lines" class="commentary-lines">
-                <div class="commentary-line active">Welcome to the match! Press ENTER or click BOWL to start.</div>
+              <!-- Over history -->
+              <div class="over-history-container">
+                <div class="score-label" style="text-align: left; margin-bottom: 6px;">Over History</div>
+                <div id="cricket-over-balls" class="over-history-balls">
+                  <!-- Ball circles will be generated here -->
+                </div>
               </div>
-            </div>
 
-            <div class="cricket-action-area" style="margin-top: 30px; text-align: center; display: none;">
-              <button id="cricket-hit-btn" class="guess-btn" style="font-size: 1.5rem; padding: 15px 40px; border-radius: 50px; background-color: var(--primary-color);">HIT 🏏</button>
+              <!-- Notification banners -->
+              <div id="cricket-message" class="message-container hidden" style="margin-top: 5px; margin-bottom: 5px;">
+                <!-- Messages will be injected here via JS -->
+              </div>
+
+              <!-- Live Commentary feed -->
+              <div class="cricket-commentary-box">
+                <div class="score-label" style="text-align: left; margin-bottom: 8px;">Live Commentary</div>
+                <div id="cricket-commentary-lines" class="commentary-lines">
+                  <div class="commentary-line active">Welcome to the match! Press ENTER or click BOWL to start.</div>
+                </div>
+              </div>
+
+              <!-- Action buttons & Controls -->
+              <div class="cricket-action-area" style="text-align: center; display: none;">
+                <button id="cricket-hit-btn" class="guess-btn" style="font-size: 1.5rem; padding: 15px 40px; border-radius: 50px; background-color: var(--primary-color);">HIT 🏏</button>
+              </div>
+
+              <!-- Restart/Play Again action button -->
+              <div style="text-align: center;">
+                <button id="cricket-restart-btn" class="restart-btn hidden" style="width: 100%; padding: 14px;">Play Again 🔄</button>
+              </div>
             </div>
           </div>
 
-          <div class="game-footer">
-            <button id="cricket-restart-btn" class="restart-btn hidden">Play Again</button>
-          </div>
         </main>
       </div>
     </div>

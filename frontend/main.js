@@ -201,6 +201,8 @@ function loadStats() {
     console.error("Failed to load stats from localStorage", e);
   }
   updateStatsUI();
+  // Initialize player career stats database
+  loadPlayerStatsDatabase();
 }
 
 function saveStats() {
@@ -210,6 +212,158 @@ function saveStats() {
     console.error("Failed to save stats to localStorage", e);
   }
   updateStatsUI();
+}
+
+// Player Career Stats Database Operations
+const DPR_PLAYER_STATS_KEY = 'dpr_cricket_player_stats';
+
+function normalizePlayerName(name) {
+  if (name === "Prabath Jayasuriya") return "P. Jayasuriya";
+  return name;
+}
+
+function loadPlayerStatsDatabase() {
+  let db = {};
+  try {
+    const stored = localStorage.getItem(DPR_PLAYER_STATS_KEY);
+    if (stored) {
+      db = JSON.parse(stored);
+    }
+  } catch (e) {
+    console.error("Failed to load player stats database", e);
+  }
+  
+  let updated = false;
+  const allNames = new Set();
+  
+  if (typeof PLAYER_ROLES !== 'undefined') {
+    Object.keys(PLAYER_ROLES).forEach(n => allNames.add(normalizePlayerName(n)));
+  }
+  
+  if (typeof SQUADS !== 'undefined') {
+    Object.values(SQUADS).forEach(team => {
+      team.batters.forEach(n => allNames.add(normalizePlayerName(n)));
+      team.bowlers.forEach(n => allNames.add(normalizePlayerName(n)));
+    });
+  }
+  
+  allNames.forEach(name => {
+    if (!db[name]) {
+      db[name] = {
+        name: name,
+        batting: {
+          runs: 0,
+          balls: 0,
+          innings: 0,
+          sixes: 0,
+          fours: 0,
+          fiftyCount: 0,
+          hundredCount: 0,
+          highestScore: 0,
+          highestScoreNotOut: false,
+          dismissals: 0
+        },
+        bowling: {
+          wickets: 0,
+          ballsBowled: 0,
+          runsConceded: 0,
+          innings: 0,
+          bestWickets: 0,
+          bestRuns: 0
+        }
+      };
+      updated = true;
+    }
+  });
+  
+  if (updated) {
+    savePlayerStatsDatabase(db);
+  }
+  
+  return db;
+}
+
+function savePlayerStatsDatabase(db) {
+  try {
+    localStorage.setItem(DPR_PLAYER_STATS_KEY, JSON.stringify(db));
+  } catch (e) {
+    console.error("Failed to save player stats database", e);
+  }
+}
+
+function recordMatchStats() {
+  const db = loadPlayerStatsDatabase();
+  
+  // 1. Gather batting performances
+  let tempBattingScorecard = [];
+  battersList.forEach(name => {
+    let histEntry = battingScorecardHistory.find(b => b.name === name);
+    if (histEntry) {
+      tempBattingScorecard.push(histEntry);
+    } else if (batter1 && batter1.name === name && batter1.name !== "No Batter") {
+      tempBattingScorecard.push({ name: batter1.name, runs: batter1.runs, balls: batter1.balls, status: "Not Out", fours: batter1.fours || 0, sixes: batter1.sixes || 0 });
+    } else if (batter2 && batter2.name === name && batter2.name !== "No Batter") {
+      tempBattingScorecard.push({ name: batter2.name, runs: batter2.runs, balls: batter2.balls, status: "Not Out", fours: batter2.fours || 0, sixes: batter2.sixes || 0 });
+    } else {
+      tempBattingScorecard.push({ name: name, runs: 0, balls: 0, status: "Did Not Bat", fours: 0, sixes: 0 });
+    }
+  });
+
+  // Update batting stats
+  tempBattingScorecard.forEach(b => {
+    if (b.status === "Out" || b.status === "Not Out") {
+      const normName = normalizePlayerName(b.name);
+      if (db[normName]) {
+        const batting = db[normName].batting;
+        batting.innings++;
+        batting.runs += b.runs;
+        batting.balls += b.balls;
+        batting.fours += (b.fours || 0);
+        batting.sixes += (b.sixes || 0);
+        
+        if (b.runs >= 100) {
+          batting.hundredCount++;
+        } else if (b.runs >= 50) {
+          batting.fiftyCount++;
+        }
+        
+        if (b.runs > batting.highestScore) {
+          batting.highestScore = b.runs;
+          batting.highestScoreNotOut = (b.status === "Not Out");
+        } else if (b.runs === batting.highestScore && b.status === "Not Out" && !batting.highestScoreNotOut) {
+          batting.highestScoreNotOut = true;
+        }
+        
+        if (b.status === "Out") {
+          batting.dismissals++;
+        }
+      }
+    }
+  });
+
+  // 2. Update bowling stats
+  bowlersList.forEach(name => {
+    let stats = bowlerStatsMap[name];
+    if (stats && stats.balls > 0) {
+      const normName = normalizePlayerName(name);
+      if (db[normName]) {
+        const bowling = db[normName].bowling;
+        const isFirstBowlingInnings = (bowling.ballsBowled === 0);
+        
+        bowling.innings++;
+        bowling.wickets += stats.wickets;
+        bowling.ballsBowled += stats.balls;
+        bowling.runsConceded += stats.runs;
+        
+        if (isFirstBowlingInnings || stats.wickets > bowling.bestWickets || (stats.wickets === bowling.bestWickets && stats.runs < bowling.bestRuns)) {
+          bowling.bestWickets = stats.wickets;
+          bowling.bestRuns = stats.runs;
+        }
+      }
+    }
+  });
+
+  savePlayerStatsDatabase(db);
 }
 
 function updateStatsUI() {
@@ -352,6 +506,15 @@ const scorecardTabBowling = document.getElementById('scorecard-tab-bowling');
 const scorecardSectionBatting = document.getElementById('scorecard-section-batting');
 const scorecardSectionBowling = document.getElementById('scorecard-section-bowling');
 
+const cricketPlayingXiModal = document.getElementById('cricket-playing-xi-modal');
+const cricketPlayingXiContinueBtn = document.getElementById('cricket-playing-xi-continue-btn');
+const xiUserFlag = document.getElementById('xi-user-flag');
+const xiUserName = document.getElementById('xi-user-name');
+const xiUserList = document.getElementById('xi-user-list');
+const xiOppFlag = document.getElementById('xi-opp-flag');
+const xiOppName = document.getElementById('xi-opp-name');
+const xiOppList = document.getElementById('xi-opp-list');
+
 // Bowler types lookup table (Fast vs Spin)
 const BOWLER_TYPES = {
   "Jasprit Bumrah": "Fast", "Mohammed Siraj": "Fast", "R. Ashwin": "Spin", "Ravindra Jadeja": "Spin", "Akash Deep": "Fast",
@@ -377,6 +540,33 @@ const BOWLER_WEIGHTS = {
 };
 
 let isMilestoneCelebrating = false;
+
+// Player Roles & Team Flags for pre-match Playing XI presentation
+const TEAM_FLAGS = {
+  IND: "🇮🇳",
+  AUS: "🇦🇺",
+  ENG: "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
+  SL: "🇱🇰"
+};
+
+const PLAYER_ROLES = {
+  // India
+  "Rohit Sharma": "Batter", "Yashasvi Jaiswal": "Batter", "Shubman Gill": "Batter", "Virat Kohli": "Batter",
+  "Rishabh Pant": "Wicketkeeper", "KL Rahul": "Batter", "Ravindra Jadeja": "All-Rounder", "R. Ashwin": "All-Rounder",
+  "Jasprit Bumrah": "Bowler", "Mohammed Siraj": "Bowler", "Akash Deep": "Bowler",
+  // Australia
+  "Usman Khawaja": "Batter", "Steve Smith": "Batter", "M. Labuschagne": "Batter", "Travis Head": "Batter",
+  "Mitchell Marsh": "All-Rounder", "Alex Carey": "Wicketkeeper", "Pat Cummins": "Bowler", "Mitchell Starc": "Bowler",
+  "Nathan Lyon": "Bowler", "Josh Hazlewood": "Bowler", "Cameron Green": "All-Rounder",
+  // England
+  "Zak Crawley": "Batter", "Ben Duckett": "Batter", "Ollie Pope": "Batter", "Joe Root": "Batter",
+  "Harry Brook": "Batter", "Ben Stokes": "All-Rounder", "Jamie Smith": "Wicketkeeper", "Chris Woakes": "All-Rounder",
+  "Gus Atkinson": "Bowler", "Shoaib Bashir": "Bowler", "Mark Wood": "Bowler",
+  // Sri Lanka
+  "Pathum Nissanka": "Batter", "D. Karunaratne": "Batter", "Kusal Mendis": "Wicketkeeper", "Angelo Mathews": "All-Rounder",
+  "Dinesh Chandimal": "Batter", "D. de Silva": "All-Rounder", "Kamindu Mendis": "Batter", "P. Jayasuriya": "Bowler",
+  "Asitha Fernando": "Bowler", "Lahiru Kumara": "Bowler", "Vishwa Fernando": "Bowler"
+};
 
 // Squad declarations containing real players
 const SQUADS = {
@@ -734,6 +924,57 @@ function initCricket() {
   if (cricketScorecardModal) {
     cricketScorecardModal.classList.add('hidden');
   }
+  if (cricketPlayingXiModal) {
+    cricketPlayingXiModal.classList.add('hidden');
+  }
+}
+
+function isBeginningModalOpen() {
+  const teamSelectOpen = cricketTeamSelectModal && !cricketTeamSelectModal.classList.contains('hidden');
+  const playingXiOpen = cricketPlayingXiModal && !cricketPlayingXiModal.classList.contains('hidden');
+  const howToPlayOpen = cricketHowToPlayModal && !cricketHowToPlayModal.classList.contains('hidden');
+  return teamSelectOpen || playingXiOpen || howToPlayOpen;
+}
+
+function showPlayingXI() {
+  const userTeam = SQUADS[userTeamCode];
+  const oppTeam = SQUADS[oppTeamCode];
+
+  // Set headers
+  if (xiUserFlag) xiUserFlag.textContent = TEAM_FLAGS[userTeamCode] || "🇦🇺";
+  if (xiUserName) xiUserName.textContent = userTeam.name;
+  if (xiOppFlag) xiOppFlag.textContent = TEAM_FLAGS[oppTeamCode] || "🇮🇳";
+  if (xiOppName) xiOppName.textContent = oppTeam.name;
+
+  // Helper to build list HTML
+  const buildPlayerListHTML = (players) => {
+    return players.map((name, index) => {
+      const role = PLAYER_ROLES[name] || "Batter";
+      let roleClass = "batter";
+      if (role === "Bowler") roleClass = "bowler";
+      else if (role === "All-Rounder") roleClass = "all-rounder";
+      else if (role === "Wicketkeeper") roleClass = "wicketkeeper";
+
+      return `
+        <div class="playing-xi-row">
+          <div class="player-name-wrap">
+            <span class="player-number">${index + 1}</span>
+            <span class="player-name-text player-name-hoverable" data-player-name="${name}">${name}</span>
+          </div>
+          <span class="xi-role-badge ${roleClass}">${role}</span>
+        </div>
+      `;
+    }).join("");
+  };
+
+  // Populate lists
+  if (xiUserList) xiUserList.innerHTML = buildPlayerListHTML(userTeam.batters);
+  if (xiOppList) xiOppList.innerHTML = buildPlayerListHTML(oppTeam.batters);
+
+  // Show Playing XI Modal
+  if (cricketPlayingXiModal) {
+    cricketPlayingXiModal.classList.remove('hidden');
+  }
 }
 
 function updateTeamCardCrossHighlight() {
@@ -800,8 +1041,8 @@ function startMatchWithSelectedTeams() {
   battersList = [...SQUADS[userTeamCode].batters];
   bowlersList = [...SQUADS[oppTeamCode].bowlers];
 
-  batter1 = { name: battersList[0], runs: 0, balls: 0, hasCelebrated50: false, hasCelebrated100: false };
-  batter2 = { name: battersList[1], runs: 0, balls: 0, hasCelebrated50: false, hasCelebrated100: false };
+  batter1 = { name: battersList[0], runs: 0, balls: 0, fours: 0, sixes: 0, hasCelebrated50: false, hasCelebrated100: false };
+  batter2 = { name: battersList[1], runs: 0, balls: 0, fours: 0, sixes: 0, hasCelebrated50: false, hasCelebrated100: false };
   
   // Clear and initialize bowlerStatsMap
   bowlerStatsMap = {};
@@ -856,9 +1097,7 @@ function startMatchWithSelectedTeams() {
   
   updateHowToPlayModal();
   
-  if (cricketHowToPlayModal) {
-    cricketHowToPlayModal.classList.remove('hidden');
-  }
+  showPlayingXI();
 }
 
 function replaceOutBatter(batterNum) {
@@ -871,6 +1110,8 @@ function replaceOutBatter(batterNum) {
       name: outBatter.name,
       runs: outBatter.runs,
       balls: outBatter.balls,
+      fours: outBatter.fours || 0,
+      sixes: outBatter.sixes || 0,
       status: "Out"
     });
   }
@@ -884,15 +1125,15 @@ function replaceOutBatter(batterNum) {
     let newName = battersList[nextBatsmanIndex];
     nextBatsmanIndex++;
     if (batterNum === 1) {
-      batter1 = { name: newName, runs: 0, balls: 0, hasCelebrated50: false, hasCelebrated100: false };
+      batter1 = { name: newName, runs: 0, balls: 0, fours: 0, sixes: 0, hasCelebrated50: false, hasCelebrated100: false };
     } else {
-      batter2 = { name: newName, runs: 0, balls: 0, hasCelebrated50: false, hasCelebrated100: false };
+      batter2 = { name: newName, runs: 0, balls: 0, fours: 0, sixes: 0, hasCelebrated50: false, hasCelebrated100: false };
     }
   } else {
     if (batterNum === 1) {
-      batter1 = { name: "No Batter", runs: 0, balls: 0, hasCelebrated50: false, hasCelebrated100: false };
+      batter1 = { name: "No Batter", runs: 0, balls: 0, fours: 0, sixes: 0, hasCelebrated50: false, hasCelebrated100: false };
     } else {
-      batter2 = { name: "No Batter", runs: 0, balls: 0, hasCelebrated50: false, hasCelebrated100: false };
+      batter2 = { name: "No Batter", runs: 0, balls: 0, fours: 0, sixes: 0, hasCelebrated50: false, hasCelebrated100: false };
     }
   }
 }
@@ -931,7 +1172,7 @@ function showPostMatchScorecard() {
 
     battingHtml += `
       <div class="player-stat-row" style="padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between;">
-        <span style="font-weight: 600; color: var(--text-primary);">${b.name} <span style="font-size: 0.8rem; font-weight: normal; margin-left: 6px;">(${displayStatus})</span></span>
+        <span style="font-weight: 600; color: var(--text-primary);"><span class="player-name-hoverable" data-player-name="${b.name}">${b.name}</span> <span style="font-size: 0.8rem; font-weight: normal; margin-left: 6px;">(${displayStatus})</span></span>
         ${scoreDisplay}
       </div>
     `;
@@ -947,7 +1188,7 @@ function showPostMatchScorecard() {
       let econ = ((stats.runs * 6) / stats.balls).toFixed(2);
       bowlingHtml += `
         <div class="player-stat-row" style="padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between;">
-          <span style="font-weight: 600; color: #a5b4fc;">${name}</span>
+          <span style="font-weight: 600; color: #a5b4fc;"><span class="player-name-hoverable" data-player-name="${name}">${name}</span></span>
           <span class="player-runs" style="color: #a5b4fc;">Overs: ${overs} | Runs: ${stats.runs} | Wkts: ${stats.wickets} | Econ: ${econ}</span>
         </div>
       `;
@@ -1142,7 +1383,8 @@ function updateCricketUI() {
     cricketRuns.textContent = cricketState.runs;
   }
   cricketWickets.textContent = cricketState.wickets;
-  cricketBalls.textContent = cricketState.balls_faced;
+  const oversFaced = Math.floor(cricketState.balls_faced / 6) + '.' + (cricketState.balls_faced % 6);
+  cricketBalls.textContent = oversFaced;
 
   // Render Player scorecards HUD
   const strikerNameEl = document.getElementById('batter-striker-name');
@@ -1974,6 +2216,11 @@ function handleBoundary(runs) {
     let activeBatter = (strikerOnStrike === 1) ? batter1 : batter2;
     activeBatter.runs += runs;
     activeBatter.balls++;
+    if (runs === 4) {
+      activeBatter.fours = (activeBatter.fours || 0) + 1;
+    } else if (runs === 6) {
+      activeBatter.sixes = (activeBatter.sixes || 0) + 1;
+    }
     currentBowler.balls++;
     currentBowler.runs += runs;
     checkMilestonesAndPartnerships(runs);
@@ -2191,6 +2438,7 @@ function handleMissOutcome() {
 }
 
 function handleCricketHit() {
+  if (isBeginningModalOpen()) return;
   if (isMilestoneCelebrating) return;
   if (cricketState.game_over) return;
   if (gameState === 'IDLE') {
@@ -2199,6 +2447,7 @@ function handleCricketHit() {
     attemptHit();
   }
 }
+
 
 function finishDelivery() {
   gameLoopActive = false;
@@ -2237,6 +2486,7 @@ function finishDelivery() {
       }
     }
     saveStats();
+    recordMatchStats();
     showPostMatchScorecard();
   } else {
     if (isMilestoneCelebrating) {
@@ -2350,11 +2600,19 @@ function showMenu() {
     isAutoBowlingTimeout = null;
   }
   loadStats();
+  
+  // Exit fullscreen and reset body active class
+  document.body.classList.remove('test-match-active');
+  if (document.fullscreenElement) {
+    document.exitFullscreen().catch(err => console.warn(err));
+  }
+  
   mainMenu.classList.remove('hidden');
   numberGuessGame.classList.add('hidden');
   hangmanGameView.classList.add('hidden');
   if (cricketGameView) cricketGameView.classList.add('hidden');
   if (cricketScorecardModal) cricketScorecardModal.classList.add('hidden');
+  if (cricketPlayingXiModal) cricketPlayingXiModal.classList.add('hidden');
 }
 
 function showGame(gameId) {
@@ -2373,6 +2631,12 @@ function showGame(gameId) {
   hangmanGameView.classList.add('hidden');
   if (cricketGameView) cricketGameView.classList.add('hidden');
   
+  // Clean up fullscreen state before entering other games
+  document.body.classList.remove('test-match-active');
+  if (document.fullscreenElement) {
+    document.exitFullscreen().catch(err => console.warn(err));
+  }
+  
   if (gameId === 'number-guess') {
     numberGuessGame.classList.remove('hidden');
     initGame();
@@ -2385,6 +2649,10 @@ function showGame(gameId) {
     initCricket();
   } else if (gameId === 'cricket-test') {
     isTestMatch = true;
+    document.body.classList.add('test-match-active');
+    if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch(err => console.warn(err));
+    }
     cricketGameView.classList.remove('hidden');
     initCricket();
   }
@@ -2740,6 +3008,16 @@ if (cricketHitBtn) cricketHitBtn.addEventListener('click', handleCricketHit);
 if (cricketRestartBtn) cricketRestartBtn.addEventListener('click', initCricket);
 if (cricketBackBtn) cricketBackBtn.addEventListener('click', showMenu);
 if (cricketStartMatchBtn) cricketStartMatchBtn.addEventListener('click', startMatchWithSelectedTeams);
+if (cricketPlayingXiContinueBtn) {
+  cricketPlayingXiContinueBtn.addEventListener('click', () => {
+    if (cricketPlayingXiModal) {
+      cricketPlayingXiModal.classList.add('hidden');
+    }
+    if (cricketHowToPlayModal) {
+      cricketHowToPlayModal.classList.remove('hidden');
+    }
+  });
+}
 if (cricketCloseScorecardBtn) {
   cricketCloseScorecardBtn.addEventListener('click', () => {
     if (cricketScorecardModal) {
@@ -2852,6 +3130,12 @@ window.addEventListener('keydown', (e) => {
       if (cricketTeamSelectModal && !cricketTeamSelectModal.classList.contains('hidden')) {
         e.preventDefault();
         startMatchWithSelectedTeams();
+      } else if (cricketPlayingXiModal && !cricketPlayingXiModal.classList.contains('hidden')) {
+        e.preventDefault();
+        cricketPlayingXiModal.classList.add('hidden');
+        if (cricketHowToPlayModal) {
+          cricketHowToPlayModal.classList.remove('hidden');
+        }
       } else if (cricketHowToPlayModal && !cricketHowToPlayModal.classList.contains('hidden')) {
         cricketHowToPlayModal.classList.add('hidden');
         e.preventDefault();
@@ -2863,20 +3147,28 @@ window.addEventListener('keydown', (e) => {
         e.preventDefault();
         bowlBall();
       }
-    } else if (e.key === '5' || e.code === 'Numpad5' || e.key === 'Clear') {
-      if (gameState === 'BOWLING') {
-        e.preventDefault();
-        attemptHit();
+    } else {
+      if (isBeginningModalOpen()) {
+        if (e.key === '5' || e.code === 'Numpad5' || e.key === 'Clear' || e.key.toLowerCase() === 'w' || e.key.toLowerCase() === 's') {
+          e.preventDefault();
+        }
+        return;
       }
-    } else if (e.key.toLowerCase() === 'w') {
-      if (isTestMatch && gameState === 'PLAYING' && ball.state !== 'DEAD' && !cricketState.game_over) {
-        e.preventDefault();
-        startManualRun();
-      }
-    } else if (e.key.toLowerCase() === 's') {
-      if (isTestMatch && gameState === 'PLAYING' && ball.state !== 'DEAD' && !cricketState.game_over) {
-        e.preventDefault();
-        cancelManualRun();
+      if (e.key === '5' || e.code === 'Numpad5' || e.key === 'Clear') {
+        if (gameState === 'BOWLING') {
+          e.preventDefault();
+          attemptHit();
+        }
+      } else if (e.key.toLowerCase() === 'w') {
+        if (isTestMatch && gameState === 'PLAYING' && ball.state !== 'DEAD' && !cricketState.game_over) {
+          e.preventDefault();
+          startManualRun();
+        }
+      } else if (e.key.toLowerCase() === 's') {
+        if (isTestMatch && gameState === 'PLAYING' && ball.state !== 'DEAD' && !cricketState.game_over) {
+          e.preventDefault();
+          cancelManualRun();
+        }
       }
     }
   }
@@ -2922,3 +3214,169 @@ if (muteBtn) {
 }
 
 initGame();
+
+// Player Stats Hover Tooltip Logic
+function getPlayerTooltipHTML(name, stats) {
+  const normName = normalizePlayerName(name);
+  const role = PLAYER_ROLES[normName] || "Batter";
+  
+  // Dynamic batting calculations
+  const batting = stats.batting;
+  const batAvg = batting.dismissals > 0 ? (batting.runs / batting.dismissals).toFixed(2) : "-";
+  const batSR = batting.balls > 0 ? ((batting.runs / batting.balls) * 100).toFixed(2) : "0.00";
+  const highestScoreStr = batting.highestScore + (batting.highestScoreNotOut ? "*" : "");
+  
+  // Dynamic bowling calculations
+  const bowling = stats.bowling;
+  const bowlAvg = bowling.wickets > 0 ? (bowling.runsConceded / bowling.wickets).toFixed(2) : "-";
+  const bestFiguresStr = bowling.bestWickets > 0 || bowling.bestRuns > 0 ? `${bowling.bestWickets}/${bowling.bestRuns}` : "-";
+  
+  let roleClass = "batter";
+  if (role === "Bowler") roleClass = "bowler";
+  else if (role === "All-Rounder") roleClass = "all-rounder";
+  else if (role === "Wicketkeeper") roleClass = "wicketkeeper";
+  
+  let html = `
+    <div class="tooltip-header">
+      <div class="tooltip-player-name">
+        <span>${name}</span>
+        <span class="tooltip-player-role ${roleClass}">${role}</span>
+      </div>
+    </div>
+    <div class="tooltip-sections-container">
+  `;
+  
+  // If role is Batter, Wicketkeeper, All-Rounder or Bowler, show Batting Stats
+  if (role === "Batter" || role === "Wicketkeeper" || role === "All-Rounder" || role === "Bowler") {
+    html += `
+      <div>
+        <div class="tooltip-section-title">🏏 Batting Career</div>
+        <div class="tooltip-grid">
+          <div class="tooltip-stat-item">
+            <span class="tooltip-stat-label">Innings</span>
+            <span class="tooltip-stat-value">${batting.innings}</span>
+          </div>
+          <div class="tooltip-stat-item">
+            <span class="tooltip-stat-label">Runs</span>
+            <span class="tooltip-stat-value">${batting.runs}</span>
+          </div>
+          <div class="tooltip-stat-item">
+            <span class="tooltip-stat-label">Average</span>
+            <span class="tooltip-stat-value">${batAvg}</span>
+          </div>
+          <div class="tooltip-stat-item">
+            <span class="tooltip-stat-label">S/R</span>
+            <span class="tooltip-stat-value">${batSR}</span>
+          </div>
+          <div class="tooltip-stat-item">
+            <span class="tooltip-stat-label">Fours</span>
+            <span class="tooltip-stat-value">${batting.fours}</span>
+          </div>
+          <div class="tooltip-stat-item">
+            <span class="tooltip-stat-label">Sixes</span>
+            <span class="tooltip-stat-value">${batting.sixes}</span>
+          </div>
+          <div class="tooltip-stat-item">
+            <span class="tooltip-stat-label">50s/100s</span>
+            <span class="tooltip-stat-value">${batting.fiftyCount}/${batting.hundredCount}</span>
+          </div>
+          <div class="tooltip-stat-item">
+            <span class="tooltip-stat-label">Highest</span>
+            <span class="tooltip-stat-value">${highestScoreStr}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  // If role is Bowler or All-Rounder, show Bowling Stats
+  if (role === "Bowler" || role === "All-Rounder") {
+    html += `
+      <div>
+        <div class="tooltip-section-title">🔴 Bowling Career</div>
+        <div class="tooltip-grid">
+          <div class="tooltip-stat-item">
+            <span class="tooltip-stat-label">Innings</span>
+            <span class="tooltip-stat-value">${bowling.innings}</span>
+          </div>
+          <div class="tooltip-stat-item">
+            <span class="tooltip-stat-label">Wickets</span>
+            <span class="tooltip-stat-value">${bowling.wickets}</span>
+          </div>
+          <div class="tooltip-stat-item">
+            <span class="tooltip-stat-label">Balls</span>
+            <span class="tooltip-stat-value">${bowling.ballsBowled}</span>
+          </div>
+          <div class="tooltip-stat-item">
+            <span class="tooltip-stat-label">Average</span>
+            <span class="tooltip-stat-value">${bowlAvg}</span>
+          </div>
+          <div class="tooltip-stat-item">
+            <span class="tooltip-stat-label">Best</span>
+            <span class="tooltip-stat-value">${bestFiguresStr}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  html += `</div>`;
+  return html;
+}
+
+// Setup document-level event delegation for tooltip hover
+document.addEventListener('mouseover', (e) => {
+  const target = e.target.closest('.player-name-hoverable');
+  if (!target) return;
+  
+  const playerName = target.getAttribute('data-player-name');
+  if (!playerName) return;
+  
+  const db = loadPlayerStatsDatabase();
+  const normName = normalizePlayerName(playerName);
+  const stats = db[normName];
+  if (!stats) return;
+  
+  const tooltip = document.getElementById('player-stats-tooltip');
+  if (!tooltip) return;
+  
+  // Render html content
+  tooltip.innerHTML = getPlayerTooltipHTML(playerName, stats);
+  
+  // Position the tooltip
+  tooltip.classList.remove('hidden');
+  tooltip.style.visibility = 'hidden';
+  tooltip.style.display = 'block';
+  
+  const rect = target.getBoundingClientRect();
+  const tooltipHeight = tooltip.offsetHeight || 220;
+  
+  let x = rect.left + rect.width / 2 - 160; // 160 is half of 320px width
+  let y = rect.top - 10 - tooltipHeight;
+  
+  if (x < 10) x = 10;
+  if (x + 320 > window.innerWidth) x = window.innerWidth - 330;
+  
+  if (y < 10) {
+    // Show below the element instead
+    y = rect.bottom + 10;
+  }
+  
+  tooltip.style.left = `${x}px`;
+  tooltip.style.top = `${y}px`;
+  tooltip.style.visibility = 'visible';
+  tooltip.classList.add('visible');
+});
+
+document.addEventListener('mouseout', (e) => {
+  const target = e.target.closest('.player-name-hoverable');
+  if (!target) return;
+  
+  const tooltip = document.getElementById('player-stats-tooltip');
+  if (!tooltip) return;
+  
+  tooltip.classList.remove('visible');
+  tooltip.classList.add('hidden');
+  tooltip.style.left = '-9999px';
+  tooltip.style.top = '-9999px';
+});

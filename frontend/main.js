@@ -30,6 +30,7 @@ let gameStats = {
 // Sound State
 let isMuted = false;
 let audioCtx = null;
+let bowlNoiseBuffer = null;
 
 // Mini Cricket Over outcomes history
 let ballOutcomesHistory = [];
@@ -37,6 +38,18 @@ let ballOutcomesHistory = [];
 function initAudio() {
   if (!audioCtx) {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx && !bowlNoiseBuffer) {
+    try {
+      const bufferSize = audioCtx.sampleRate * 0.4;
+      bowlNoiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = bowlNoiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+    } catch (e) {
+      console.error("Failed to generate noise buffer", e);
+    }
   }
 }
 
@@ -67,14 +80,11 @@ function playSfx(type) {
         break;
       }
       case 'bowl': {
-        const bufferSize = audioCtx.sampleRate * 0.4;
-        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) {
-          data[i] = Math.random() * 2 - 1;
+        if (!bowlNoiseBuffer) {
+          initAudio();
         }
         const noise = audioCtx.createBufferSource();
-        noise.buffer = buffer;
+        noise.buffer = bowlNoiseBuffer;
         
         const filter = audioCtx.createBiquadFilter();
         filter.type = 'bandpass';
@@ -367,29 +377,24 @@ function recordMatchStats() {
 }
 
 function updateStatsUI() {
-  const guessVal = document.getElementById('stats-guess-val');
-  const hangmanVal = document.getElementById('stats-hangman-val');
-  const cricketVal = document.getElementById('stats-cricket-val');
-  const cricketTestVal = document.getElementById('stats-test-cricket-val');
-  
-  if (guessVal) {
-    guessVal.textContent = gameStats.numberGuess.bestScore !== null 
+  if (statsGuessValEl) {
+    statsGuessValEl.textContent = gameStats.numberGuess.bestScore !== null 
       ? `${gameStats.numberGuess.bestScore} att.` 
       : '-';
   }
-  if (hangmanVal) {
+  if (statsHangmanValEl) {
     const total = gameStats.hangman.wins + gameStats.hangman.losses;
-    hangmanVal.textContent = total > 0 
+    statsHangmanValEl.textContent = total > 0 
       ? `${gameStats.hangman.wins}W / ${gameStats.hangman.losses}L` 
       : '-';
   }
-  if (cricketVal) {
-    cricketVal.textContent = gameStats.cricket.highRun > 0 
+  if (statsCricketValEl) {
+    statsCricketValEl.textContent = gameStats.cricket.highRun > 0 
       ? `${gameStats.cricket.highRun} runs` 
       : '-';
   }
-  if (cricketTestVal) {
-    cricketTestVal.textContent = (gameStats.cricketTest && gameStats.cricketTest.highRun > 0)
+  if (statsTestCricketValEl) {
+    statsTestCricketValEl.textContent = (gameStats.cricketTest && gameStats.cricketTest.highRun > 0)
       ? `${gameStats.cricketTest.highRun} runs` 
       : '-';
   }
@@ -515,6 +520,39 @@ const xiOppFlag = document.getElementById('xi-opp-flag');
 const xiOppName = document.getElementById('xi-opp-name');
 const xiOppList = document.getElementById('xi-opp-list');
 
+// Cached Gameplay & Overlay Elements for Performance
+const ballEl = document.getElementById('cricket-ball');
+const strikerEl = document.getElementById('cricket-striker');
+const nonStrikerEl = document.getElementById('cricket-nonstriker');
+const bowlerEl = document.getElementById('cricket-bowler');
+const batEl = document.getElementById('cricket-bat');
+const fieldersGroupEl = document.getElementById('cricket-fielders-group');
+const runsCompletedTextEl = document.getElementById('runs-completed-text');
+const timingIndicatorEl = document.getElementById('timing-indicator');
+const timingSweetSpotEl = document.getElementById('timing-sweet-spot');
+const timingEarlyZoneEl = document.getElementById('timing-early-zone');
+const timingLateZoneEl = document.getElementById('timing-late-zone');
+const cricketSpeedValEl = document.getElementById('cricket-speed-val');
+const cricketOverBallsEl = document.getElementById('cricket-over-balls');
+const statsGuessValEl = document.getElementById('stats-guess-val');
+const statsHangmanValEl = document.getElementById('stats-hangman-val');
+const statsCricketValEl = document.getElementById('stats-cricket-val');
+const statsTestCricketValEl = document.getElementById('stats-test-cricket-val');
+const batterStrikerNameEl = document.getElementById('batter-striker-name');
+const batterStrikerStatsEl = document.getElementById('batter-striker-stats');
+const batterNonStrikerNameEl = document.getElementById('batter-nonstriker-name');
+const batterNonStrikerStatsEl = document.getElementById('batter-nonstriker-stats');
+const bowlerNameEl = document.getElementById('bowler-name');
+const bowlerStatsEl = document.getElementById('bowler-stats');
+const partnershipStatsEl = document.getElementById('partnership-stats');
+const cricketMilestoneToastEl = document.getElementById('cricket-milestone-toast');
+const scorecardBattingRowsEl = document.getElementById('scorecard-batting-rows');
+const scorecardBowlingRowsEl = document.getElementById('scorecard-bowling-rows');
+const teamSelectErrorEl = document.getElementById('team-select-error');
+const guessHistoryContainerEl = document.getElementById('guess-history-container');
+const guessHistoryChipsEl = document.getElementById('guess-history-chips');
+const cricketGameContainerEl = document.querySelector('#cricket-game .game-container');
+
 // Bowler types lookup table (Fast vs Spin)
 const BOWLER_TYPES = {
   "Jasprit Bumrah": "Fast", "Mohammed Siraj": "Fast", "R. Ashwin": "Spin", "Ravindra Jadeja": "Spin", "Akash Deep": "Fast",
@@ -612,6 +650,8 @@ let bowlerStatsMap = {}; // name -> { name, balls, runs, wickets }
 
 let bowlingDirection = 1; // 1 = top-to-bottom, -1 = bottom-to-top
 let isAutoBowlingTimeout = null;
+let isCricketPaused = false;
+let pausedAutoBowling = false;
 
 // Bowling Physics & Styling
 let currentBallSpeedY = 4.5;
@@ -827,8 +867,7 @@ function getProceduralCommentary(outcome, speed, style) {
 }
 
 function generateBowlingSpeed() {
-  const speedVal = document.getElementById('cricket-speed-val');
-  if (!speedVal) return;
+  if (!cricketSpeedValEl) return;
   
   if (!overBowlerStyle) {
     const bowlerType = BOWLER_TYPES[currentBowler.name] || "Fast";
@@ -849,13 +888,12 @@ function generateBowlingSpeed() {
   hasBounced = false;
   bouncePointY = 190 + Math.random() * 50; // bounce point Y
   
-  speedVal.innerHTML = `${ballStyle} @ <span class="highlight">${ballSpeedKmh.toFixed(1)} km/h</span>`;
+  cricketSpeedValEl.innerHTML = `${ballStyle} @ <span class="highlight">${ballSpeedKmh.toFixed(1)} km/h</span>`;
 }
 
 function updateOverHistoryUI() {
-  const container = document.getElementById('cricket-over-balls');
-  if (!container) return;
-  container.innerHTML = '';
+  if (!cricketOverBallsEl) return;
+  cricketOverBallsEl.innerHTML = '';
   
   const currentOverIndex = Math.floor(Math.max(0, cricketState.balls_faced - 1) / 6);
   const startIdx = currentOverIndex * 6;
@@ -877,18 +915,18 @@ function updateOverHistoryUI() {
     } else {
       chip.textContent = '-';
     }
-    container.appendChild(chip);
+    cricketOverBallsEl.appendChild(chip);
   }
 }
 
 function triggerBoundaryFlash() {
-  const container = document.querySelector('#cricket-game .game-container');
-  if (container) {
-    container.classList.remove('boundary-flash');
-    void container.offsetWidth;
-    container.classList.add('boundary-flash');
+  const targetContainer = cricketGameContainerEl || document.querySelector('#cricket-game .game-container');
+  if (targetContainer) {
+    targetContainer.classList.remove('boundary-flash');
+    void targetContainer.offsetWidth;
+    targetContainer.classList.add('boundary-flash');
     setTimeout(() => {
-      container.classList.remove('boundary-flash');
+      targetContainer.classList.remove('boundary-flash');
     }, 1500);
   }
 }
@@ -1056,6 +1094,13 @@ function startMatchWithSelectedTeams() {
   nextBatsmanIndex = 2;
   nextBowlerIndex = 1;
   strikerOnStrike = 1; // batter1 starts on strike
+  
+  isCricketPaused = false;
+  pausedAutoBowling = false;
+  const pauseModal = document.getElementById('cricket-pause-modal');
+  if (pauseModal) {
+    pauseModal.classList.add('hidden');
+  }
   
   if (isAutoBowlingTimeout) {
     clearTimeout(isAutoBowlingTimeout);
@@ -1510,38 +1555,52 @@ function updateSVGDOM() {
 }
 
 function drawFielders() {
-  const group = document.getElementById('cricket-fielders-group');
+  const group = fieldersGroupEl || document.getElementById('cricket-fielders-group');
   if (!group) return;
-  group.innerHTML = '';
-  fielders.forEach(f => {
-    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    circle.setAttribute('cx', f.x);
-    circle.setAttribute('cy', f.y);
-    circle.setAttribute('r', f.state === 'CHASING' ? '7' : '5.5');
-    
-    let fill = '#f59e0b';
-    if (f.state === 'CHASING') fill = '#eab308';
-    else if (f.state === 'THROWING') fill = '#3b82f6';
-    
-    circle.setAttribute('fill', fill);
-    circle.setAttribute('stroke', '#ffffff');
-    circle.setAttribute('stroke-width', '1.5');
-    group.appendChild(circle);
+  
+  const expectedChildCount = fielders.length * 2;
+  if (group.children.length !== expectedChildCount) {
+    group.innerHTML = '';
+    fielders.forEach((f, idx) => {
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('stroke', '#ffffff');
+      circle.setAttribute('stroke-width', '1.5');
+      group.appendChild(circle);
 
-    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    text.setAttribute('x', f.x);
-    text.setAttribute('y', f.y - 9);
-    text.setAttribute('text-anchor', 'middle');
-    text.setAttribute('fill', '#ffffff');
-    text.setAttribute('font-size', '8px');
-    text.setAttribute('font-family', 'sans-serif');
-    text.setAttribute('font-weight', '600');
+      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text.setAttribute('text-anchor', 'middle');
+      text.setAttribute('fill', '#ffffff');
+      text.setAttribute('font-size', '8px');
+      text.setAttribute('font-family', 'sans-serif');
+      text.setAttribute('font-weight', '600');
+      group.appendChild(text);
+    });
+  }
+
+  fielders.forEach((f, idx) => {
+    const circle = group.children[idx * 2];
+    const text = group.children[idx * 2 + 1];
     
-    let label = f.name;
-    if (f.state === 'CHASING') label += ' 🏃';
-    if (f.state === 'THROWING') label += ' 🎯';
-    text.textContent = label;
-    group.appendChild(text);
+    if (circle) {
+      circle.setAttribute('cx', f.x);
+      circle.setAttribute('cy', f.y);
+      circle.setAttribute('r', f.state === 'CHASING' ? '7' : '5.5');
+      
+      let fill = '#f59e0b';
+      if (f.state === 'CHASING') fill = '#eab308';
+      else if (f.state === 'THROWING') fill = '#3b82f6';
+      circle.setAttribute('fill', fill);
+    }
+    
+    if (text) {
+      text.setAttribute('x', f.x);
+      text.setAttribute('y', f.y - 9);
+      
+      let label = f.name;
+      if (f.state === 'CHASING') label += ' 🏃';
+      if (f.state === 'THROWING') label += ' 🎯';
+      text.textContent = label;
+    }
   });
 }
 
@@ -1990,24 +2049,12 @@ function selectActiveFielder() {
 }
 
 function triggerFloatingRuns(runCount) {
-  const floatingText = document.getElementById('runs-completed-text');
+  const floatingText = runsCompletedTextEl || document.getElementById('runs-completed-text');
   if (floatingText) {
     floatingText.textContent = `+${runCount} Run${runCount > 1 ? 's' : ''}`;
-    floatingText.style.opacity = '1';
-    floatingText.setAttribute('y', '240');
-    
-    let opacity = 1.0;
-    let textY = 240;
-    let animId = setInterval(() => {
-      textY -= 1.5;
-      opacity -= 0.05;
-      floatingText.setAttribute('y', textY);
-      floatingText.style.opacity = opacity;
-      if (opacity <= 0) {
-        clearInterval(animId);
-        floatingText.style.opacity = '0';
-      }
-    }, 30);
+    floatingText.classList.remove('float-runs-animation');
+    void floatingText.offsetWidth; // Force reflow to restart CSS animation
+    floatingText.classList.add('float-runs-animation');
   }
 }
 
@@ -2587,6 +2634,67 @@ function finishDelivery() {
   updateCricketUI();
 }
 
+function toggleCricketPause() {
+  if (cricketState.game_over) return;
+  if (isBeginningModalOpen()) return; // Don't pause if squad selection / playing XI is open
+  if (isMilestoneCelebrating) return; // Don't pause during milestone toasts
+
+  isCricketPaused = !isCricketPaused;
+  const pauseModal = document.getElementById('cricket-pause-modal');
+  
+  if (isCricketPaused) {
+    // PAUSING
+    // Stop the game loop
+    gameLoopActive = false;
+    if (gameLoopId) {
+      cancelAnimationFrame(gameLoopId);
+      gameLoopId = null;
+    }
+    
+    // Pause auto-bowling timeout if scheduled
+    if (isAutoBowlingTimeout) {
+      clearTimeout(isAutoBowlingTimeout);
+      isAutoBowlingTimeout = null;
+      pausedAutoBowling = true;
+    } else {
+      pausedAutoBowling = false;
+    }
+    
+    // Show overlay
+    if (pauseModal) {
+      pauseModal.classList.remove('hidden');
+    }
+    
+    // Play SFX click
+    playSfx('click');
+    showCricketMessage("Match Paused. Press 8 to Resume.", "warning");
+  } else {
+    // RESUMING
+    // Hide overlay
+    if (pauseModal) {
+      pauseModal.classList.add('hidden');
+    }
+    
+    // Play SFX click
+    playSfx('click');
+    showCricketMessage("Resuming match...", "success");
+    
+    // Restart game loop if needed
+    if (gameState === 'BOWLING' || gameState === 'PLAYING') {
+      gameLoopActive = true;
+      gameLoopId = requestAnimationFrame(gameLoop);
+    }
+    
+    // Resume auto-bowling if it was paused
+    if (pausedAutoBowling) {
+      const overEnd = cricketState.balls_faced > 0 && cricketState.balls_faced % 6 === 0;
+      isAutoBowlingTimeout = setTimeout(() => {
+        bowlBall();
+      }, overEnd ? 2500 : 2000);
+      showCricketMessage(overEnd ? "Over complete! Changing ends... next ball in 2.5s 🔄" : "Preparing next delivery... next ball in 2s ⚾", overEnd ? 'success' : 'warning');
+    }
+  }
+}
 
 // Navigation Logic
 function showMenu() {
@@ -2598,6 +2706,12 @@ function showMenu() {
   if (isAutoBowlingTimeout) {
     clearTimeout(isAutoBowlingTimeout);
     isAutoBowlingTimeout = null;
+  }
+  isCricketPaused = false;
+  pausedAutoBowling = false;
+  const pauseModal = document.getElementById('cricket-pause-modal');
+  if (pauseModal) {
+    pauseModal.classList.add('hidden');
   }
   loadStats();
   
@@ -3048,6 +3162,11 @@ if (cricketCloseHelpBtn) {
   });
 }
 
+const resumeBtn = document.getElementById('cricket-resume-btn');
+if (resumeBtn) {
+  resumeBtn.addEventListener('click', toggleCricketPause);
+}
+
 // ===== CUSTOM DROPDOWN TEAM SELECTION LOGIC =====
 function setupTeamDropdown(dropdownId, optionsId, selectId, flagId, nameId) {
   const container = document.getElementById(dropdownId);
@@ -3120,6 +3239,17 @@ updateTeamCardCrossHighlight();
 
 window.addEventListener('keydown', (e) => {
   if (cricketGameView && !cricketGameView.classList.contains('hidden')) {
+    if (e.key === '8') {
+      e.preventDefault();
+      toggleCricketPause();
+      return;
+    }
+    
+    if (isCricketPaused) {
+      e.preventDefault();
+      return;
+    }
+
     if (isMilestoneCelebrating) {
       if (e.key === 'Enter' || e.key === '5' || e.code === 'Numpad5' || e.key === 'Clear' || e.key.toLowerCase() === 'w' || e.key.toLowerCase() === 's') {
         e.preventDefault();

@@ -558,7 +558,13 @@ const BOWLER_TYPES = {
   "Jasprit Bumrah": "Fast", "Mohammed Siraj": "Fast", "R. Ashwin": "Spin", "Ravindra Jadeja": "Spin", "Akash Deep": "Fast",
   "Pat Cummins": "Fast", "Mitchell Starc": "Fast", "Josh Hazlewood": "Fast", "Nathan Lyon": "Spin", "Mitchell Marsh": "Fast", "Cameron Green": "Fast",
   "Chris Woakes": "Fast", "Gus Atkinson": "Fast", "Mark Wood": "Fast", "Shoaib Bashir": "Spin", "Ben Stokes": "Fast",
-  "Prabath Jayasuriya": "Spin", "Asitha Fernando": "Fast", "Lahiru Kumara": "Fast", "Vishwa Fernando": "Fast", "D. de Silva": "Spin", "Angelo Mathews": "Fast"
+  "Prabath Jayasuriya": "Spin", "Asitha Fernando": "Fast", "Lahiru Kumara": "Fast", "Vishwa Fernando": "Fast", "D. de Silva": "Spin", "Angelo Mathews": "Fast",
+  // New Zealand
+  "Tim Southee": "Fast", "Matt Henry": "Fast", "Kyle Jamieson": "Fast", "Mitchell Santner": "Spin", "Glenn Phillips": "Spin", "Rachin Ravindra": "Spin",
+  // South Africa
+  "Kagiso Rabada": "Fast", "Marco Jansen": "Fast", "Keshav Maharaj": "Spin", "Lungi Ngidi": "Fast", "Wiaan Mulder": "Fast",
+  // West Indies
+  "Kemar Roach": "Fast", "Alzarri Joseph": "Fast", "Jayden Seales": "Fast", "Gudakesh Motie": "Spin", "Jason Holder": "Fast"
 };
 
 // Global history array to store scores of dismissed batters
@@ -574,17 +580,48 @@ const BOWLER_WEIGHTS = {
   "Jasprit Bumrah": 4, "Mohammed Siraj": 4, "R. Ashwin": 4, "Ravindra Jadeja": 4, "Akash Deep": 3,
   "Pat Cummins": 4, "Mitchell Starc": 4, "Josh Hazlewood": 4, "Nathan Lyon": 4, "Mitchell Marsh": 2, "Cameron Green": 2,
   "Chris Woakes": 4, "Gus Atkinson": 4, "Mark Wood": 4, "Shoaib Bashir": 4, "Ben Stokes": 2,
-  "Prabath Jayasuriya": 4, "Asitha Fernando": 4, "Lahiru Kumara": 4, "Vishwa Fernando": 4, "D. de Silva": 2, "Angelo Mathews": 2
+  "Prabath Jayasuriya": 4, "Asitha Fernando": 4, "Lahiru Kumara": 4, "Vishwa Fernando": 4, "D. de Silva": 2, "Angelo Mathews": 2,
+  // New Zealand
+  "Tim Southee": 4, "Matt Henry": 4, "Kyle Jamieson": 4, "Mitchell Santner": 4, "Glenn Phillips": 2, "Rachin Ravindra": 2,
+  // South Africa
+  "Kagiso Rabada": 4, "Marco Jansen": 4, "Keshav Maharaj": 4, "Lungi Ngidi": 4, "Wiaan Mulder": 2,
+  // West Indies
+  "Kemar Roach": 4, "Alzarri Joseph": 4, "Jayden Seales": 4, "Gudakesh Motie": 4, "Jason Holder": 3
 };
 
 let isMilestoneCelebrating = false;
 
+function getTeamFlagHTML(teamCode, className = "country-flag-img") {
+  if (teamCode === "WI") {
+    return `<svg class="${className}" width="28" height="20" viewBox="0 0 28 20" style="display:inline-block; vertical-align:middle;">
+      <rect width="28" height="20" fill="#7B002C" rx="2" />
+      <circle cx="14" cy="11" r="5" fill="#FDB813" />
+      <ellipse cx="14" cy="16" rx="9" ry="3" fill="#D4AF37" />
+      <path d="M14,16 Q13,12 14,8" stroke="#8B5A2B" stroke-width="1.2" fill="none" />
+      <path d="M14,8 Q11,7 9,9 M14,8 Q12,5 11,3 M14,8 Q15,4 17,4 M14,8 Q16,6 18,8 M14,8 Q15,10 17,11" stroke="#228B22" stroke-width="1" fill="none" />
+    </svg>`;
+  }
+  const codes = {
+    IND: "in",
+    AUS: "au",
+    ENG: "gb-eng",
+    SL: "lk",
+    NZ: "nz",
+    SA: "za"
+  };
+  const code = codes[teamCode] || "un";
+  return `<img class="${className}" src="https://flagcdn.com/w40/${code}.png" alt="${teamCode}" style="display:inline-block; vertical-align:middle;">`;
+}
+
 // Player Roles & Team Flags for pre-match Playing XI presentation
 const TEAM_FLAGS = {
-  IND: "🇮🇳",
-  AUS: "🇦🇺",
-  ENG: "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
-  SL: "🇱🇰"
+  IND: getTeamFlagHTML("IND"),
+  AUS: getTeamFlagHTML("AUS"),
+  ENG: getTeamFlagHTML("ENG"),
+  SL: getTeamFlagHTML("SL"),
+  NZ: getTeamFlagHTML("NZ"),
+  SA: getTeamFlagHTML("SA"),
+  WI: getTeamFlagHTML("WI")
 };
 
 const PLAYER_ROLES = {
@@ -603,7 +640,19 @@ const PLAYER_ROLES = {
   // Sri Lanka
   "Pathum Nissanka": "Batter", "D. Karunaratne": "Batter", "Kusal Mendis": "Wicketkeeper", "Angelo Mathews": "All-Rounder",
   "Dinesh Chandimal": "Batter", "D. de Silva": "All-Rounder", "Kamindu Mendis": "Batter", "P. Jayasuriya": "Bowler",
-  "Asitha Fernando": "Bowler", "Lahiru Kumara": "Bowler", "Vishwa Fernando": "Bowler"
+  "Asitha Fernando": "Bowler", "Lahiru Kumara": "Bowler", "Vishwa Fernando": "Bowler",
+  // New Zealand
+  "Tom Latham": "Batter", "Devon Conway": "Batter", "Kane Williamson": "Batter", "Rachin Ravindra": "All-Rounder",
+  "Daryl Mitchell": "Batter", "Glenn Phillips": "All-Rounder", "Tom Blundell": "Wicketkeeper", "Mitchell Santner": "All-Rounder",
+  "Matt Henry": "Bowler", "Kyle Jamieson": "Bowler", "Tim Southee": "Bowler",
+  // South Africa
+  "Aiden Markram": "Batter", "Tony de Zorzi": "Batter", "Tristan Stubbs": "Batter", "Temba Bavuma": "Batter",
+  "David Bedingham": "Batter", "Kyle Verreynne": "Wicketkeeper", "Wiaan Mulder": "All-Rounder", "Marco Jansen": "All-Rounder",
+  "Keshav Maharaj": "Bowler", "Kagiso Rabada": "Bowler", "Lungi Ngidi": "Bowler",
+  // West Indies
+  "Kraigg Brathwaite": "Batter", "Mikyle Louis": "Batter", "Keacy Carty": "Batter", "Alick Athanaze": "Batter",
+  "Kavem Hodge": "Batter", "Joshua Da Silva": "Wicketkeeper", "Jason Holder": "All-Rounder", "Alzarri Joseph": "Bowler",
+  "Kemar Roach": "Bowler", "Jayden Seales": "Bowler", "Gudakesh Motie": "Bowler"
 };
 
 // Squad declarations containing real players
@@ -631,6 +680,24 @@ const SQUADS = {
     short: "SL",
     batters: ["Pathum Nissanka", "D. Karunaratne", "Kusal Mendis", "Angelo Mathews", "Dinesh Chandimal", "D. de Silva", "Kamindu Mendis", "P. Jayasuriya", "Asitha Fernando", "Lahiru Kumara", "Vishwa Fernando"],
     bowlers: ["Prabath Jayasuriya", "Asitha Fernando", "Lahiru Kumara", "Vishwa Fernando", "D. de Silva", "Angelo Mathews"]
+  },
+  NZ: {
+    name: "New Zealand",
+    short: "NZ",
+    batters: ["Tom Latham", "Devon Conway", "Kane Williamson", "Rachin Ravindra", "Daryl Mitchell", "Glenn Phillips", "Tom Blundell", "Mitchell Santner", "Matt Henry", "Kyle Jamieson", "Tim Southee"],
+    bowlers: ["Tim Southee", "Matt Henry", "Kyle Jamieson", "Mitchell Santner", "Glenn Phillips", "Rachin Ravindra"]
+  },
+  SA: {
+    name: "South Africa",
+    short: "SA",
+    batters: ["Aiden Markram", "Tony de Zorzi", "Tristan Stubbs", "Temba Bavuma", "David Bedingham", "Kyle Verreynne", "Wiaan Mulder", "Marco Jansen", "Keshav Maharaj", "Kagiso Rabada", "Lungi Ngidi"],
+    bowlers: ["Kagiso Rabada", "Marco Jansen", "Keshav Maharaj", "Lungi Ngidi", "Wiaan Mulder"]
+  },
+  WI: {
+    name: "West Indies",
+    short: "WI",
+    batters: ["Kraigg Brathwaite", "Mikyle Louis", "Keacy Carty", "Alick Athanaze", "Kavem Hodge", "Joshua Da Silva", "Jason Holder", "Alzarri Joseph", "Kemar Roach", "Jayden Seales", "Gudakesh Motie"],
+    bowlers: ["Kemar Roach", "Alzarri Joseph", "Jayden Seales", "Gudakesh Motie", "Jason Holder"]
   }
 };
 
@@ -979,13 +1046,13 @@ function showPlayingXI() {
   const oppTeam = SQUADS[oppTeamCode];
 
   // Set headers
-  if (xiUserFlag) xiUserFlag.textContent = TEAM_FLAGS[userTeamCode] || "🇦🇺";
+  if (xiUserFlag) xiUserFlag.innerHTML = TEAM_FLAGS[userTeamCode] || "";
   if (xiUserName) xiUserName.textContent = userTeam.name;
-  if (xiOppFlag) xiOppFlag.textContent = TEAM_FLAGS[oppTeamCode] || "🇮🇳";
+  if (xiOppFlag) xiOppFlag.innerHTML = TEAM_FLAGS[oppTeamCode] || "";
   if (xiOppName) xiOppName.textContent = oppTeam.name;
 
   // Helper to build list HTML
-  const buildPlayerListHTML = (players) => {
+  const buildPlayerListHTML = (players, flag) => {
     return players.map((name, index) => {
       const role = PLAYER_ROLES[name] || "Batter";
       let roleClass = "batter";
@@ -997,7 +1064,7 @@ function showPlayingXI() {
         <div class="playing-xi-row">
           <div class="player-name-wrap">
             <span class="player-number">${index + 1}</span>
-            <span class="player-name-text player-name-hoverable" data-player-name="${name}">${name}</span>
+            <span class="player-name-text player-name-hoverable" data-player-name="${name}">${flag || ''} ${name}</span>
           </div>
           <span class="xi-role-badge ${roleClass}">${role}</span>
         </div>
@@ -1006,8 +1073,8 @@ function showPlayingXI() {
   };
 
   // Populate lists
-  if (xiUserList) xiUserList.innerHTML = buildPlayerListHTML(userTeam.batters);
-  if (xiOppList) xiOppList.innerHTML = buildPlayerListHTML(oppTeam.batters);
+  if (xiUserList) xiUserList.innerHTML = buildPlayerListHTML(userTeam.batters, TEAM_FLAGS[userTeamCode]);
+  if (xiOppList) xiOppList.innerHTML = buildPlayerListHTML(oppTeam.batters, TEAM_FLAGS[oppTeamCode]);
 
   // Show Playing XI Modal
   if (cricketPlayingXiModal) {
@@ -1034,9 +1101,15 @@ function updateTeamCardCrossHighlight() {
   const bowlName = document.getElementById('matchup-bowl-name');
   const userTrigger = document.getElementById('user-team-trigger');
   const oppTrigger = document.getElementById('opp-team-trigger');
-  if (batFlag && userTrigger) batFlag.textContent = userTrigger.querySelector('.select-flag')?.textContent || '';
+  if (batFlag && userTrigger) {
+    const userFlagImg = userTrigger.querySelector('.country-flag-img');
+    if (userFlagImg) batFlag.innerHTML = userFlagImg.outerHTML;
+  }
   if (batName && userVal) batName.textContent = userVal;
-  if (bowlFlag && oppTrigger) bowlFlag.textContent = oppTrigger.querySelector('.select-flag')?.textContent || '';
+  if (bowlFlag && oppTrigger) {
+    const oppFlagImg = oppTrigger.querySelector('.country-flag-img');
+    if (oppFlagImg) bowlFlag.innerHTML = oppFlagImg.outerHTML;
+  }
   if (bowlName && oppVal) bowlName.textContent = oppVal;
 }
 
@@ -1108,6 +1181,17 @@ function startMatchWithSelectedTeams() {
   }
   resetPlayState();
   updateCricketUI();
+  
+  // Set scoreboard header matchup details
+  const sbUserFlag = document.getElementById('scoreboard-user-flag');
+  const sbUserName = document.getElementById('scoreboard-user-name');
+  const sbOppFlag = document.getElementById('scoreboard-opp-flag');
+  const sbOppName = document.getElementById('scoreboard-opp-name');
+  if (sbUserFlag) sbUserFlag.innerHTML = TEAM_FLAGS[userTeamCode] || '';
+  if (sbUserName) sbUserName.textContent = SQUADS[userTeamCode].short;
+  if (sbOppFlag) sbOppFlag.innerHTML = TEAM_FLAGS[oppTeamCode] || '';
+  if (sbOppName) sbOppName.textContent = SQUADS[oppTeamCode].short;
+
   updateOverHistoryUI();
   
   const speedVal = document.getElementById('cricket-speed-val');
@@ -1123,7 +1207,7 @@ function startMatchWithSelectedTeams() {
   
   const commentaryLines = document.getElementById('cricket-commentary-lines');
   if (commentaryLines) {
-    commentaryLines.innerHTML = `<div class="commentary-line active">Welcome to the match! ${SQUADS[userTeamCode].name} vs ${SQUADS[oppTeamCode].name}. Press ENTER or click BOWL to start.</div>`;
+    commentaryLines.innerHTML = `<div class="commentary-line active">Welcome to the match! ${TEAM_FLAGS[userTeamCode] || ''} ${SQUADS[userTeamCode].name} vs ${TEAM_FLAGS[oppTeamCode] || ''} ${SQUADS[oppTeamCode].name}. Press ENTER or click BOWL to start.</div>`;
   }
   
   const gameHeaderTitle = cricketGameView.querySelector('.game-header h1');
@@ -1131,11 +1215,11 @@ function startMatchWithSelectedTeams() {
   const ballsLimitEl = document.getElementById('cricket-balls-limit');
   
   if (isTestMatch) {
-    if (gameHeaderTitle) gameHeaderTitle.textContent = `${SQUADS[userTeamCode].name} vs ${SQUADS[oppTeamCode].name} - Test Match`;
+    if (gameHeaderTitle) gameHeaderTitle.innerHTML = `${TEAM_FLAGS[userTeamCode] || ''} ${SQUADS[userTeamCode].name} vs ${TEAM_FLAGS[oppTeamCode] || ''} ${SQUADS[oppTeamCode].name} - Test Match`;
     if (gameHeaderDesc) gameHeaderDesc.innerHTML = 'Score as many runs as possible until <span class="highlight">10 Wickets</span> are down!';
     if (ballsLimitEl) ballsLimitEl.style.display = 'none';
   } else {
-    if (gameHeaderTitle) gameHeaderTitle.textContent = `${SQUADS[userTeamCode].name} vs ${SQUADS[oppTeamCode].name} - Mini Cricket`;
+    if (gameHeaderTitle) gameHeaderTitle.innerHTML = `${TEAM_FLAGS[userTeamCode] || ''} ${SQUADS[userTeamCode].name} vs ${TEAM_FLAGS[oppTeamCode] || ''} ${SQUADS[oppTeamCode].name} - Mini Cricket`;
     if (gameHeaderDesc) gameHeaderDesc.innerHTML = 'Score as many runs as possible in <span class="highlight">2 Overs (12 balls)</span>!';
     if (ballsLimitEl) ballsLimitEl.style.display = 'inline';
   }
@@ -1217,7 +1301,7 @@ function showPostMatchScorecard() {
 
     battingHtml += `
       <div class="player-stat-row" style="padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between;">
-        <span style="font-weight: 600; color: var(--text-primary);"><span class="player-name-hoverable" data-player-name="${b.name}">${b.name}</span> <span style="font-size: 0.8rem; font-weight: normal; margin-left: 6px;">(${displayStatus})</span></span>
+        <span style="font-weight: 600; color: var(--text-primary);"><span class="player-name-hoverable" data-player-name="${b.name}">${TEAM_FLAGS[userTeamCode] || ''} ${b.name}</span> <span style="font-size: 0.8rem; font-weight: normal; margin-left: 6px;">(${displayStatus})</span></span>
         ${scoreDisplay}
       </div>
     `;
@@ -1233,7 +1317,7 @@ function showPostMatchScorecard() {
       let econ = ((stats.runs * 6) / stats.balls).toFixed(2);
       bowlingHtml += `
         <div class="player-stat-row" style="padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between;">
-          <span style="font-weight: 600; color: #a5b4fc;"><span class="player-name-hoverable" data-player-name="${name}">${name}</span></span>
+          <span style="font-weight: 600; color: #a5b4fc;"><span class="player-name-hoverable" data-player-name="${name}">${TEAM_FLAGS[oppTeamCode] || ''} ${name}</span></span>
           <span class="player-runs" style="color: #a5b4fc;">Overs: ${overs} | Runs: ${stats.runs} | Wkts: ${stats.wickets} | Econ: ${econ}</span>
         </div>
       `;
@@ -1241,6 +1325,20 @@ function showPostMatchScorecard() {
   });
   const bowlingContainer = document.getElementById('scorecard-bowling-rows');
   if (bowlingContainer) bowlingContainer.innerHTML = bowlingHtml;
+
+  // Dynamic Scorecard Titles with Flags
+  const scorecardTitle = document.getElementById('scorecard-title');
+  if (scorecardTitle) {
+    scorecardTitle.innerHTML = `🏆 Match Scorecard: ${TEAM_FLAGS[userTeamCode] || ''} ${SQUADS[userTeamCode].name} vs ${TEAM_FLAGS[oppTeamCode] || ''} ${SQUADS[oppTeamCode].name}`;
+  }
+  const battingHeader = document.getElementById('scorecard-batting-header');
+  if (battingHeader) {
+    battingHeader.innerHTML = `${TEAM_FLAGS[userTeamCode] || ''} ${SQUADS[userTeamCode].name} Batting`;
+  }
+  const bowlingHeader = document.getElementById('scorecard-bowling-header');
+  if (bowlingHeader) {
+    bowlingHeader.innerHTML = `${TEAM_FLAGS[oppTeamCode] || ''} ${SQUADS[oppTeamCode].name} Bowling`;
+  }
 
   // Activate the Batting tab by default when modal opens
   if (scorecardTabBatting) {
@@ -1445,7 +1543,7 @@ function updateCricketUI() {
     const s2 = (strikerOnStrike === 1) ? batter2 : batter1;
     
     if (strikerNameEl) {
-      strikerNameEl.textContent = s1.name;
+      strikerNameEl.innerHTML = `${TEAM_FLAGS[userTeamCode] || ''} ${s1.name}`;
       const strikerRow = document.getElementById('batter-striker-row');
       if (strikerRow) strikerRow.className = 'player-stat-row active-batter';
     }
@@ -1454,7 +1552,7 @@ function updateCricketUI() {
     }
     
     if (nonStrikerNameEl) {
-      nonStrikerNameEl.textContent = s2.name;
+      nonStrikerNameEl.innerHTML = `${TEAM_FLAGS[userTeamCode] || ''} ${s2.name}`;
       const nonStrikerRow = document.getElementById('batter-nonstriker-row');
       if (nonStrikerRow) nonStrikerRow.className = 'player-stat-row';
     }
@@ -1463,7 +1561,7 @@ function updateCricketUI() {
     }
 
     if (bowlerNameEl) {
-      bowlerNameEl.textContent = currentBowler.name;
+      bowlerNameEl.innerHTML = `${TEAM_FLAGS[oppTeamCode] || ''} ${currentBowler.name}`;
     }
     if (bowlerStatsEl) {
       let overs = Math.floor(currentBowler.balls / 6) + '.' + (currentBowler.balls % 6);
@@ -3195,11 +3293,13 @@ function setupTeamDropdown(dropdownId, optionsId, selectId, flagId, nameId) {
       if (opt.classList.contains('disabled-option')) return;
 
       const val = opt.getAttribute('data-value');
-      const flag = opt.getAttribute('data-flag');
       const name = opt.getAttribute('data-name');
+      const flagImgEl = opt.querySelector('.country-flag-img');
 
       // Update trigger display
-      if (flagEl) flagEl.textContent = flag;
+      if (flagEl && flagImgEl) {
+        flagEl.innerHTML = flagImgEl.outerHTML;
+      }
       if (nameEl) nameEl.textContent = name;
 
       // Update hidden select
@@ -3239,7 +3339,7 @@ updateTeamCardCrossHighlight();
 
 window.addEventListener('keydown', (e) => {
   if (cricketGameView && !cricketGameView.classList.contains('hidden')) {
-    if (e.key === '8') {
+    if (e.key === '8' || e.code === 'Numpad8' || e.code === 'Digit8') {
       e.preventDefault();
       toggleCricketPause();
       return;

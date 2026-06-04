@@ -1,3 +1,8 @@
+@font-face {
+  font-family: "Twemoji Country Flags";
+  src: url("https://cdn.jsdelivr.net/npm/country-flag-emoji-polyfill@0.1.3/dist/CountryFlagEmojiPolyfill.ttf") format("truetype");
+}
+
 :root {
   --bg-gradient: radial-gradient(circle at center, #161b33 0%, #080a14 100%);
   --card-bg: rgba(20, 25, 45, 0.45);
@@ -31,7 +36,7 @@
   --error-color: #ef4444;
   --warning-color: #f59e0b;
   
-  --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-family: 'Inter', 'Twemoji Country Flags', system-ui, -apple-system, sans-serif;
 }
 
 * {
@@ -1309,6 +1314,19 @@ body::after {
 
 /* ===== CUSTOM DROPDOWN TEAM SELECTOR ===== */
 
+/* Country Flag Image */
+.country-flag-img {
+  width: 28px;
+  height: 20px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+  display: inline-block;
+  vertical-align: middle;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease;
+}
+
 /* Modal box */
 .team-select-modal-box {
   background: rgba(12, 16, 32, 0.97);
@@ -1454,7 +1472,9 @@ body::after {
   top: 100%;
   left: 0;
   right: 0;
-  background: rgba(14, 18, 36, 0.98);
+  background: rgba(14, 18, 36, 0.93);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1.5px solid rgba(255, 255, 255, 0.12);
   border-top: none;
   border-radius: 0 0 14px 14px;
@@ -1463,14 +1483,33 @@ body::after {
   max-height: 0;
   opacity: 0;
   pointer-events: none;
-  transition: max-height 0.28s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease, transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(-8px) scale(0.98);
   box-shadow: 0 16px 32px -8px rgba(0,0,0,0.7);
 }
 
 .team-custom-select.open .team-select-dropdown {
-  max-height: 260px;
+  max-height: 380px;
   opacity: 1;
   pointer-events: all;
+  overflow-y: auto;
+  transform: translateY(0) scale(1);
+}
+
+/* Custom Scrollbar for Dropdown Option Panel */
+.team-select-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+.team-select-dropdown::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 0 0 14px 0;
+}
+.team-select-dropdown::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+}
+.team-select-dropdown::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 /* Individual Option */
@@ -1478,10 +1517,22 @@ body::after {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 11px 16px;
+  padding: 12px 18px;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  position: relative;
+}
+
+.team-select-option::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: transparent;
+  transition: background-color 0.25s ease;
 }
 
 .team-select-option:last-child {
@@ -1489,15 +1540,29 @@ body::after {
 }
 
 .team-select-option:hover {
-  background: rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.06);
+  padding-left: 22px;
 }
 
-.team-select-option.selected {
+.team-select-option:hover .country-flag-img {
+  transform: scale(1.08);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+#user-team-options .team-select-option.selected {
   background: rgba(16, 185, 129, 0.08);
+}
+#user-team-options .team-select-option.selected::before {
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
 }
 
 #opp-team-options .team-select-option.selected {
   background: rgba(165, 180, 252, 0.08);
+}
+#opp-team-options .team-select-option.selected::before {
+  background: #a5b4fc;
+  box-shadow: 0 0 8px #a5b4fc;
 }
 
 .team-select-option.disabled-option {
@@ -2065,6 +2130,72 @@ body.test-match-active .cricket-commentary-box .commentary-lines {
   color: var(--text-secondary);
   font-weight: 500;
   margin-bottom: 12px;
+}
+
+.cricket-matchup-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--card-border);
+  padding: 10px 16px;
+  border-radius: 16px;
+  margin-bottom: 16px;
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: var(--text-primary);
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.1), 0 4px 10px rgba(0,0,0,0.2);
+}
+.matchup-vs {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 900;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 2px 6px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+}
+.matchup-team-name {
+  letter-spacing: 0.5px;
+}
+
+/* Matchup Preview Strip at Bottom of Dropdowns */
+.team-matchup-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 12px 18px;
+  margin-top: 20px;
+  margin-bottom: 8px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.team-matchup-preview .matchup-vs {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+#matchup-bat-name, #matchup-bowl-name {
+  color: var(--text-primary);
+  letter-spacing: 0.05em;
+}
+
+#matchup-bat-flag, #matchup-bowl-flag {
+  display: flex;
+  align-items: center;
 }
 
 

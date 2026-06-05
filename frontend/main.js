@@ -613,6 +613,41 @@ function getTeamFlagHTML(teamCode, className = "country-flag-img") {
   return `<img class="${className}" src="https://flagcdn.com/w40/${code}.png" alt="${teamCode}" style="display:inline-block; vertical-align:middle;">`;
 }
 
+function getFlagCDNCode(teamCode) {
+  const codes = {
+    IND: "in",
+    AUS: "au",
+    ENG: "gb-eng",
+    SL: "lk",
+    NZ: "nz",
+    SA: "za"
+  };
+  return codes[teamCode] || "un";
+}
+
+function updateSVGOutfieldFlags(userTeamCode, oppTeamCode) {
+  const svgUserFlagGraphic = document.getElementById('svg-user-flag-graphic');
+  const svgOppFlagGraphic = document.getElementById('svg-opp-flag-graphic');
+  
+  const setFlagSVG = (el, teamCode, cx, cy, r) => {
+    if (!el) return;
+    if (teamCode === "WI") {
+      el.innerHTML = `
+        <rect x="${cx - r}" y="${cy - r}" width="${r * 2}" height="${r * 2}" fill="#7B002C" />
+        <circle cx="${cx}" cy="${cy}" r="${r * 0.5}" fill="#FDB813" />
+        <ellipse cx="${cx}" cy="${cy + r * 0.5}" rx="${r * 0.9}" ry="${r * 0.3}" fill="#D4AF37" />
+        <path d="M${cx},${cy + r * 0.5} Q${cx - r * 0.1},${cy + r * 0.1} ${cx},${cy - r * 0.3}" stroke="#8B5A2B" stroke-width="1.2" fill="none" />
+      `;
+    } else {
+      const code = getFlagCDNCode(teamCode);
+      el.innerHTML = `<image href="https://flagcdn.com/w80/${code}.png" x="${cx - r}" y="${cy - r}" height="${r * 2}" width="${r * 2}" preserveAspectRatio="xMidYMid slice" />`;
+    }
+  };
+  
+  setFlagSVG(svgUserFlagGraphic, userTeamCode, 90, 90, 24);
+  setFlagSVG(svgOppFlagGraphic, oppTeamCode, 360, 90, 24);
+}
+
 // Player Roles & Team Flags for pre-match Playing XI presentation
 const TEAM_FLAGS = {
   IND: getTeamFlagHTML("IND"),
@@ -701,7 +736,7 @@ const SQUADS = {
   }
 };
 
-let userTeamCode = 'AUS';
+let userTeamCode = 'SL';
 let oppTeamCode = 'IND';
 let battersList = [];
 let bowlersList = [];
@@ -1191,6 +1226,25 @@ function startMatchWithSelectedTeams() {
   if (sbUserName) sbUserName.textContent = SQUADS[userTeamCode].short;
   if (sbOppFlag) sbOppFlag.innerHTML = TEAM_FLAGS[oppTeamCode] || '';
   if (sbOppName) sbOppName.textContent = SQUADS[oppTeamCode].short;
+
+  // Set top TV broadcast bar details
+  const topBarUserFlag = document.getElementById('top-bar-user-flag');
+  const topBarUserName = document.getElementById('top-bar-user-name');
+  const topBarOppFlag = document.getElementById('top-bar-opp-flag');
+  const topBarOppName = document.getElementById('top-bar-opp-name');
+  const topBarMatchType = document.getElementById('top-bar-match-type');
+
+  if (topBarUserFlag) topBarUserFlag.innerHTML = getTeamFlagHTML(userTeamCode, "top-bar-flag-img");
+  if (topBarUserName) topBarUserName.textContent = SQUADS[userTeamCode].name;
+  if (topBarOppFlag) topBarOppFlag.innerHTML = getTeamFlagHTML(oppTeamCode, "top-bar-flag-img");
+  if (topBarOppName) topBarOppName.textContent = SQUADS[oppTeamCode].name;
+  if (topBarMatchType) {
+    topBarMatchType.textContent = isTestMatch ? "TEST MATCH" : "MINI CRICKET";
+    topBarMatchType.className = isTestMatch ? "match-type-badge test-badge" : "match-type-badge mini-badge";
+  }
+
+  // Update circular flags on the SVG outfield grass
+  updateSVGOutfieldFlags(userTeamCode, oppTeamCode);
 
   updateOverHistoryUI();
   

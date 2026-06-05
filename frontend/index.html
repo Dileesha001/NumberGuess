@@ -207,8 +207,8 @@
                 </label>
                 <div class="team-custom-select" id="user-team-dropdown" data-select="cricket-user-team">
                   <div class="team-select-trigger" id="user-team-trigger">
-                    <span class="select-flag" id="user-select-flag"><img class="country-flag-img" src="https://flagcdn.com/w40/au.png" alt="AUS"></span>
-                    <span class="select-name" id="user-select-name">Australia</span>
+                    <span class="select-flag" id="user-select-flag"><img class="country-flag-img" src="https://flagcdn.com/w40/lk.png" alt="SL"></span>
+                    <span class="select-name" id="user-select-name">Sri Lanka</span>
                     <span class="select-arrow">▾</span>
                   </div>
                   <div class="team-select-dropdown" id="user-team-options">
@@ -219,7 +219,7 @@
                         <span class="opt-code">IND</span>
                       </div>
                     </div>
-                    <div class="team-select-option selected" data-value="AUS" data-name="Australia">
+                    <div class="team-select-option" data-value="AUS" data-name="Australia">
                       <img class="country-flag-img" src="https://flagcdn.com/w40/au.png" alt="AUS">
                       <div class="opt-info">
                         <span class="opt-name">Australia</span>
@@ -233,7 +233,7 @@
                         <span class="opt-code">ENG</span>
                       </div>
                     </div>
-                    <div class="team-select-option" data-value="SL" data-name="Sri Lanka">
+                    <div class="team-select-option selected" data-value="SL" data-name="Sri Lanka">
                       <img class="country-flag-img" src="https://flagcdn.com/w40/lk.png" alt="SL">
                       <div class="opt-info">
                         <span class="opt-name">Sri Lanka</span>
@@ -352,8 +352,8 @@
 
               <!-- Matchup Preview Strip -->
               <div class="team-matchup-preview" id="team-matchup-preview">
-                <span id="matchup-bat-flag"><img class="country-flag-img" src="https://flagcdn.com/w40/au.png" alt="AUS"></span>
-                <span id="matchup-bat-name">AUS</span>
+                <span id="matchup-bat-flag"><img class="country-flag-img" src="https://flagcdn.com/w40/lk.png" alt="SL"></span>
+                <span id="matchup-bat-name">SL</span>
                 <span class="matchup-vs">batting vs</span>
                 <span id="matchup-bowl-flag"><img class="country-flag-img" src="https://flagcdn.com/w40/in.png" alt="IND"></span>
                 <span id="matchup-bowl-name">IND</span>
@@ -368,9 +368,9 @@
               <!-- Hidden selects for JS compatibility -->
               <select id="cricket-user-team" style="display:none;">
                 <option value="IND">India</option>
-                <option value="AUS" selected>Australia</option>
+                <option value="AUS">Australia</option>
                 <option value="ENG">England</option>
-                <option value="SL">Sri Lanka</option>
+                <option value="SL" selected>Sri Lanka</option>
                 <option value="NZ">New Zealand</option>
                 <option value="SA">South Africa</option>
                 <option value="WI">West Indies</option>
@@ -493,6 +493,24 @@
             <p>Score as many runs as possible in <span class="highlight">2 Overs (12 balls)</span>!</p>
           </header>
 
+          <!-- TV-Style Top Broadcast Bar -->
+          <div id="cricket-top-bar" class="cricket-top-bar">
+            <div class="top-bar-left">
+              <span id="top-bar-match-type" class="match-type-badge test-badge">TEST MATCH</span>
+              <span class="live-badge"><span class="live-dot"></span>LIVE</span>
+            </div>
+            <div class="top-bar-center">
+              <span id="top-bar-user-flag" class="top-bar-flag"></span>
+              <span id="top-bar-user-name" class="top-bar-team-name">Sri Lanka</span>
+              <span class="top-bar-vs">VS</span>
+              <span id="top-bar-opp-name" class="top-bar-team-name">India</span>
+              <span id="top-bar-opp-flag" class="top-bar-flag"></span>
+            </div>
+            <div class="top-bar-right">
+              <span class="top-bar-series-text">🏆 INTERNATIONAL SERIES</span>
+            </div>
+          </div>
+
           <div class="game-body cricket-split-layout">
             <!-- Left Panel: Ground & Graphics -->
             <div class="cricket-left-panel">
@@ -571,6 +589,25 @@
                   <circle cx="225" cy="225" r="148" fill="none" stroke="#16a34a" stroke-width="12" opacity="0.08" />
                   <circle cx="225" cy="225" r="110" fill="none" stroke="#22c55e" stroke-width="12" opacity="0.08" />
                   <circle cx="225" cy="225" r="70" fill="none" stroke="#16a34a" stroke-width="12" opacity="0.08" />
+
+                  <!-- Team Flag Outfield Logos (Stylized circular badges) -->
+                  <g id="svg-outfield-logos" opacity="0.45" style="pointer-events: none;">
+                    <!-- User/Batting Team Flag -->
+                    <circle cx="90" cy="90" r="26" fill="rgba(0,0,0,0.3)" />
+                    <circle cx="90" cy="90" r="24" fill="#1e293b" stroke="rgba(255,255,255,0.6)" stroke-width="2" />
+                    <clipPath id="user-flag-clip">
+                      <circle cx="90" cy="90" r="23" />
+                    </clipPath>
+                    <g clip-path="url(#user-flag-clip)" id="svg-user-flag-graphic"></g>
+                    
+                    <!-- Opponent/Bowling Team Flag -->
+                    <circle cx="360" cy="90" r="26" fill="rgba(0,0,0,0.3)" />
+                    <circle cx="360" cy="90" r="24" fill="#1e293b" stroke="rgba(255,255,255,0.6)" stroke-width="2" />
+                    <clipPath id="opp-flag-clip">
+                      <circle cx="360" cy="90" r="23" />
+                    </clipPath>
+                    <g clip-path="url(#opp-flag-clip)" id="svg-opp-flag-graphic"></g>
+                  </g>
 
                   <!-- Inner circle (30-yard circle) -->
                   <circle cx="225" cy="225" r="130" fill="none" stroke="#22c55e" stroke-width="2" stroke-dasharray="6 6" opacity="0.3" />

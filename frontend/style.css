@@ -1158,11 +1158,18 @@ body::after {
   font-weight: 700;
 }
 
+.player-stat-row .player-name {
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .player-stat-row.active-batter .player-name {
   color: var(--accent-cricket);
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .player-stat-row.active-batter .player-name::after {
@@ -1744,8 +1751,10 @@ body::after {
 .playing-xi-row .player-number {
   color: var(--text-muted);
   font-family: monospace;
-  font-size: 0.8rem;
-  width: 16px;
+  font-size: 0.85rem;
+  width: 20px;
+  text-align: right;
+  margin-right: 8px;
 }
 
 .playing-xi-row .player-name-text {

@@ -1087,7 +1087,7 @@ function showPlayingXI() {
   if (xiOppName) xiOppName.textContent = oppTeam.name;
 
   // Helper to build list HTML
-  const buildPlayerListHTML = (players, flag) => {
+  const buildPlayerListHTML = (players) => {
     return players.map((name, index) => {
       const role = PLAYER_ROLES[name] || "Batter";
       let roleClass = "batter";
@@ -1099,7 +1099,7 @@ function showPlayingXI() {
         <div class="playing-xi-row">
           <div class="player-name-wrap">
             <span class="player-number">${index + 1}</span>
-            <span class="player-name-text player-name-hoverable" data-player-name="${name}">${flag || ''} ${name}</span>
+            <span class="player-name-text player-name-hoverable" data-player-name="${name}">${name}</span>
           </div>
           <span class="xi-role-badge ${roleClass}">${role}</span>
         </div>
@@ -1108,8 +1108,8 @@ function showPlayingXI() {
   };
 
   // Populate lists
-  if (xiUserList) xiUserList.innerHTML = buildPlayerListHTML(userTeam.batters, TEAM_FLAGS[userTeamCode]);
-  if (xiOppList) xiOppList.innerHTML = buildPlayerListHTML(oppTeam.batters, TEAM_FLAGS[oppTeamCode]);
+  if (xiUserList) xiUserList.innerHTML = buildPlayerListHTML(userTeam.batters);
+  if (xiOppList) xiOppList.innerHTML = buildPlayerListHTML(oppTeam.batters);
 
   // Show Playing XI Modal
   if (cricketPlayingXiModal) {
@@ -1354,8 +1354,8 @@ function showPostMatchScorecard() {
     }
 
     battingHtml += `
-      <div class="player-stat-row" style="padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between;">
-        <span style="font-weight: 600; color: var(--text-primary);"><span class="player-name-hoverable" data-player-name="${b.name}">${TEAM_FLAGS[userTeamCode] || ''} ${b.name}</span> <span style="font-size: 0.8rem; font-weight: normal; margin-left: 6px;">(${displayStatus})</span></span>
+      <div class="player-stat-row" style="padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
+        <span class="player-name" style="font-weight: 600; color: var(--text-primary); display: inline-flex; align-items: center;"><span class="player-name-hoverable" data-player-name="${b.name}">${b.name}</span> <span style="font-size: 0.8rem; font-weight: normal; margin-left: 6px; color: var(--text-muted);">(${displayStatus})</span></span>
         ${scoreDisplay}
       </div>
     `;
@@ -1370,8 +1370,8 @@ function showPostMatchScorecard() {
       let overs = Math.floor(stats.balls / 6) + '.' + (stats.balls % 6);
       let econ = ((stats.runs * 6) / stats.balls).toFixed(2);
       bowlingHtml += `
-        <div class="player-stat-row" style="padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between;">
-          <span style="font-weight: 600; color: #a5b4fc;"><span class="player-name-hoverable" data-player-name="${name}">${TEAM_FLAGS[oppTeamCode] || ''} ${name}</span></span>
+        <div class="player-stat-row" style="padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
+          <span class="player-name" style="font-weight: 600; color: #a5b4fc; display: inline-flex; align-items: center;"><span class="player-name-hoverable" data-player-name="${name}">${name}</span></span>
           <span class="player-runs" style="color: #a5b4fc;">Overs: ${overs} | Runs: ${stats.runs} | Wkts: ${stats.wickets} | Econ: ${econ}</span>
         </div>
       `;
@@ -1597,7 +1597,7 @@ function updateCricketUI() {
     const s2 = (strikerOnStrike === 1) ? batter2 : batter1;
     
     if (strikerNameEl) {
-      strikerNameEl.innerHTML = `${TEAM_FLAGS[userTeamCode] || ''} ${s1.name}`;
+      strikerNameEl.textContent = s1.name;
       const strikerRow = document.getElementById('batter-striker-row');
       if (strikerRow) strikerRow.className = 'player-stat-row active-batter';
     }
@@ -1606,7 +1606,7 @@ function updateCricketUI() {
     }
     
     if (nonStrikerNameEl) {
-      nonStrikerNameEl.innerHTML = `${TEAM_FLAGS[userTeamCode] || ''} ${s2.name}`;
+      nonStrikerNameEl.textContent = s2.name;
       const nonStrikerRow = document.getElementById('batter-nonstriker-row');
       if (nonStrikerRow) nonStrikerRow.className = 'player-stat-row';
     }
@@ -1615,7 +1615,7 @@ function updateCricketUI() {
     }
 
     if (bowlerNameEl) {
-      bowlerNameEl.innerHTML = `${TEAM_FLAGS[oppTeamCode] || ''} ${currentBowler.name}`;
+      bowlerNameEl.textContent = currentBowler.name;
     }
     if (bowlerStatsEl) {
       let overs = Math.floor(currentBowler.balls / 6) + '.' + (currentBowler.balls % 6);

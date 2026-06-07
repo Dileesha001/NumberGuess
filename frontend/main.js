@@ -769,6 +769,30 @@ let overBowlerStyle = null;
 const STUMPS_STRIKER = { x: 225, y: 315 };
 const STUMPS_NON_STRIKER = { x: 225, y: 135 };
 
+let lastFrameTime = 0;
+
+// Keep track of last values to optimize DOM operations
+let lastBallX = null;
+let lastBallY = null;
+let lastBallRadius = null;
+let lastBallOpacity = null;
+let lastBallFill = null;
+
+let lastB1Y = null;
+let lastB2Y = null;
+let lastStrikerFill = null;
+let lastNonStrikerFill = null;
+let lastBowlerY = null;
+let lastBowlerFill = null;
+
+let lastBatX1 = null;
+let lastBatY1 = null;
+let lastBatX2 = null;
+let lastBatY2 = null;
+let lastBatTransformOrigin = null;
+
+let lastIndicatorCy = null;
+
 class Fielder {
   constructor(id, name, x, y, speed) {
     this.id = id;
@@ -780,17 +804,20 @@ class Fielder {
     this.speed = speed;
     this.state = 'IDLE'; // IDLE, CHASING, THROWING
     this.has_ball = false;
+    this.lastX = null;
+    this.lastY = null;
+    this.lastState = null;
   }
 
-  update(ballX, ballY, isActive) {
+  update(ballX, ballY, isActive, dt = 1.0) {
     if (isActive) {
       this.state = 'CHASING';
       let dx = ballX - this.x;
       let dy = ballY - this.y;
       let distance = Math.sqrt(dx * dx + dy * dy);
-      if (distance > 4) {
-        this.x += (dx / distance) * this.speed;
-        this.y += (dy / distance) * this.speed;
+      if (distance > 4 * dt) {
+        this.x += (dx / distance) * this.speed * dt;
+        this.y += (dy / distance) * this.speed * dt;
       } else {
         this.x = ballX;
         this.y = ballY;
@@ -802,17 +829,17 @@ class Fielder {
       if ((ball.state === 'HIT' || ball.state === 'THROWN') && distance < 120) {
         this.state = 'CHASING';
         let moveSpeed = this.speed * 0.7;
-        if (distance > 12) {
-          this.x += (dx / distance) * moveSpeed;
-          this.y += (dy / distance) * moveSpeed;
+        if (distance > 12 * dt) {
+          this.x += (dx / distance) * moveSpeed * dt;
+          this.y += (dy / distance) * moveSpeed * dt;
         }
       } else {
         let hdx = this.homeX - this.x;
         let hdy = this.homeY - this.y;
         let hdist = Math.sqrt(hdx * hdx + hdy * hdy);
-        if (hdist > 2) {
-          this.x += (hdx / hdist) * 1.5; // return to base
-          this.y += (hdy / hdist) * 1.5;
+        if (hdist > 2 * dt) {
+          this.x += (hdx / hdist) * 1.5 * dt; // return to base
+          this.y += (hdy / hdist) * 1.5 * dt;
         } else {
           this.x = this.homeX;
           this.y = this.homeY;
@@ -827,6 +854,9 @@ class Fielder {
     this.y = this.homeY;
     this.state = 'IDLE';
     this.has_ball = false;
+    this.lastX = null;
+    this.lastY = null;
+    this.lastState = null;
   }
 }
 
@@ -1067,6 +1097,12 @@ function initCricket() {
   if (cricketPlayingXiModal) {
     cricketPlayingXiModal.classList.add('hidden');
   }
+  
+  const skipPreMatch = localStorage.getItem('dpr_skip_prematch_modals') === 'true';
+  const quickStartCheckbox = document.getElementById('cricket-quick-start');
+  if (quickStartCheckbox) {
+    quickStartCheckbox.checked = skipPreMatch;
+  }
 }
 
 function isBeginningModalOpen() {
@@ -1280,7 +1316,24 @@ function startMatchWithSelectedTeams() {
   
   updateHowToPlayModal();
   
-  showPlayingXI();
+  const skipPreMatch = document.getElementById('cricket-quick-start')?.checked || false;
+  try {
+    localStorage.setItem('dpr_skip_prematch_modals', skipPreMatch ? 'true' : 'false');
+  } catch (e) {
+    console.error(e);
+  }
+
+  if (skipPreMatch) {
+    if (cricketPlayingXiModal) {
+      cricketPlayingXiModal.classList.add('hidden');
+    }
+    if (cricketHowToPlayModal) {
+      cricketHowToPlayModal.classList.add('hidden');
+    }
+    showCricketMessage("Press ENTER or click BOWL to start! 🏏", "warning");
+  } else {
+    showPlayingXI();
+  }
 }
 
 function replaceOutBatter(batterNum) {
@@ -1456,15 +1509,15 @@ function triggerMilestoneCelebration(msg) {
           }
           
           const overEnd = cricketState.balls_faced > 0 && cricketState.balls_faced % 6 === 0;
-          const resumeMsg = overEnd ? "Over complete! Changing ends... next ball in 2.5s 🔄" : "Preparing next delivery... next ball in 2s ⚾";
+          const resumeMsg = overEnd ? "Over complete! Changing ends... next ball in 1.2s 🔄" : "Preparing next delivery... next ball in 1s ⚾";
           showCricketMessage(resumeMsg, overEnd ? 'success' : 'warning');
           
           isAutoBowlingTimeout = setTimeout(() => {
             bowlBall();
-          }, overEnd ? 2500 : 2000);
+          }, overEnd ? 1200 : 1000);
         }
       }
-    }, 4000);
+    }, 2000);
   }
 }
 
@@ -1569,6 +1622,12 @@ function resetPlayState() {
     batEl.style.transform = 'rotate(0deg)';
   }
   
+  // Reset cache variables to force next frame SVG updates
+  lastBallX = null; lastBallY = null; lastBallRadius = null; lastBallOpacity = null; lastBallFill = null;
+  lastB1Y = null; lastB2Y = null; lastStrikerFill = null; lastNonStrikerFill = null; lastBowlerY = null; lastBowlerFill = null;
+  lastBatX1 = null; lastBatY1 = null; lastBatX2 = null; lastBatY2 = null; lastBatTransformOrigin = null;
+  lastIndicatorCy = null;
+
   updateSVGDOM();
   drawFielders();
 }
@@ -1636,16 +1695,27 @@ function updateSVGDOM() {
   const batEl = document.getElementById('cricket-bat');
   
   if (ballEl) {
-    ballEl.setAttribute('cx', ball.x);
-    ballEl.setAttribute('cy', ball.y);
     let radius = 5;
     if (ball.loft) {
       let h = Math.sin(ball.loftProgress * Math.PI) * ball.maxLoftHeight;
       radius = 5 + h * 0.15;
     }
-    ballEl.setAttribute('r', radius);
-    ballEl.style.opacity = (ball.state === 'IDLE') ? '0' : '1';
-    ballEl.setAttribute('fill', isTestMatch ? '#be123c' : '#ffffff');
+    const ballFill = isTestMatch ? '#be123c' : '#ffffff';
+    const ballOpacity = (ball.state === 'IDLE') ? '0' : '1';
+    
+    if (ball.x !== lastBallX || ball.y !== lastBallY || radius !== lastBallRadius || ballOpacity !== lastBallOpacity || ballFill !== lastBallFill) {
+      ballEl.setAttribute('cx', ball.x);
+      ballEl.setAttribute('cy', ball.y);
+      ballEl.setAttribute('r', radius);
+      ballEl.style.opacity = ballOpacity;
+      ballEl.setAttribute('fill', ballFill);
+      
+      lastBallX = ball.x;
+      lastBallY = ball.y;
+      lastBallRadius = radius;
+      lastBallOpacity = ballOpacity;
+      lastBallFill = ballFill;
+    }
   }
 
   let strikerFill = '#3b82f6'; // default blue
@@ -1679,30 +1749,57 @@ function updateSVGDOM() {
   }
   
   if (strikerEl) {
-    strikerEl.setAttribute('cy', batsmen.batsman1Y);
-    strikerEl.setAttribute('fill', strikerFill);
+    if (batsmen.batsman1Y !== lastB1Y || strikerFill !== lastStrikerFill) {
+      strikerEl.setAttribute('cy', batsmen.batsman1Y);
+      strikerEl.setAttribute('fill', strikerFill);
+      lastB1Y = batsmen.batsman1Y;
+      lastStrikerFill = strikerFill;
+    }
   }
   if (nonStrikerEl) {
-    nonStrikerEl.setAttribute('cy', batsmen.batsman2Y);
-    nonStrikerEl.setAttribute('fill', nonStrikerFill);
+    if (batsmen.batsman2Y !== lastB2Y || nonStrikerFill !== lastNonStrikerFill) {
+      nonStrikerEl.setAttribute('cy', batsmen.batsman2Y);
+      nonStrikerEl.setAttribute('fill', nonStrikerFill);
+      lastB2Y = batsmen.batsman2Y;
+      lastNonStrikerFill = nonStrikerFill;
+    }
   }
+  
+  const bowlerY = (bowlingDirection === 1) ? 115 : 335;
   if (bowlerEl) {
-    bowlerEl.setAttribute('cy', (bowlingDirection === 1) ? 115 : 335);
-    bowlerEl.setAttribute('fill', bowlerFill);
+    if (bowlerY !== lastBowlerY || bowlerFill !== lastBowlerFill) {
+      bowlerEl.setAttribute('cy', bowlerY);
+      bowlerEl.setAttribute('fill', bowlerFill);
+      lastBowlerY = bowlerY;
+      lastBowlerFill = bowlerFill;
+    }
   }
   
   if (batEl) {
-    batEl.setAttribute('x1', 225);
-    batEl.setAttribute('y1', batsmen.batsman1Y);
-    if (batsmen.isRunning) {
-      batEl.setAttribute('x2', 225);
-      batEl.setAttribute('y2', batsmen.batsman1Y);
-    } else {
+    let x1 = 225;
+    let y1 = batsmen.batsman1Y;
+    let x2 = 225;
+    let y2 = batsmen.batsman1Y;
+    if (!batsmen.isRunning) {
       let batOffset = (bowlingDirection === 1) ? -13 : 13;
-      batEl.setAttribute('x2', 238);
-      batEl.setAttribute('y2', batsmen.batsman1Y + batOffset);
+      x2 = 238;
+      y2 = batsmen.batsman1Y + batOffset;
     }
-    batEl.style.transformOrigin = `225px ${batsmen.batsman1Y}px`;
+    const batTransformOrigin = `225px ${y1}px`;
+    
+    if (x1 !== lastBatX1 || y1 !== lastBatY1 || x2 !== lastBatX2 || y2 !== lastBatY2 || batTransformOrigin !== lastBatTransformOrigin) {
+      batEl.setAttribute('x1', x1);
+      batEl.setAttribute('y1', y1);
+      batEl.setAttribute('x2', x2);
+      batEl.setAttribute('y2', y2);
+      batEl.style.transformOrigin = batTransformOrigin;
+      
+      lastBatX1 = x1;
+      lastBatY1 = y1;
+      lastBatX2 = x2;
+      lastBatY2 = y2;
+      lastBatTransformOrigin = batTransformOrigin;
+    }
   }
 }
 
@@ -1734,25 +1831,32 @@ function drawFielders() {
     const text = group.children[idx * 2 + 1];
     
     if (circle) {
-      circle.setAttribute('cx', f.x);
-      circle.setAttribute('cy', f.y);
-      circle.setAttribute('r', f.state === 'CHASING' ? '7' : '5.5');
-      
-      let fill = '#f59e0b';
-      if (f.state === 'CHASING') fill = '#eab308';
-      else if (f.state === 'THROWING') fill = '#3b82f6';
-      circle.setAttribute('fill', fill);
+      if (f.x !== f.lastX || f.y !== f.lastY || f.state !== f.lastState) {
+        circle.setAttribute('cx', f.x);
+        circle.setAttribute('cy', f.y);
+        circle.setAttribute('r', f.state === 'CHASING' ? '7' : '5.5');
+        
+        let fill = '#f59e0b';
+        if (f.state === 'CHASING') fill = '#eab308';
+        else if (f.state === 'THROWING') fill = '#3b82f6';
+        circle.setAttribute('fill', fill);
+      }
     }
     
     if (text) {
-      text.setAttribute('x', f.x);
-      text.setAttribute('y', f.y - 9);
-      
-      let label = f.name;
-      if (f.state === 'CHASING') label += ' 🏃';
-      if (f.state === 'THROWING') label += ' 🎯';
-      text.textContent = label;
+      if (f.x !== f.lastX || f.y !== f.lastY || f.state !== f.lastState) {
+        text.setAttribute('x', f.x);
+        text.setAttribute('y', f.y - 9);
+        
+        let label = f.name;
+        if (f.state === 'CHASING') label += ' 🏃';
+        if (f.state === 'THROWING') label += ' 🎯';
+        text.textContent = label;
+      }
     }
+    f.lastX = f.x;
+    f.lastY = f.y;
+    f.lastState = f.state;
   });
 }
 
@@ -1805,6 +1909,7 @@ function bowlBall() {
   cricketHitBtn.style.opacity = '1';
   cricketMessage.className = 'message-container hidden';
   
+  lastFrameTime = performance.now();
   gameLoopActive = true;
   gameLoopId = requestAnimationFrame(gameLoop);
 }
@@ -1957,7 +2062,7 @@ function attemptHit() {
     
     setTimeout(() => {
       processHitResponse(outcomeRes);
-    }, 150);
+    }, 50);
   } else {
     gameState = 'PLAYING';
     cricketHitBtn.disabled = true;
@@ -1998,6 +2103,7 @@ function rollWeighted(weights) {
 }
 
 function processHitResponse(res) {
+  lastFrameTime = performance.now();
   gameLoopActive = true;
   gameLoopId = requestAnimationFrame(gameLoop);
   
@@ -2210,12 +2316,19 @@ function triggerFloatingRuns(runCount) {
   }
 }
 
-function gameLoop() {
+function gameLoop(timestamp) {
   if (!gameLoopActive) return;
+
+  if (!timestamp) timestamp = performance.now();
+  if (!lastFrameTime) lastFrameTime = timestamp;
+  let elapsed = timestamp - lastFrameTime;
+  if (elapsed > 100) elapsed = 16.666;
+  const dt = elapsed / 16.666;
+  lastFrameTime = timestamp;
 
   if (ball.state === 'BOWLED') {
     if (bowlingDirection === 1) {
-      ball.y += currentBallSpeedY;
+      ball.y += currentBallSpeedY * dt;
       
       // Dynamic swing/spin physics
       if (ballStyle === "Off-spin") {
@@ -2225,9 +2338,9 @@ function gameLoop() {
           playSfx('click'); // bounce sound
         }
       } else {
-        currentBallSpeedX += Math.sin(ball.y / 25) * 0.05;
+        currentBallSpeedX += Math.sin(ball.y / 25) * 0.05 * dt;
       }
-      ball.x += currentBallSpeedX;
+      ball.x += currentBallSpeedX * dt;
 
       if (ball.y >= 315) {
         ball.y = 315;
@@ -2235,7 +2348,7 @@ function gameLoop() {
         handleMissOutcome();
       }
     } else {
-      ball.y -= currentBallSpeedY;
+      ball.y -= currentBallSpeedY * dt;
       
       if (ballStyle === "Off-spin") {
         if (!hasBounced && ball.y <= bouncePointY) {
@@ -2244,9 +2357,9 @@ function gameLoop() {
           playSfx('click'); // bounce sound
         }
       } else {
-        currentBallSpeedX += Math.sin((450 - ball.y) / 25) * 0.05;
+        currentBallSpeedX += Math.sin((450 - ball.y) / 25) * 0.05 * dt;
       }
-      ball.x += currentBallSpeedX;
+      ball.x += currentBallSpeedX * dt;
 
       if (ball.y <= 135) {
         ball.y = 135;
@@ -2262,14 +2375,14 @@ function gameLoop() {
       indicator.setAttribute('cy', gy);
     }
   } else if (ball.state === 'HIT') {
-    ball.x += ball.vx;
-    ball.y += ball.vy;
+    ball.x += ball.vx * dt;
+    ball.y += ball.vy * dt;
 
     if (!ball.loft) {
-      ball.vx *= 0.985;
-      ball.vy *= 0.985;
+      ball.vx *= Math.pow(0.985, dt);
+      ball.vy *= Math.pow(0.985, dt);
     } else {
-      ball.loftProgress += 1 / ball.loftDuration;
+      ball.loftProgress += (1 / ball.loftDuration) * dt;
       if (ball.loftProgress >= 1) {
         ball.loft = false;
         ball.loftProgress = 0;
@@ -2294,9 +2407,9 @@ function gameLoop() {
     let dy = ball.targetY - ball.y;
     let distance = Math.sqrt(dx * dx + dy * dy);
     let throwSpeed = 7.5;
-    if (distance > throwSpeed) {
-      ball.x += (dx / distance) * throwSpeed;
-      ball.y += (dy / distance) * throwSpeed;
+    if (distance > throwSpeed * dt) {
+      ball.x += (dx / distance) * throwSpeed * dt;
+      ball.y += (dy / distance) * throwSpeed * dt;
     } else {
       ball.x = ball.targetX;
       ball.y = ball.targetY;
@@ -2307,7 +2420,7 @@ function gameLoop() {
 
   // Update all fielders
   fielders.forEach(f => {
-    f.update(ball.x, ball.y, f === activeFielder);
+    f.update(ball.x, ball.y, f === activeFielder, dt);
   });
 
   if (activeFielder) {
@@ -2346,19 +2459,19 @@ function gameLoop() {
             
             activeFielder.state = 'IDLE';
           }
-        }, 300);
+        }, 150);
       }
     }
   }
 
   if (batsmen.isRunning) {
     let dir1 = Math.sign(batsmen.target1Y - batsmen.batsman1Y);
-    batsmen.batsman1Y += dir1 * batsmen.speed;
+    batsmen.batsman1Y += dir1 * batsmen.speed * dt;
     if (dir1 > 0 && batsmen.batsman1Y >= batsmen.target1Y) batsmen.batsman1Y = batsmen.target1Y;
     if (dir1 < 0 && batsmen.batsman1Y <= batsmen.target1Y) batsmen.batsman1Y = batsmen.target1Y;
 
     let dir2 = Math.sign(batsmen.target2Y - batsmen.batsman2Y);
-    batsmen.batsman2Y += dir2 * batsmen.speed;
+    batsmen.batsman2Y += dir2 * batsmen.speed * dt;
     if (dir2 > 0 && batsmen.batsman2Y >= batsmen.target2Y) batsmen.batsman2Y = batsmen.target2Y;
     if (dir2 < 0 && batsmen.batsman2Y <= batsmen.target2Y) batsmen.batsman2Y = batsmen.target2Y;
 
@@ -2774,12 +2887,12 @@ function finishDelivery() {
         addCommentary(`${nextBowlerName} comes on to bowl the new over from the opposite end.`, 'system');
       }
 
-      const msg = overEnd ? "Over complete! Changing ends... next ball in 3s 🔄" : "Preparing next delivery... next ball in 2.5s ⚾";
+      const msg = overEnd ? "Over complete! Changing ends... next ball in 1.5s 🔄" : "Preparing next delivery... next ball in 1s ⚾";
       showCricketMessage(msg, overEnd ? 'success' : 'warning');
       
       isAutoBowlingTimeout = setTimeout(() => {
         bowlBall();
-      }, overEnd ? 3000 : 2500);
+      }, overEnd ? 1500 : 1000);
     }
   }
   
@@ -2833,6 +2946,7 @@ function toggleCricketPause() {
     
     // Restart game loop if needed
     if (gameState === 'BOWLING' || gameState === 'PLAYING') {
+      lastFrameTime = performance.now();
       gameLoopActive = true;
       gameLoopId = requestAnimationFrame(gameLoop);
     }
@@ -2842,8 +2956,8 @@ function toggleCricketPause() {
       const overEnd = cricketState.balls_faced > 0 && cricketState.balls_faced % 6 === 0;
       isAutoBowlingTimeout = setTimeout(() => {
         bowlBall();
-      }, overEnd ? 2500 : 2000);
-      showCricketMessage(overEnd ? "Over complete! Changing ends... next ball in 2.5s 🔄" : "Preparing next delivery... next ball in 2s ⚾", overEnd ? 'success' : 'warning');
+      }, overEnd ? 1500 : 1000);
+      showCricketMessage(overEnd ? "Over complete! Changing ends... next ball in 1.5s 🔄" : "Preparing next delivery... next ball in 1s ⚾", overEnd ? 'success' : 'warning');
     }
   }
 }

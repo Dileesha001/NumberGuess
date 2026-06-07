@@ -131,7 +131,7 @@ body::after {
   box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), var(--launcher-glow);
   text-align: center;
   backdrop-filter: blur(20px);
-  animation: floatIn 0.8s ease-out;
+  animation: floatIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .logo-wrapper {
@@ -304,7 +304,7 @@ body::after {
   transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
   max-width: 540px;
   margin: 0 auto;
-  animation: slideUp 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Customize Glowing Theme based on Active Game */
@@ -954,11 +954,14 @@ body::after {
   z-index: 100;
   border-radius: 32px;
   opacity: 1;
-  transition: opacity 0.3s ease;
+  visibility: visible;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
 }
 
 .how-to-play-overlay.hidden {
-  display: none !important;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .how-to-play-content {
@@ -2339,6 +2342,60 @@ body.test-match-active .cricket-commentary-box .commentary-lines {
   .top-bar-series-text {
     display: none;
   }
+}
+
+/* Quick Start Checkbox Styled Styling */
+.quick-start-option {
+  margin: 16px 0 8px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.quick-start-option input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.quick-start-option input[type="checkbox"]:checked {
+  background: var(--accent-cricket);
+  border-color: var(--accent-cricket);
+}
+
+.quick-start-option input[type="checkbox"]:checked::after {
+  content: '✓';
+  color: white;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.quick-start-option input[type="checkbox"]:hover {
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.quick-start-option label {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s ease;
+}
+
+.quick-start-option input[type="checkbox"]:checked + label {
+  color: var(--text-primary);
 }
 
 

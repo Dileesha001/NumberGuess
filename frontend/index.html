@@ -74,6 +74,16 @@
         </header>
 
         <div class="game-body">
+          <!-- Range visual tracker -->
+          <div class="range-tracker-container">
+            <div class="range-text">Range: <span id="range-min">1</span> - <span id="range-max">100</span></div>
+            <div class="range-visual-bar">
+              <div class="range-track"></div>
+              <div class="range-highlight" id="range-highlight-bar"></div>
+              <div class="range-marker" id="range-last-guess-marker"></div>
+            </div>
+          </div>
+
           <form id="guess-form" class="guess-form">
             <input 
               type="number" 
@@ -116,6 +126,9 @@
           <header class="game-header">
             <h1>Hangman</h1>
             <p>Guess the word by entering letters!</p>
+            <div id="hangman-category-container" class="hangman-category-container">
+              Category: <span id="hangman-category-name">-</span>
+            </div>
           </header>
 
           <div class="game-body">

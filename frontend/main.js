@@ -18,6 +18,8 @@ let secretNumber;
 let attempts;
 let isGameOver;
 let guessHistory = [];
+let minBound = 1;
+let maxBound = 100;
 
 // Statistics State
 let gameStats = {
@@ -402,40 +404,334 @@ function updateStatsUI() {
 
 // Hangman State
 const hangmanWords = [
-  'APPLE', 'BANANA', 'ELEPHANT', 'GUITAR', 'MOUNTAIN', 'OCEAN', 'PLANET', 'SUMMER', 'WINTER', 'BUTTERFLY', 
-  'SUNFLOWER', 'PENGUIN', 'DIAMOND', 'HOSPITAL', 'LIBRARY', 'ANIMAL', 'GIRAFFE', 'KANGAROO', 'OSTRICH', 
-  'PANTHER', 'CHEETAH', 'LEOPARD', 'TIGER', 'LION', 'MONKEY', 'GORILLA', 'CHIMPANZEE', 'ALLIGATOR', 
-  'CROCODILE', 'IGUANA', 'SNAKE', 'TURTLE', 'DOLPHIN', 'WHALE', 'SHARK', 'OCTOPUS', 'SQUID', 'LOBSTER', 
-  'CRAB', 'SEAGULL', 'PELICAN', 'EAGLE', 'HAWK', 'FALCON', 'OWL', 'WOODPECKER', 'PARROT', 'PIGEON', 
-  'SPARROW', 'SWALLOW', 'ROBIN', 'BLUEJAY', 'CARDINAL', 'HUMMINGBIRD', 'WOODS', 'FOREST', 'JUNGLE', 
-  'DESERT', 'TUNDRA', 'SAVANNA', 'VALLEY', 'CANYON', 'RIVER', 'STREAM', 'CREEK', 'LAKE', 'POND', 
-  'SEA', 'GULF', 'BAY', 'STRAIT', 'ISLAND', 'PENINSULA', 'CONTINENT', 'STAR', 'GALAXY', 'UNIVERSE', 
-  'ASTERIOD', 'COMET', 'METEOR', 'SATELLITE', 'ROCKET', 'SPACESHIP', 'ASTRONAUT', 'TELESCOPE', 
-  'OBSERVATORY', 'MICROSCOPE', 'LABORATORY', 'EXPERIMENT', 'CHEMISTRY', 'PHYSICS', 'BIOLOGY', 
-  'ASTRONOMY', 'GEOLOGY', 'METEOROLOGY', 'ECOLOGY', 'BOTANY', 'ZOOLOGY', 'ANATOMY', 'PHYSIOLOGY', 
-  'MEDICINE', 'SURGERY', 'DOCTOR', 'NURSE', 'CLINIC', 'PHARMACY', 'PRESCRIPTION', 'MEDICATION', 
-  'VACCINE', 'ANTIBIOTIC', 'VITAMIN', 'MINERAL', 'PROTEIN', 'CARBOHYDRATE', 'FAT', 'CALORIE', 
-  'NUTRITION', 'DIET', 'EXERCISE', 'WORKOUT', 'GYM', 'FITNESS', 'MUSCLE', 'BONE', 'JOINT', 'BLOOD', 
-  'HEART', 'LUNG', 'BRAIN', 'STOMACH', 'LIVER', 'KIDNEY', 'SKIN', 'HAIR', 'NAIL', 'TOOTH', 'DENTIST', 
-  'BRUSH', 'FLOSS', 'PASTE', 'MOUTH', 'TONGUE', 'THROAT', 'NOSE', 'EYE', 'EAR', 'HEAD', 'NECK', 
-  'SHOULDER', 'ARM', 'ELBOW', 'WRIST', 'HAND', 'FINGER', 'THUMB', 'CHEST', 'BACK', 'WAIST', 'HIP', 
-  'LEG', 'KNEE', 'ANKLE', 'FOOT', 'TOE', 'SHOE', 'SOCK', 'BOOT', 'SANDAL', 'SLIPPER', 'COAT', 
-  'JACKET', 'SWEATER', 'SHIRT', 'TSHIRT', 'BLOUSE', 'DRESS', 'SKIRT', 'PANTS', 'JEANS', 'SHORTS', 
-  'BELT', 'TIE', 'SCARF', 'GLOVE', 'HAT', 'CAP', 'HELMET', 'GLASSES', 'SUNGLASSES', 'WATCH', 
-  'CLOCK', 'TIMER', 'CALENDAR', 'DAY', 'WEEK', 'MONTH', 'YEAR', 'DECADE', 'CENTURY', 'MILLENNIUM', 
-  'SPRING', 'AUTUMN', 'SEASON', 'WEATHER', 'CLIMATE', 'TEMPERATURE', 'THERMOMETER', 'BAROMETER', 
-  'RAIN', 'SNOW', 'SLEET', 'HAIL', 'WIND', 'BREEZE', 'GALE', 'STORM', 'HURRICANE', 'TORNADO', 
-  'CYCLONE', 'TYPHOON', 'BLIZZARD', 'AVALANCHE', 'EARTHQUAKE', 'VOLCANO', 'TSUNAMI', 'FLOOD', 
-  'DROUGHT', 'WILDFIRE', 'FIRE', 'FLAME', 'SMOKE', 'ASH', 'COAL', 'WOOD', 'PAPER', 'CARDBOARD', 
-  'PLASTIC', 'GLASS', 'METAL', 'IRON', 'STEEL', 'COPPER', 'GOLD', 'SILVER', 'BRONZE', 'BRASS', 
-  'ALUMINUM', 'LEAD', 'ZINC', 'TIN', 'PLATINUM', 'RUBY', 'SAPPHIRE', 'EMERALD', 'PEARL', 'OPAL', 
-  'AMETHYST', 'TOPAZ', 'QUARTZ', 'GRANITE', 'MARBLE', 'LIMESTONE', 'SANDSTONE', 'CLAY', 'DIRT', 
-  'SOIL', 'SAND', 'DUST', 'MUD', 'ROCK', 'STONE', 'PEBBLE', 'BOULDER', 'GRAVEL', 'ASPHALT', 
-  'CONCRETE', 'CEMENT', 'BRICK', 'BLOCK', 'TILE', 'SHINGLE', 'ROOF', 'WALL', 'FLOOR', 'CEILING', 
-  'DOOR', 'WINDOW', 'ROOM', 'HOUSE', 'BUILDING', 'SKYSCRAPER', 'OFFICE', 'STORE', 'SHOP', 
-  'MARKET', 'SUPERMARKET', 'MALL', 'RESTAURANT', 'CAFE', 'BAKERY', 'BUTCHER', 'GROCERY', 
-  'BANK', 'POST', 'SCHOOL', 'COLLEGE', 'UNIVERSITY', 'MUSEUM', 'THEATER', 'CINEMA', 'STADIUM', 
-  'ARENA', 'PARK', 'GARDEN', 'ZOO', 'AQUARIUM'
+  // Fruits
+  { word: 'APPLE', category: 'Fruits' },
+  { word: 'BANANA', category: 'Fruits' },
+  // Animals
+  { word: 'ELEPHANT', category: 'Animals' },
+  { word: 'GIRAFFE', category: 'Animals' },
+  { word: 'KANGAROO', category: 'Animals' },
+  { word: 'PANTHER', category: 'Animals' },
+  { word: 'CHEETAH', category: 'Animals' },
+  { word: 'LEOPARD', category: 'Animals' },
+  { word: 'TIGER', category: 'Animals' },
+  { word: 'LION', category: 'Animals' },
+  { word: 'MONKEY', category: 'Animals' },
+  { word: 'GORILLA', category: 'Animals' },
+  { word: 'CHIMPANZEE', category: 'Animals' },
+  { word: 'ALLIGATOR', category: 'Animals' },
+  { word: 'CROCODILE', category: 'Animals' },
+  { word: 'IGUANA', category: 'Animals' },
+  { word: 'SNAKE', category: 'Animals' },
+  { word: 'TURTLE', category: 'Animals' },
+  { word: 'DOLPHIN', category: 'Animals' },
+  { word: 'WHALE', category: 'Animals' },
+  { word: 'SHARK', category: 'Animals' },
+  { word: 'OCTOPUS', category: 'Animals' },
+  { word: 'SQUID', category: 'Animals' },
+  { word: 'LOBSTER', category: 'Animals' },
+  { word: 'CRAB', category: 'Animals' },
+  { word: 'PENGUIN', category: 'Animals' },
+  // Music
+  { word: 'GUITAR', category: 'Music' },
+  // Nature
+  { word: 'MOUNTAIN', category: 'Nature' },
+  { word: 'OCEAN', category: 'Nature' },
+  { word: 'PLANET', category: 'Space' },
+  { word: 'SUMMER', category: 'Nature' },
+  { word: 'WINTER', category: 'Nature' },
+  { word: 'BUTTERFLY', category: 'Nature' },
+  { word: 'SUNFLOWER', category: 'Nature' },
+  { word: 'DIAMOND', category: 'Nature' },
+  // Birds
+  { word: 'SEAGULL', category: 'Birds' },
+  { word: 'PELICAN', category: 'Birds' },
+  { word: 'EAGLE', category: 'Birds' },
+  { word: 'HAWK', category: 'Birds' },
+  { word: 'FALCON', category: 'Birds' },
+  { word: 'OWL', category: 'Birds' },
+  { word: 'WOODPECKER', category: 'Birds' },
+  { word: 'PARROT', category: 'Birds' },
+  { word: 'PIGEON', category: 'Birds' },
+  { word: 'SPARROW', category: 'Birds' },
+  { word: 'SWALLOW', category: 'Birds' },
+  { word: 'ROBIN', category: 'Birds' },
+  { word: 'BLUEJAY', category: 'Birds' },
+  { word: 'CARDINAL', category: 'Birds' },
+  { word: 'HUMMINGBIRD', category: 'Birds' },
+  // Nature landscape
+  { word: 'WOODS', category: 'Nature' },
+  { word: 'FOREST', category: 'Nature' },
+  { word: 'JUNGLE', category: 'Nature' },
+  { word: 'DESERT', category: 'Nature' },
+  { word: 'TUNDRA', category: 'Nature' },
+  { word: 'SAVANNA', category: 'Nature' },
+  { word: 'VALLEY', category: 'Nature' },
+  { word: 'CANYON', category: 'Nature' },
+  { word: 'RIVER', category: 'Nature' },
+  { word: 'STREAM', category: 'Nature' },
+  { word: 'CREEK', category: 'Nature' },
+  { word: 'LAKE', category: 'Nature' },
+  { word: 'POND', category: 'Nature' },
+  { word: 'SEA', category: 'Nature' },
+  { word: 'GULF', category: 'Nature' },
+  { word: 'BAY', category: 'Nature' },
+  { word: 'STRAIT', category: 'Nature' },
+  { word: 'ISLAND', category: 'Nature' },
+  { word: 'PENINSULA', category: 'Nature' },
+  { word: 'CONTINENT', category: 'Nature' },
+  // Space
+  { word: 'STAR', category: 'Space' },
+  { word: 'GALAXY', category: 'Space' },
+  { word: 'UNIVERSE', category: 'Space' },
+  { word: 'ASTERIOD', category: 'Space' },
+  { word: 'COMET', category: 'Space' },
+  { word: 'METEOR', category: 'Space' },
+  { word: 'SATELLITE', category: 'Space' },
+  { word: 'ROCKET', category: 'Space' },
+  { word: 'SPACESHIP', category: 'Space' },
+  { word: 'ASTRONAUT', category: 'Space' },
+  { word: 'TELESCOPE', category: 'Space' },
+  // Science & Lab
+  { word: 'OBSERVATORY', category: 'Science' },
+  { word: 'MICROSCOPE', category: 'Science' },
+  { word: 'LABORATORY', category: 'Science' },
+  { word: 'EXPERIMENT', category: 'Science' },
+  { word: 'CHEMISTRY', category: 'Science' },
+  { word: 'PHYSICS', category: 'Science' },
+  { word: 'BIOLOGY', category: 'Science' },
+  { word: 'ASTRONOMY', category: 'Science' },
+  { word: 'GEOLOGY', category: 'Science' },
+  { word: 'METEOROLOGY', category: 'Science' },
+  { word: 'ECOLOGY', category: 'Science' },
+  { word: 'BOTANY', category: 'Science' },
+  { word: 'ZOOLOGY', category: 'Science' },
+  { word: 'ANATOMY', category: 'Science' },
+  { word: 'PHYSIOLOGY', category: 'Science' },
+  // Medicine
+  { word: 'MEDICINE', category: 'Medicine' },
+  { word: 'SURGERY', category: 'Medicine' },
+  { word: 'DOCTOR', category: 'Medicine' },
+  { word: 'NURSE', category: 'Medicine' },
+  { word: 'CLINIC', category: 'Medicine' },
+  { word: 'PHARMACY', category: 'Medicine' },
+  { word: 'PRESCRIPTION', category: 'Medicine' },
+  { word: 'MEDICATION', category: 'Medicine' },
+  { word: 'VACCINE', category: 'Medicine' },
+  { word: 'ANTIBIOTIC', category: 'Medicine' },
+  // Human Body
+  { word: 'VITAMIN', category: 'Human Body' },
+  { word: 'MINERAL', category: 'Human Body' },
+  { word: 'PROTEIN', category: 'Human Body' },
+  { word: 'CARBOHYDRATE', category: 'Human Body' },
+  { word: 'FAT', category: 'Human Body' },
+  { word: 'CALORIE', category: 'Human Body' },
+  { word: 'NUTRITION', category: 'Human Body' },
+  { word: 'DIET', category: 'Human Body' },
+  { word: 'EXERCISE', category: 'Human Body' },
+  { word: 'WORKOUT', category: 'Human Body' },
+  { word: 'GYM', category: 'Places' },
+  { word: 'FITNESS', category: 'Human Body' },
+  { word: 'MUSCLE', category: 'Human Body' },
+  { word: 'BONE', category: 'Human Body' },
+  { word: 'JOINT', category: 'Human Body' },
+  { word: 'BLOOD', category: 'Human Body' },
+  { word: 'HEART', category: 'Human Body' },
+  { word: 'LUNG', category: 'Human Body' },
+  { word: 'BRAIN', category: 'Human Body' },
+  { word: 'STOMACH', category: 'Human Body' },
+  { word: 'LIVER', category: 'Human Body' },
+  { word: 'KIDNEY', category: 'Human Body' },
+  { word: 'SKIN', category: 'Human Body' },
+  { word: 'HAIR', category: 'Human Body' },
+  { word: 'NAIL', category: 'Human Body' },
+  { word: 'TOOTH', category: 'Human Body' },
+  { word: 'DENTIST', category: 'Medicine' },
+  { word: 'BRUSH', category: 'Objects' },
+  { word: 'FLOSS', category: 'Objects' },
+  { word: 'PASTE', category: 'Objects' },
+  { word: 'MOUTH', category: 'Human Body' },
+  { word: 'TONGUE', category: 'Human Body' },
+  { word: 'THROAT', category: 'Human Body' },
+  { word: 'NOSE', category: 'Human Body' },
+  { word: 'EYE', category: 'Human Body' },
+  { word: 'EAR', category: 'Human Body' },
+  { word: 'HEAD', category: 'Human Body' },
+  { word: 'NECK', category: 'Human Body' },
+  { word: 'SHOULDER', category: 'Human Body' },
+  { word: 'ARM', category: 'Human Body' },
+  { word: 'ELBOW', category: 'Human Body' },
+  { word: 'WRIST', category: 'Human Body' },
+  { word: 'HAND', category: 'Human Body' },
+  { word: 'FINGER', category: 'Human Body' },
+  { word: 'THUMB', category: 'Human Body' },
+  { word: 'CHEST', category: 'Human Body' },
+  { word: 'BACK', category: 'Human Body' },
+  { word: 'WAIST', category: 'Human Body' },
+  { word: 'HIP', category: 'Human Body' },
+  { word: 'LEG', category: 'Human Body' },
+  { word: 'KNEE', category: 'Human Body' },
+  { word: 'ANKLE', category: 'Human Body' },
+  { word: 'FOOT', category: 'Human Body' },
+  { word: 'TOE', category: 'Human Body' },
+  // Clothing / Gear
+  { word: 'SHOE', category: 'Clothing' },
+  { word: 'SOCK', category: 'Clothing' },
+  { word: 'BOOT', category: 'Clothing' },
+  { word: 'SANDAL', category: 'Clothing' },
+  { word: 'SLIPPER', category: 'Clothing' },
+  { word: 'COAT', category: 'Clothing' },
+  { word: 'JACKET', category: 'Clothing' },
+  { word: 'SWEATER', category: 'Clothing' },
+  { word: 'SHIRT', category: 'Clothing' },
+  { word: 'TSHIRT', category: 'Clothing' },
+  { word: 'BLOUSE', category: 'Clothing' },
+  { word: 'DRESS', category: 'Clothing' },
+  { word: 'SKIRT', category: 'Clothing' },
+  { word: 'PANTS', category: 'Clothing' },
+  { word: 'JEANS', category: 'Clothing' },
+  { word: 'SHORTS', category: 'Clothing' },
+  { word: 'BELT', category: 'Clothing' },
+  { word: 'TIE', category: 'Clothing' },
+  { word: 'SCARF', category: 'Clothing' },
+  { word: 'GLOVE', category: 'Clothing' },
+  { word: 'HAT', category: 'Clothing' },
+  { word: 'CAP', category: 'Clothing' },
+  { word: 'HELMET', category: 'Clothing' },
+  { word: 'GLASSES', category: 'Clothing' },
+  { word: 'SUNGLASSES', category: 'Clothing' },
+  { word: 'WATCH', category: 'Clothing' },
+  // Weather
+  { word: 'CLOCK', category: 'Objects' },
+  { word: 'TIMER', category: 'Objects' },
+  { word: 'CALENDAR', category: 'Objects' },
+  { word: 'DAY', category: 'Time' },
+  { word: 'WEEK', category: 'Time' },
+  { word: 'MONTH', category: 'Time' },
+  { word: 'YEAR', category: 'Time' },
+  { word: 'DECADE', category: 'Time' },
+  { word: 'CENTURY', category: 'Time' },
+  { word: 'MILLENNIUM', category: 'Time' },
+  { word: 'SPRING', category: 'Weather' },
+  { word: 'AUTUMN', category: 'Weather' },
+  { word: 'SEASON', category: 'Weather' },
+  { word: 'WEATHER', category: 'Weather' },
+  { word: 'CLIMATE', category: 'Weather' },
+  { word: 'TEMPERATURE', category: 'Weather' },
+  { word: 'THERMOMETER', category: 'Weather' },
+  { word: 'BAROMETER', category: 'Weather' },
+  { word: 'RAIN', category: 'Weather' },
+  { word: 'SNOW', category: 'Weather' },
+  { word: 'SLEET', category: 'Weather' },
+  { word: 'HAIL', category: 'Weather' },
+  { word: 'WIND', category: 'Weather' },
+  { word: 'BREEZE', category: 'Weather' },
+  { word: 'GALE', category: 'Weather' },
+  { word: 'STORM', category: 'Weather' },
+  { word: 'HURRICANE', category: 'Weather' },
+  { word: 'TORNADO', category: 'Weather' },
+  { word: 'CYCLONE', category: 'Weather' },
+  { word: 'TYPHOON', category: 'Weather' },
+  { word: 'BLIZZARD', category: 'Weather' },
+  { word: 'AVALANCHE', category: 'Weather' },
+  { word: 'EARTHQUAKE', category: 'Weather' },
+  { word: 'VOLCANO', category: 'Weather' },
+  { word: 'TSUNAMI', category: 'Weather' },
+  { word: 'FLOOD', category: 'Weather' },
+  { word: 'DROUGHT', category: 'Weather' },
+  { word: 'WILDFIRE', category: 'Weather' },
+  { word: 'FIRE', category: 'Nature' },
+  { word: 'FLAME', category: 'Nature' },
+  { word: 'SMOKE', category: 'Nature' },
+  { word: 'ASH', category: 'Nature' },
+  { word: 'COAL', category: 'Nature' },
+  { word: 'WOOD', category: 'Nature' },
+  { word: 'PAPER', category: 'Objects' },
+  { word: 'CARDBOARD', category: 'Objects' },
+  // Materials
+  { word: 'PLASTIC', category: 'Materials' },
+  { word: 'GLASS', category: 'Materials' },
+  { word: 'METAL', category: 'Materials' },
+  { word: 'IRON', category: 'Materials' },
+  { word: 'STEEL', category: 'Materials' },
+  { word: 'COPPER', category: 'Materials' },
+  { word: 'GOLD', category: 'Materials' },
+  { word: 'SILVER', category: 'Materials' },
+  { word: 'BRONZE', category: 'Materials' },
+  { word: 'BRASS', category: 'Materials' },
+  { word: 'ALUMINUM', category: 'Materials' },
+  { word: 'LEAD', category: 'Materials' },
+  { word: 'ZINC', category: 'Materials' },
+  { word: 'TIN', category: 'Materials' },
+  { word: 'PLATINUM', category: 'Materials' },
+  { word: 'RUBY', category: 'Materials' },
+  { word: 'SAPPHIRE', category: 'Materials' },
+  { word: 'EMERALD', category: 'Materials' },
+  { word: 'PEARL', category: 'Materials' },
+  { word: 'OPAL', category: 'Materials' },
+  { word: 'AMETHYST', category: 'Materials' },
+  { word: 'TOPAZ', category: 'Materials' },
+  { word: 'QUARTZ', category: 'Materials' },
+  { word: 'GRANITE', category: 'Materials' },
+  { word: 'MARBLE', category: 'Materials' },
+  { word: 'LIMESTONE', category: 'Materials' },
+  { word: 'SANDSTONE', category: 'Materials' },
+  { word: 'CLAY', category: 'Materials' },
+  { word: 'DIRT', category: 'Nature' },
+  { word: 'SOIL', category: 'Nature' },
+  { word: 'SAND', category: 'Nature' },
+  { word: 'DUST', category: 'Nature' },
+  { word: 'MUD', category: 'Nature' },
+  { word: 'ROCK', category: 'Nature' },
+  { word: 'STONE', category: 'Nature' },
+  { word: 'PEBBLE', category: 'Nature' },
+  { word: 'BOULDER', category: 'Nature' },
+  { word: 'GRAVEL', category: 'Nature' },
+  { word: 'ASPHALT', category: 'Materials' },
+  { word: 'CONCRETE', category: 'Materials' },
+  { word: 'CEMENT', category: 'Materials' },
+  { word: 'BRICK', category: 'Materials' },
+  { word: 'BLOCK', category: 'Objects' },
+  { word: 'TILE', category: 'Materials' },
+  { word: 'SHINGLE', category: 'Materials' },
+  { word: 'ROOF', category: 'Places' },
+  { word: 'WALL', category: 'Places' },
+  { word: 'FLOOR', category: 'Places' },
+  { word: 'CEILING', category: 'Places' },
+  // Places
+  { word: 'DOOR', category: 'Places' },
+  { word: 'WINDOW', category: 'Places' },
+  { word: 'ROOM', category: 'Places' },
+  { word: 'HOUSE', category: 'Places' },
+  { word: 'BUILDING', category: 'Places' },
+  { word: 'SKYSCRAPER', category: 'Places' },
+  { word: 'OFFICE', category: 'Places' },
+  { word: 'STORE', category: 'Places' },
+  { word: 'SHOP', category: 'Places' },
+  { word: 'MARKET', category: 'Places' },
+  { word: 'SUPERMARKET', category: 'Places' },
+  { word: 'MALL', category: 'Places' },
+  { word: 'RESTAURANT', category: 'Places' },
+  { word: 'CAFE', category: 'Places' },
+  { word: 'BAKERY', category: 'Places' },
+  { word: 'BUTCHER', category: 'Places' },
+  { word: 'GROCERY', category: 'Places' },
+  { word: 'BANK', category: 'Places' },
+  { word: 'POST', category: 'Places' },
+  { word: 'SCHOOL', category: 'Places' },
+  { word: 'COLLEGE', category: 'Places' },
+  { word: 'UNIVERSITY', category: 'Places' },
+  { word: 'MUSEUM', category: 'Places' },
+  { word: 'THEATER', category: 'Places' },
+  { word: 'CINEMA', category: 'Places' },
+  { word: 'STADIUM', category: 'Places' },
+  { word: 'ARENA', category: 'Places' },
+  { word: 'PARK', category: 'Places' },
+  { word: 'GARDEN', category: 'Places' },
+  { word: 'ZOO', category: 'Places' },
+  { word: 'AQUARIUM', category: 'Places' },
+  { word: 'HOSPITAL', category: 'Places' },
+  { word: 'LIBRARY', category: 'Places' }
 ];
 
 let recentHangmanWords = [];
@@ -449,6 +745,7 @@ try {
 }
 
 let currentWord = '';
+let currentCategory = '';
 let guessedLetters = new Set();
 let wrongGuesses = 0;
 let isHangmanGameOver = false;
@@ -3044,6 +3341,11 @@ function initGame() {
   isGameOver = false;
   guessHistory = [];
   
+  // Reset Bounds for Range visualizer
+  minBound = 1;
+  maxBound = 100;
+  updateRangeUI(null);
+  
   // Reset UI
   updateAttempts();
   guessInput.value = '';
@@ -3068,6 +3370,35 @@ function initGame() {
 // Update attempts UI
 function updateAttempts() {
   attemptsCount.textContent = attempts;
+}
+
+// Update bounds visual range UI for Number Guessing
+function updateRangeUI(lastGuess) {
+  const minEl = document.getElementById('range-min');
+  const maxEl = document.getElementById('range-max');
+  const highlightBar = document.getElementById('range-highlight-bar');
+  const marker = document.getElementById('range-last-guess-marker');
+  
+  if (minEl) minEl.textContent = minBound;
+  if (maxEl) maxEl.textContent = maxBound;
+  
+  if (highlightBar) {
+    const leftPercent = ((minBound - 1) / 99) * 100;
+    const rightPercent = ((maxBound - 1) / 99) * 100;
+    const widthPercent = Math.max(0, rightPercent - leftPercent);
+    highlightBar.style.left = `${leftPercent}%`;
+    highlightBar.style.width = `${widthPercent}%`;
+  }
+  
+  if (marker) {
+    if (lastGuess !== null && lastGuess >= 1 && lastGuess <= 100) {
+      const markerPercent = ((lastGuess - 1) / 99) * 100;
+      marker.style.left = `${markerPercent}%`;
+      marker.style.display = 'block';
+    } else {
+      marker.style.display = 'none';
+    }
+  }
 }
 
 // Show message with specific type (error, warning, success)
@@ -3116,6 +3447,15 @@ function handleGuess(e) {
     return;
   }
   
+  // Guard: Avoid wasting attempts if guessing outside current visual range
+  if (guess < minBound || guess > maxBound) {
+    showMessage(`Out of current bounds! Guess a number between ${minBound} and ${maxBound}.`, 'warning');
+    playSfx('fail');
+    guessInput.value = '';
+    guessInput.focus();
+    return;
+  }
+  
   attempts++;
   updateAttempts();
   
@@ -3128,6 +3468,8 @@ function handleGuess(e) {
     chipClass = diff <= 10 ? 'close' : 'low';
     showMessage('Too low! Try again.', 'warning');
     playSfx('click');
+    minBound = Math.max(minBound, guess + 1);
+    updateRangeUI(guess);
     guessInput.value = '';
     guessInput.focus();
   } else if (guess > secretNumber) {
@@ -3135,6 +3477,8 @@ function handleGuess(e) {
     chipClass = diff <= 10 ? 'close' : 'high';
     showMessage('Too high! Try again.', 'warning');
     playSfx('click');
+    maxBound = Math.min(maxBound, guess - 1);
+    updateRangeUI(guess);
     guessInput.value = '';
     guessInput.focus();
   } else {
@@ -3143,6 +3487,9 @@ function handleGuess(e) {
     
     // Game Won
     isGameOver = true;
+    minBound = guess;
+    maxBound = guess;
+    updateRangeUI(guess);
     showMessage(`🎉 Congratulations!<br/>You guessed the number ${secretNumber} correctly!`, 'success');
     playSfx('success');
     
@@ -3308,13 +3655,15 @@ function disableAllKeyboardKeys() {
 }
 
 function initHangman() {
-  let availableWords = hangmanWords.filter(word => !recentHangmanWords.includes(word));
+  let availableWords = hangmanWords.filter(w => !recentHangmanWords.includes(w.word));
   if (availableWords.length === 0) {
     availableWords = hangmanWords;
     recentHangmanWords = [];
   }
   
-  currentWord = availableWords[Math.floor(Math.random() * availableWords.length)];
+  const chosen = availableWords[Math.floor(Math.random() * availableWords.length)];
+  currentWord = chosen.word;
+  currentCategory = chosen.category;
   
   recentHangmanWords.push(currentWord);
   if (recentHangmanWords.length > 100) {
@@ -3325,6 +3674,12 @@ function initHangman() {
     localStorage.setItem('hangmanRecentWords', JSON.stringify(recentHangmanWords));
   } catch (e) {
     console.error('Error writing to localStorage', e);
+  }
+
+  // Update Category display in HTML
+  const categoryNameEl = document.getElementById('hangman-category-name');
+  if (categoryNameEl) {
+    categoryNameEl.textContent = currentCategory;
   }
 
   guessedLetters.clear();

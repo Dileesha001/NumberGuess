@@ -695,7 +695,12 @@ body::after {
   transition: opacity 0.4s ease, stroke-dashoffset 0.4s ease;
 }
 
+.figure-part.hide-part {
+  opacity: 0;
+}
+
 .figure-part.show-part {
+  opacity: 1;
   stroke: var(--accent-hangman);
   filter: drop-shadow(0 0 6px var(--accent-hangman));
 }
@@ -2396,6 +2401,99 @@ body.test-match-active .cricket-commentary-box .commentary-lines {
 
 .quick-start-option input[type="checkbox"]:checked + label {
   color: var(--text-primary);
+}
+
+/* --- Range Visualizer Styles for Number Guessing --- */
+.range-tracker-container {
+  margin: 0 auto 24px auto;
+  max-width: 360px;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid var(--card-border);
+  backdrop-filter: blur(8px);
+}
+
+.range-text {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.range-text span {
+  color: var(--accent-number);
+  font-size: 1.15rem;
+  font-family: monospace;
+  font-weight: 800;
+  text-shadow: 0 0 8px rgba(6, 182, 212, 0.4);
+}
+
+.range-visual-bar {
+  position: relative;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  overflow: visible;
+  margin: 0 8px;
+}
+
+.range-track {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+}
+
+.range-highlight {
+  position: absolute;
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-number) 0%, #06b6d4 100%);
+  border-radius: 4px;
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.4);
+  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  left: 0%;
+  width: 100%;
+}
+
+.range-marker {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: var(--error-color);
+  border: 2.5px solid var(--text-primary);
+  border-radius: 50%;
+  top: -3px;
+  transform: translateX(-50%);
+  box-shadow: 0 0 8px var(--error-color);
+  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  left: 50%;
+  display: none;
+  z-index: 2;
+}
+
+/* --- Category display for Hangman --- */
+.hangman-category-container {
+  display: inline-block;
+  background: rgba(244, 63, 94, 0.08);
+  border: 1px solid rgba(244, 63, 94, 0.2);
+  color: var(--text-secondary);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-top: 12px;
+  margin-bottom: 8px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+#hangman-category-name {
+  color: var(--accent-hangman);
+  font-weight: 800;
+  text-shadow: 0 0 6px rgba(244, 63, 94, 0.3);
 }
 
 

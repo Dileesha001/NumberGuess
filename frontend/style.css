@@ -224,16 +224,10 @@ body::after {
   box-shadow: 0 20px 40px -10px rgba(244, 63, 94, 0.25), var(--hangman-glow);
 }
 
-.game-card[data-game="mini-cricket"]:hover {
+.game-card[data-game="cricker"]:hover {
   transform: translateY(-8px);
   border-color: rgba(16, 185, 129, 0.4);
   box-shadow: 0 20px 40px -10px rgba(16, 185, 129, 0.25), var(--cricket-glow);
-}
-
-.game-card[data-game="cricket-test"]:hover {
-  transform: translateY(-8px);
-  border-color: rgba(245, 158, 11, 0.4);
-  box-shadow: 0 20px 40px -10px rgba(245, 158, 11, 0.25), var(--cricket-test-glow);
 }
 
 .game-card.placeholder {
@@ -480,6 +474,28 @@ body::after {
 }
 
 .guess-btn:active {
+  transform: translateY(0);
+}
+
+.team-start-btn {
+  padding: 16px 32px;
+  border: none;
+  border-radius: 16px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: white;
+  background: var(--accent-cricket);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  width: 100%;
+}
+.team-start-btn:hover {
+  background: var(--accent-cricket-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 20px -5px rgba(16, 185, 129, 0.4);
+}
+.team-start-btn:active {
   transform: translateY(0);
 }
 

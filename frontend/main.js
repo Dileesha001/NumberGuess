@@ -4,11 +4,15 @@ let pathModule;
 let fsModule;
 let processModule;
 try {
-  const req = typeof window !== 'undefined' && window.require ? window.require : require;
-  execFile = req('child_process').execFile;
-  pathModule = req('path');
-  fsModule = req('fs');
-  processModule = req('process');
+  const req = (typeof window !== 'undefined' && window.require) ? window.require : (typeof require !== 'undefined' ? require : null);
+  if (req) {
+    execFile = req('child_process').execFile;
+    pathModule = req('path');
+    fsModule = req('fs');
+    processModule = req('process');
+  } else {
+    console.warn("Node integration not available (running in web browser)");
+  }
 } catch (e) {
   console.warn("Node integration not available", e);
 }
@@ -795,7 +799,10 @@ const cricketHitBtn = document.getElementById('cricket-hit-btn');
 const cricketRestartBtn = document.getElementById('cricket-restart-btn');
 const cricketBackBtn = document.getElementById('cricket-back-btn');
 const cricketHowToPlayModal = document.getElementById('cricket-how-to-play-modal');
-const cricketCloseHelpBtn = document.getElementById('cricket-close-help-btn');
+const cricketModeSelectModal = document.getElementById('cricket-mode-select-modal');
+const modeQuickMatchBtn = document.getElementById('mode-quick-match-btn');
+const modeTestCricketBtn = document.getElementById('mode-test-cricket-btn');
+const cricketModeCloseBtn = document.getElementById('cricket-mode-close-btn');
 
 const cricketTeamSelectModal = document.getElementById('cricket-team-select-modal');
 const cricketStartMatchBtn = document.getElementById('cricket-start-match-btn');
@@ -3355,6 +3362,13 @@ function showMenu() {
 }
 
 function showGame(gameId) {
+  if (gameId === 'cricker') {
+    playSfx('click');
+    if (cricketModeSelectModal) {
+      cricketModeSelectModal.classList.remove('hidden');
+    }
+    return;
+  }
   playSfx('click');
   gameLoopActive = false;
   if (gameLoopId) {
@@ -4015,6 +4029,36 @@ gameCards.forEach(card => {
     }
   });
 });
+
+if (cricketModeCloseBtn) {
+  cricketModeCloseBtn.addEventListener('click', () => {
+    playSfx('click');
+    cricketModeSelectModal.classList.add('hidden');
+  });
+}
+
+if (modeQuickMatchBtn) {
+  modeQuickMatchBtn.addEventListener('click', () => {
+    cricketModeSelectModal.classList.add('hidden');
+    showGame('mini-cricket');
+  });
+}
+
+if (modeTestCricketBtn) {
+  modeTestCricketBtn.addEventListener('click', () => {
+    cricketModeSelectModal.classList.add('hidden');
+    showGame('cricket-test');
+  });
+}
+
+if (cricketModeSelectModal) {
+  cricketModeSelectModal.addEventListener('click', (e) => {
+    if (e.target === cricketModeSelectModal) {
+      playSfx('click');
+      cricketModeSelectModal.classList.add('hidden');
+    }
+  });
+}
 
 // Start the game for the first time
 loadStats();

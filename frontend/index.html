@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <!-- Import 'Inter' font for a modern look -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./style.css" />
+    <link rel="stylesheet" href="./style.css?v=2" />
     <title>DPR Mini Games</title>
   </head>
   <body>
@@ -17,6 +17,28 @@
       <!-- Header Controls -->
       <div class="app-header-controls">
         <button id="mute-btn" class="icon-btn" title="Toggle Sound">🔊</button>
+      </div>
+
+      <!-- Cricket Mode Selection Modal -->
+      <div id="cricket-mode-select-modal" class="how-to-play-overlay hidden">
+        <div class="team-select-modal-box" style="max-width: 400px; text-align: center;">
+          <button id="cricket-mode-close-btn" class="icon-btn" style="position: absolute; top: 16px; right: 16px; font-size: 1.2rem; padding: 6px 10px; border-radius: 50%;">✕</button>
+          
+          <div class="team-modal-header" style="margin-bottom: 24px;">
+            <div class="team-modal-icon">🏏</div>
+            <h2 class="team-modal-title">Select Cricket Mode</h2>
+            <p class="team-modal-subtitle">Choose between a quick 2-over match or a classic Test match</p>
+          </div>
+          
+          <div style="display: flex; flex-direction: column; gap: 16px; width: 100%;">
+            <button id="mode-quick-match-btn" class="guess-btn" style="background: linear-gradient(135deg, var(--accent-cricket) 0%, #059669 100%); width: 100%; border: none;">
+              Quick Match (2 Overs)
+            </button>
+            <button id="mode-test-cricket-btn" class="guess-btn" style="background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%); width: 100%; border: none;">
+              Test Cricket (10 Wickets)
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Main Menu View -->
@@ -45,19 +67,15 @@
             <p>Guess the hidden word before it's too late.</p>
             <div class="card-stats">Record: <span class="card-stats-val" id="stats-hangman-val">-</span></div>
           </div>
-          <!-- Game 3: Mini Cricket -->
-          <div class="game-card" data-game="mini-cricket">
+          <!-- Game 3: Cricker -->
+          <div class="game-card" data-game="cricker">
             <div class="game-card-icon">🏏</div>
-            <h3>Mini Cricket</h3>
-            <p>Hit the ball to score runs before you get out.</p>
-            <div class="card-stats">High Score: <span class="card-stats-val" id="stats-cricket-val">-</span></div>
-          </div>
-          <!-- Game 4: Cricket Test Match -->
-          <div class="game-card" data-game="cricket-test">
-            <div class="game-card-icon">🏏</div>
-            <h3>Cricket Test</h3>
-            <p>Play a classic Test Match! Manual running: press W to run, S to turn back. Play until 10 wickets down.</p>
-            <div class="card-stats">High Score: <span class="card-stats-val" id="stats-test-cricket-val">-</span></div>
+            <h3>Cricker</h3>
+            <p>Play a Quick Match or a classic Test Match!</p>
+            <div class="card-stats">
+              Quick Best: <span class="card-stats-val" id="stats-cricket-val">-</span> | 
+              Test Best: <span class="card-stats-val" id="stats-test-cricket-val">-</span>
+            </div>
           </div>
         </div>
       </main>
@@ -841,6 +859,6 @@
       </div>
     </div>
     <div id="player-stats-tooltip" class="player-stats-tooltip hidden"></div>
-    <script type="module" src="./main.js"></script>
+    <script type="module" src="./main.js?v=2"></script>
   </body>
 </html>

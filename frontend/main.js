@@ -4,7 +4,7 @@ let pathModule;
 let fsModule;
 let processModule;
 try {
-  const req = (typeof window !== 'undefined' && window.require) ? window.require : (typeof require !== 'undefined' ? require : null);
+  const req = (typeof window !== 'undefined' && window['require']) ? window['require'] : (typeof globalThis !== 'undefined' && globalThis['require'] ? globalThis['require'] : null);
   if (req) {
     execFile = req('child_process').execFile;
     pathModule = req('path');
@@ -786,6 +786,10 @@ const mainMenu = document.getElementById('main-menu');
 const numberGuessGame = document.getElementById('number-guess-game');
 const backBtn = document.getElementById('back-btn');
 const gameCards = document.querySelectorAll('.game-card');
+console.log('mainMenu found:', !!mainMenu);
+console.log('numberGuessGame found:', !!numberGuessGame);
+console.log('backBtn found:', !!backBtn);
+console.log('gameCards count:', gameCards.length);
 
 // // --- Mini Cricket State & DOM ---
 let isTestMatch = false;
@@ -810,6 +814,7 @@ const cricketUserTeamSelect = document.getElementById('cricket-user-team');
 const cricketOppTeamSelect = document.getElementById('cricket-opp-team');
 const cricketScorecardModal = document.getElementById('cricket-scorecard-modal');
 const cricketCloseScorecardBtn = document.getElementById('cricket-close-scorecard-btn');
+const cricketCloseHelpBtn = document.getElementById('cricket-close-help-btn');
 const scorecardTabBatting = document.getElementById('scorecard-tab-batting');
 const scorecardTabBowling = document.getElementById('scorecard-tab-bowling');
 const scorecardSectionBatting = document.getElementById('scorecard-section-batting');
@@ -1993,7 +1998,6 @@ function updateCricketUI() {
   if (batter1 && batter2 && currentBowler) {
     const s1 = (strikerOnStrike === 1) ? batter1 : batter2;
     const s2 = (strikerOnStrike === 1) ? batter2 : batter1;
-    
     if (strikerNameEl) {
       strikerNameEl.textContent = s1.name;
       const strikerRow = document.getElementById('batter-striker-row');
@@ -2992,7 +2996,6 @@ function handleSafeRuns() {
   ballOutcomesHistory.push(lastOutcome);
   finishDelivery();
 }
-
 function checkRunOut() {
   let isSafe = true;
   if (ball.targetY === STUMPS_STRIKER.y) {
@@ -3362,6 +3365,7 @@ function showMenu() {
 }
 
 function showGame(gameId) {
+  console.log('showGame called with gameId:', gameId);
   if (gameId === 'cricker') {
     playSfx('click');
     if (cricketModeSelectModal) {
@@ -3807,13 +3811,13 @@ function handleHangmanGuess(e) {
 }
 
 // Event Listeners
-form.addEventListener('submit', handleGuess);
-restartBtn.addEventListener('click', initGame);
-backBtn.addEventListener('click', showMenu);
+if (form) form.addEventListener('submit', handleGuess);
+if (restartBtn) restartBtn.addEventListener('click', initGame);
+if (backBtn) backBtn.addEventListener('click', showMenu);
 
-hangmanForm.addEventListener('submit', handleHangmanGuess);
-hangmanRestartBtn.addEventListener('click', initHangman);
-hangmanBackBtn.addEventListener('click', showMenu);
+if (hangmanForm) hangmanForm.addEventListener('submit', handleHangmanGuess);
+if (hangmanRestartBtn) hangmanRestartBtn.addEventListener('click', initHangman);
+if (hangmanBackBtn) hangmanBackBtn.addEventListener('click', showMenu);
 
 if (cricketHitBtn) cricketHitBtn.addEventListener('click', handleCricketHit);
 if (cricketRestartBtn) cricketRestartBtn.addEventListener('click', initCricket);
@@ -3928,7 +3932,7 @@ setupTeamDropdown('user-team-dropdown', 'user-team-options', 'cricket-user-team'
 setupTeamDropdown('opp-team-dropdown', 'opp-team-options', 'cricket-opp-team', 'opp-select-flag', 'opp-select-name');
 
 // Close all dropdowns when clicking outside
-document.addEventListener('click', () => {
+document.addEventListener('click', (e) => {
   document.querySelectorAll('.team-custom-select.open').forEach(el => el.classList.remove('open'));
 });
 

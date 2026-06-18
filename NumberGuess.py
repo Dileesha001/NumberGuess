@@ -11,14 +11,14 @@ def number_guessing_game():
 
     while True:
         try:
-            # Get the user's guess
             guess = int(input("\nEnter your guess: "))
-            attempts += 1
 
             # Check if the guess is within the valid range
             if guess < 1 or guess > 100:
                 print("Out of bounds! Please guess a number between 1 and 100.")
                 continue
+
+            attempts += 1
 
             # Compare the guess to the secret number
             if guess < secret_number:

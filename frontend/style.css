@@ -131,7 +131,6 @@ body::after {
   box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), var(--launcher-glow);
   text-align: center;
   backdrop-filter: blur(20px);
-  animation: floatIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .logo-wrapper {
@@ -224,7 +223,7 @@ body::after {
   box-shadow: 0 20px 40px -10px rgba(244, 63, 94, 0.25), var(--hangman-glow);
 }
 
-.game-card[data-game="cricker"]:hover {
+.game-card[data-game="cricket"]:hover {
   transform: translateY(-8px);
   border-color: rgba(16, 185, 129, 0.4);
   box-shadow: 0 20px 40px -10px rgba(16, 185, 129, 0.25), var(--cricket-glow);
@@ -298,7 +297,6 @@ body::after {
   transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
   max-width: 540px;
   margin: 0 auto;
-  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Customize Glowing Theme based on Active Game */
@@ -658,6 +656,30 @@ body::after {
 @keyframes slideUp {
   0% { transform: translateY(20px); opacity: 0; }
   100% { transform: translateY(0); opacity: 1; }
+}
+
+/* Page Transitions */
+.menu-container,
+#number-guess-game,
+#hangman-game,
+#cricket-game {
+  transition: opacity 0.22s cubic-bezier(0.4, 0, 0.2, 1), transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: opacity, transform;
+}
+
+.fade-out {
+  opacity: 0 !important;
+  transform: scale(0.97) translateY(-6px) !important;
+}
+
+.fade-in {
+  opacity: 0 !important;
+  transform: scale(0.97) translateY(6px) !important;
+}
+
+.fade-in-active {
+  opacity: 1 !important;
+  transform: scale(1) translateY(0) !important;
 }
 
 @keyframes pulseTitle {
@@ -2517,6 +2539,229 @@ body.test-match-active .cricket-commentary-box .commentary-lines {
   color: var(--accent-hangman);
   font-weight: 800;
   text-shadow: 0 0 6px rgba(244, 63, 94, 0.3);
+}
+
+/* --- Visual & Graphic Enhancements --- */
+
+/* Card Spotlight Glassmorphism */
+.game-card {
+  position: relative;
+}
+.game-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(350px circle at var(--mouse-x, 0px) var(--mouse-y, 0px), rgba(255, 255, 255, 0.06), transparent 50%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+  z-index: 3;
+  border-radius: 24px;
+}
+.game-card:hover::after {
+  opacity: 1;
+}
+
+/* Animated SVG Launcher Icons */
+.svg-icon {
+  width: 90px;
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+.neon-icon {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.35));
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.game-card:hover .neon-icon {
+  transform: scale(1.12) rotate(4deg);
+}
+.game-card:hover .number-icon {
+  filter: drop-shadow(0 0 12px var(--accent-number));
+}
+.game-card:hover .hangman-icon {
+  filter: drop-shadow(0 0 12px var(--accent-hangman));
+}
+.game-card:hover .cricket-icon {
+  filter: drop-shadow(0 0 12px var(--accent-cricket));
+}
+
+@keyframes spinSlow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.spin-slow {
+  animation: spinSlow 15s linear infinite;
+  transform-origin: 50px 50px;
+}
+
+@keyframes pulseSlow {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+.pulse-slow {
+  animation: pulseSlow 3s ease-in-out infinite;
+  transform-origin: 65px 35px;
+}
+
+/* Cricket Crossed Bats Hover Animation */
+.game-card:hover .cricket-icon .tilt-left {
+  animation: tiltLeftSlight 0.8s ease-in-out infinite alternate;
+}
+.game-card:hover .cricket-icon .tilt-right {
+  animation: tiltRightSlight 0.8s ease-in-out infinite alternate;
+}
+@keyframes tiltLeftSlight {
+  0% { transform: rotate(0deg); transform-origin: 50px 50px; }
+  100% { transform: rotate(-8deg); transform-origin: 50px 50px; }
+}
+@keyframes tiltRightSlight {
+  0% { transform: rotate(0deg); transform-origin: 50px 50px; }
+  100% { transform: rotate(8deg); transform-origin: 50px 50px; }
+}
+
+/* --- TV-Style Broadcast Event Banners --- */
+.tv-event-banner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.8);
+  width: 90%;
+  max-width: 440px;
+  background: rgba(15, 23, 42, 0.9);
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 24px;
+  text-align: center;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(255, 255, 255, 0.1);
+  z-index: 100;
+  backdrop-filter: blur(15px);
+  pointer-events: none;
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.tv-event-banner.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.tv-event-banner.four-theme {
+  border-color: #10b981;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 40px rgba(16, 185, 129, 0.4);
+  background: linear-gradient(135deg, rgba(6, 78, 59, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%);
+}
+
+.tv-event-banner.six-theme {
+  border-color: #fbbf24;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 45px rgba(251, 191, 36, 0.5);
+  background: linear-gradient(135deg, rgba(120, 53, 4, 0.9) 0%, rgba(88, 28, 135, 0.9) 100%);
+}
+
+.tv-event-banner.wicket-theme {
+  border-color: #ef4444;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 40px rgba(239, 68, 68, 0.45);
+  background: linear-gradient(135deg, rgba(153, 27, 27, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%);
+  animation: flashRedBorder 0.4s ease infinite alternate;
+}
+
+@keyframes flashRedBorder {
+  0% { border-color: rgba(239, 68, 68, 0.5); }
+  100% { border-color: rgba(239, 68, 68, 1); }
+}
+
+.banner-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: bannerPopText 0.5s ease both;
+}
+
+.banner-title {
+  font-size: 3.2rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin: 0;
+  line-height: 1;
+}
+
+.four-theme .banner-title {
+  background: linear-gradient(to right, #34d399, #10b981);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
+.six-theme .banner-title {
+  background: linear-gradient(to right, #fef08a, #fbbf24, #f59e0b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 8px rgba(251, 191, 36, 0.5));
+}
+
+.wicket-theme .banner-title {
+  background: linear-gradient(to right, #fca5a5, #ef4444);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
+.banner-subtitle {
+  font-size: 1.15rem;
+  color: var(--text-primary);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+
+@keyframes bannerPopText {
+  0% { transform: scale(0.85); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* --- Hangman Tile Flip & Glowing Gallows Overrides --- */
+.figure-part.show-part {
+  opacity: 1 !important;
+  stroke: var(--accent-hangman) !important;
+  filter: drop-shadow(0 0 8px var(--accent-hangman)) drop-shadow(0 0 16px rgba(244, 63, 94, 0.5)) !important;
+  animation: neonGlowPulse 1.8s ease-in-out infinite alternate;
+}
+
+@keyframes neonGlowPulse {
+  0% { filter: drop-shadow(0 0 6px var(--accent-hangman)) drop-shadow(0 0 10px rgba(244, 63, 94, 0.4)); }
+  100% { filter: drop-shadow(0 0 10px var(--accent-hangman)) drop-shadow(0 0 20px rgba(244, 63, 94, 0.7)); }
+}
+
+.letter-box {
+  perspective: 1000px;
+}
+.letter-box:not(:empty) {
+  border-bottom-color: var(--accent-hangman) !important;
+  color: var(--text-primary) !important;
+  text-shadow: 0 0 10px rgba(244, 63, 94, 0.5) !important;
+  animation: flipTileY 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both !important;
+}
+
+@keyframes flipTileY {
+  0% { transform: rotateY(-90deg) scale(0.8); opacity: 0; }
+  100% { transform: rotateY(0deg) scale(1); opacity: 1; }
+}
+
+/* Number Guessing spectrum highlighter */
+#number-guess-game .range-highlight {
+  background: linear-gradient(90deg, #0891b2 0%, var(--accent-number) 50%, #22d3ee 100%) !important;
+  box-shadow: 0 0 15px rgba(6, 182, 212, 0.6) !important;
+}
+
+/* Ball trajectory line and shadow animations */
+#cricket-ball-shadow {
+  transition: opacity 0.1s ease;
 }
 
 

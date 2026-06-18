@@ -43,7 +43,13 @@ let ballOutcomesHistory = [];
 
 function initAudio() {
   if (!audioCtx) {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (AudioContextClass) {
+      audioCtx = new AudioContextClass();
+    } else {
+      console.warn("Web Audio API not supported");
+      return;
+    }
   }
   if (audioCtx && !bowlNoiseBuffer) {
     try {
@@ -63,6 +69,7 @@ function playSfx(type) {
   if (isMuted) return;
   try {
     initAudio();
+    if (!audioCtx) return;
     if (audioCtx.state === 'suspended') {
       audioCtx.resume();
     }
@@ -207,11 +214,18 @@ function loadStats() {
     const stored = localStorage.getItem('dpr_mini_games_stats');
     if (stored) {
       const parsed = JSON.parse(stored);
-      gameStats = { 
-        ...gameStats, 
-        ...parsed,
-        cricketTest: parsed.cricketTest || { highRun: 0, gamesPlayed: 0 }
-      };
+      if (parsed.numberGuess) {
+        gameStats.numberGuess = { ...gameStats.numberGuess, ...parsed.numberGuess };
+      }
+      if (parsed.hangman) {
+        gameStats.hangman = { ...gameStats.hangman, ...parsed.hangman };
+      }
+      if (parsed.cricket) {
+        gameStats.cricket = { ...gameStats.cricket, ...parsed.cricket };
+      }
+      if (parsed.cricketTest) {
+        gameStats.cricketTest = { ...gameStats.cricketTest, ...parsed.cricketTest };
+      }
     }
   } catch (e) {
     console.error("Failed to load stats from localStorage", e);
@@ -488,7 +502,7 @@ const hangmanWords = [
   { word: 'STAR', category: 'Space' },
   { word: 'GALAXY', category: 'Space' },
   { word: 'UNIVERSE', category: 'Space' },
-  { word: 'ASTERIOD', category: 'Space' },
+  { word: 'ASTEROID', category: 'Space' },
   { word: 'COMET', category: 'Space' },
   { word: 'METEOR', category: 'Space' },
   { word: 'SATELLITE', category: 'Space' },
@@ -1720,11 +1734,11 @@ function showPostMatchScorecard() {
     if (histEntry) {
       tempBattingScorecard.push(histEntry);
     } else if (batter1 && batter1.name === name && batter1.name !== "No Batter") {
-      tempBattingScorecard.push({ name: batter1.name, runs: batter1.runs, balls: batter1.balls, status: "Not Out" });
+      tempBattingScorecard.push({ name: batter1.name, runs: batter1.runs, balls: batter1.balls, status: "Not Out", fours: batter1.fours || 0, sixes: batter1.sixes || 0 });
     } else if (batter2 && batter2.name === name && batter2.name !== "No Batter") {
-      tempBattingScorecard.push({ name: batter2.name, runs: batter2.runs, balls: batter2.balls, status: "Not Out" });
+      tempBattingScorecard.push({ name: batter2.name, runs: batter2.runs, balls: batter2.balls, status: "Not Out", fours: batter2.fours || 0, sixes: batter2.sixes || 0 });
     } else {
-      tempBattingScorecard.push({ name: name, runs: 0, balls: 0, status: "Did Not Bat" });
+      tempBattingScorecard.push({ name: name, runs: 0, balls: 0, status: "Did Not Bat", fours: 0, sixes: 0 });
     }
   });
 
@@ -1735,13 +1749,13 @@ function showPostMatchScorecard() {
     
     if (b.status === "Not Out") {
       displayStatus = `<span style="color: var(--success-color); font-weight: bold;">Not Out</span>`;
-      scoreDisplay = `<span class="player-runs" style="color: var(--accent-cricket);">${b.runs} <span style="font-size: 0.85rem; font-weight: normal; color: var(--text-secondary);">(${b.balls}b)</span></span>`;
+      scoreDisplay = `<span class="player-runs" style="color: var(--accent-cricket); font-weight: bold; font-family: monospace;">${b.runs} <span style="font-size: 0.85rem; font-weight: normal; color: var(--text-secondary);">(${b.balls}b, ${b.fours || 0}x4, ${b.sixes || 0}x6)</span></span>`;
     } else if (b.status === "Out") {
       displayStatus = `<span style="color: var(--error-color);">Out</span>`;
-      scoreDisplay = `<span class="player-runs" style="color: var(--accent-cricket);">${b.runs} <span style="font-size: 0.85rem; font-weight: normal; color: var(--text-secondary);">(${b.balls}b)</span></span>`;
+      scoreDisplay = `<span class="player-runs" style="color: var(--accent-cricket); font-weight: bold; font-family: monospace;">${b.runs} <span style="font-size: 0.85rem; font-weight: normal; color: var(--text-secondary);">(${b.balls}b, ${b.fours || 0}x4, ${b.sixes || 0}x6)</span></span>`;
     } else {
       displayStatus = `<span style="color: var(--text-muted);">Did Not Bat</span>`;
-      scoreDisplay = `<span class="player-runs" style="color: var(--text-muted);">-</span>`;
+      scoreDisplay = `<span class="player-runs" style="color: var(--text-muted); font-family: monospace;">-</span>`;
     }
 
     battingHtml += `
@@ -1763,7 +1777,7 @@ function showPostMatchScorecard() {
       bowlingHtml += `
         <div class="player-stat-row" style="padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
           <span class="player-name" style="font-weight: 600; color: #a5b4fc; display: inline-flex; align-items: center;"><span class="player-name-hoverable" data-player-name="${name}">${name}</span></span>
-          <span class="player-runs" style="color: #a5b4fc;">Overs: ${overs} | Runs: ${stats.runs} | Wkts: ${stats.wickets} | Econ: ${econ}</span>
+          <span class="player-runs" style="color: #a5b4fc; font-family: monospace;">Overs: ${overs} | Runs: ${stats.runs} | Wkts: ${stats.wickets} | Econ: ${econ}</span>
         </div>
       `;
     }
@@ -2056,6 +2070,30 @@ function updateSVGDOM() {
     }
   }
 
+  const shadowEl = document.getElementById('cricket-ball-shadow');
+  if (shadowEl) {
+    if (ball.state !== 'IDLE' && ball.state !== 'DEAD') {
+      let shadowRadius = 5;
+      let shadowBlur = 1;
+      let opacity = 0.45;
+      let offset = 0;
+      if (ball.loft) {
+        let h = Math.sin(ball.loftProgress * Math.PI) * ball.maxLoftHeight;
+        shadowRadius = 5 + h * 0.1;
+        shadowBlur = 1 + h * 0.25;
+        opacity = Math.max(0.1, 0.45 - h * 0.008);
+        offset = h * 0.4;
+      }
+      shadowEl.setAttribute('cx', ball.x);
+      shadowEl.setAttribute('cy', ball.y + offset);
+      shadowEl.setAttribute('r', shadowRadius);
+      shadowEl.style.opacity = opacity;
+      shadowEl.style.filter = `blur(${shadowBlur}px)`;
+    } else {
+      shadowEl.style.opacity = '0';
+    }
+  }
+
   let strikerFill = '#3b82f6'; // default blue
   let nonStrikerFill = '#60a5fa'; // default light blue
   let bowlerFill = '#ef4444'; // default red
@@ -2309,7 +2347,9 @@ function attemptHit() {
     
     const batEl = document.getElementById('cricket-bat');
     if (batEl) {
-      batEl.style.transform = 'rotate(-75deg)';
+      const swingRot = (bowlingDirection === 1) ? -75 : 75;
+      batEl.style.transform = `rotate(${swingRot}deg)`;
+      triggerBatSwingTrail(swingRot);
     }
 
     // Direct client-side physical outcome calculation (instant, lag-free)
@@ -2426,7 +2466,9 @@ function attemptHit() {
     
     const batEl = document.getElementById('cricket-bat');
     if (batEl) {
-      batEl.style.transform = 'rotate(-45deg)';
+      const swingRot = (bowlingDirection === 1) ? -45 : 45;
+      batEl.style.transform = `rotate(${swingRot}deg)`;
+      triggerBatSwingTrail(swingRot);
     }
   }
 }
@@ -2875,6 +2917,12 @@ function gameLoop(timestamp) {
 }
 
 function handleBoundary(runs) {
+  if (runs === 6) {
+    triggerTvBanner("SIX!", "OUT OF THE PARK! 💥", "six-theme");
+  } else if (runs === 4) {
+    triggerTvBanner("FOUR!", "CRACKED TO THE ROPE! 🏏", "four-theme");
+  }
+
   if (isTestMatch) {
     cricketState.runs += runs;
     cricketState.balls_faced++;
@@ -2907,6 +2955,11 @@ function handleBoundary(runs) {
 }
 
 function handleCaughtOut() {
+  if (batter1 && batter2) {
+    let activeBatter = (strikerOnStrike === 1) ? batter1 : batter2;
+    triggerTvBanner("WICKET!", `${activeBatter.name} CAUGHT! 🛑`, "wicket-theme");
+  }
+
   if (isTestMatch) {
     cricketState.wickets++;
     cricketState.balls_faced++;
@@ -3016,6 +3069,11 @@ function checkRunOut() {
       if (batsmen.target2Y === 145 && batsmen.batsman2Y > 150) outBatterNum = 2;
     }
 
+    if (batter1 && batter2) {
+      let outBatter = (outBatterNum === 1) ? batter1 : batter2;
+      triggerTvBanner("WICKET!", `${outBatter.name} RUN OUT! 🛑`, "wicket-theme");
+    }
+
     if (isTestMatch) {
       cricketState.wickets++;
       cricketState.runs += batsmen.completedRuns;
@@ -3079,6 +3137,7 @@ function handleMissOutcome() {
 
     if (batter1 && batter2 && currentBowler) {
       let activeBatter = (strikerOnStrike === 1) ? batter1 : batter2;
+      triggerTvBanner("WICKET!", `${activeBatter.name} BOWLED! 🛑`, "wicket-theme");
       activeBatter.balls++;
       currentBowler.balls++;
       currentBowler.wickets++;
@@ -3120,6 +3179,84 @@ function handleCricketHit() {
   }
 }
 
+function triggerTvBanner(title, subtitle, themeClass) {
+  const banner = document.getElementById('cricket-tv-event-banner');
+  const titleEl = document.getElementById('tv-banner-title');
+  const subtitleEl = document.getElementById('tv-banner-subtitle');
+  if (!banner || !titleEl || !subtitleEl) return;
+  
+  titleEl.textContent = title;
+  subtitleEl.textContent = subtitle;
+  
+  banner.className = 'tv-event-banner show ' + themeClass;
+  
+  setTimeout(() => {
+    banner.classList.remove('show');
+    setTimeout(() => {
+      banner.className = 'tv-event-banner hidden';
+    }, 450);
+  }, 2200);
+}
+
+function triggerBatSwingTrail(angle) {
+  const trail = document.getElementById('cricket-bat-trail');
+  if (!trail) return;
+  
+  const pivotX = 225;
+  const pivotY = batsmen.batsman1Y;
+  const r = 18;
+  
+  const startAngle = (bowlingDirection === 1) ? (315 * Math.PI / 180) : (135 * Math.PI / 180);
+  const endAngle = startAngle + (angle * Math.PI / 180);
+  
+  const sx = pivotX + r * Math.cos(startAngle);
+  const sy = pivotY + r * Math.sin(startAngle);
+  const ex = pivotX + r * Math.cos(endAngle);
+  const ey = pivotY + r * Math.sin(endAngle);
+  
+  const sweepFlag = angle < 0 ? 0 : 1;
+  const d = `M ${sx} ${sy} A ${r} ${r} 0 0 ${sweepFlag} ${ex} ${ey}`;
+  
+  trail.setAttribute('d', d);
+  trail.style.opacity = '1';
+  
+  setTimeout(() => {
+    trail.style.opacity = '0';
+  }, 250);
+}
+
+function changeBowlerForNewOver() {
+  const overEnd = cricketState.balls_faced > 0 && cricketState.balls_faced % 6 === 0;
+  if (overEnd) {
+    strikerOnStrike = (strikerOnStrike === 1) ? 2 : 1;
+    const remainingBowlers = bowlersList.filter(name => name !== currentBowler.name);
+    let nextBowlerName = "";
+    if (remainingBowlers.length > 0) {
+      let totalWeight = 0;
+      remainingBowlers.forEach(name => {
+        totalWeight += BOWLER_WEIGHTS[name] || 3;
+      });
+      let rand = Math.random() * totalWeight;
+      let cumulativeWeight = 0;
+      for (let i = 0; i < remainingBowlers.length; i++) {
+        const name = remainingBowlers[i];
+        cumulativeWeight += BOWLER_WEIGHTS[name] || 3;
+        if (rand <= cumulativeWeight) {
+          nextBowlerName = name;
+          break;
+        }
+      }
+    } else {
+      nextBowlerName = bowlersList[0];
+    }
+    
+    if (!bowlerStatsMap[nextBowlerName]) {
+      bowlerStatsMap[nextBowlerName] = { name: nextBowlerName, balls: 0, runs: 0, wickets: 0 };
+    }
+    currentBowler = bowlerStatsMap[nextBowlerName];
+    addCommentary(`${nextBowlerName} comes on to bowl the new over from the opposite end.`, 'system');
+  }
+}
 
 function finishDelivery() {
   gameLoopActive = false;
@@ -3173,36 +3310,7 @@ function finishDelivery() {
         isAutoBowlingTimeout = null;
       }
       
-      const overEnd = cricketState.balls_faced > 0 && cricketState.balls_faced % 6 === 0;
-      if (overEnd) {
-        strikerOnStrike = (strikerOnStrike === 1) ? 2 : 1;
-        const remainingBowlers = bowlersList.filter(name => name !== currentBowler.name);
-        let nextBowlerName = "";
-        if (remainingBowlers.length > 0) {
-          let totalWeight = 0;
-          remainingBowlers.forEach(name => {
-            totalWeight += BOWLER_WEIGHTS[name] || 3;
-          });
-          let rand = Math.random() * totalWeight;
-          let cumulativeWeight = 0;
-          for (let i = 0; i < remainingBowlers.length; i++) {
-            const name = remainingBowlers[i];
-            cumulativeWeight += BOWLER_WEIGHTS[name] || 3;
-            if (rand <= cumulativeWeight) {
-              nextBowlerName = name;
-              break;
-            }
-          }
-        } else {
-          nextBowlerName = bowlersList[0];
-        }
-        
-        if (!bowlerStatsMap[nextBowlerName]) {
-          bowlerStatsMap[nextBowlerName] = { name: nextBowlerName, balls: 0, runs: 0, wickets: 0 };
-        }
-        currentBowler = bowlerStatsMap[nextBowlerName];
-        addCommentary(`${nextBowlerName} comes on to bowl the new over from the opposite end.`, 'system');
-      }
+      changeBowlerForNewOver();
     } else {
       if (cricketHitBtn) {
         cricketHitBtn.disabled = false;
@@ -3216,36 +3324,7 @@ function finishDelivery() {
       }
       
       const overEnd = cricketState.balls_faced > 0 && cricketState.balls_faced % 6 === 0;
-      
-      if (overEnd) {
-        strikerOnStrike = (strikerOnStrike === 1) ? 2 : 1;
-        const remainingBowlers = bowlersList.filter(name => name !== currentBowler.name);
-        let nextBowlerName = "";
-        if (remainingBowlers.length > 0) {
-          let totalWeight = 0;
-          remainingBowlers.forEach(name => {
-            totalWeight += BOWLER_WEIGHTS[name] || 3;
-          });
-          let rand = Math.random() * totalWeight;
-          let cumulativeWeight = 0;
-          for (let i = 0; i < remainingBowlers.length; i++) {
-            const name = remainingBowlers[i];
-            cumulativeWeight += BOWLER_WEIGHTS[name] || 3;
-            if (rand <= cumulativeWeight) {
-              nextBowlerName = name;
-              break;
-            }
-          }
-        } else {
-          nextBowlerName = bowlersList[0];
-        }
-        
-        if (!bowlerStatsMap[nextBowlerName]) {
-          bowlerStatsMap[nextBowlerName] = { name: nextBowlerName, balls: 0, runs: 0, wickets: 0 };
-        }
-        currentBowler = bowlerStatsMap[nextBowlerName];
-        addCommentary(`${nextBowlerName} comes on to bowl the new over from the opposite end.`, 'system');
-      }
+      changeBowlerForNewOver();
 
       if (isTestMatch) {
         const msg = overEnd ? "Over complete! Changing ends... next ball in 4s 🔄" : "Preparing next delivery... next ball in 3s ⚾";
@@ -3323,15 +3402,53 @@ function toggleCricketPause() {
     // Resume auto-bowling if it was paused
     if (pausedAutoBowling) {
       const overEnd = cricketState.balls_faced > 0 && cricketState.balls_faced % 6 === 0;
+      const delay = isTestMatch ? (overEnd ? 4000 : 3000) : (overEnd ? 1500 : 1000);
       isAutoBowlingTimeout = setTimeout(() => {
         bowlBall();
-      }, overEnd ? 1500 : 1000);
-      showCricketMessage(overEnd ? "Over complete! Changing ends... next ball in 1.5s 🔄" : "Preparing next delivery... next ball in 1s ⚾", overEnd ? 'success' : 'warning');
+      }, delay);
+      const msg = isTestMatch 
+        ? (overEnd ? "Over complete! Changing ends... next ball in 4s 🔄" : "Preparing next delivery... next ball in 3s ⚾")
+        : (overEnd ? "Over complete! Changing ends... next ball in 1.5s 🔄" : "Preparing next delivery... next ball in 1s ⚾");
+      showCricketMessage(msg, overEnd ? 'success' : 'warning');
     }
   }
 }
 
 // Navigation Logic
+function getActiveView() {
+  const views = [mainMenu, numberGuessGame, hangmanGameView, cricketGameView];
+  return views.find(v => v && !v.classList.contains('hidden'));
+}
+
+function transitionView(fromView, toView, onMiddle) {
+  if (!fromView || !toView) {
+    if (onMiddle) onMiddle();
+    if (toView) toView.classList.remove('hidden');
+    return;
+  }
+
+  fromView.classList.add('fade-out');
+  
+  setTimeout(() => {
+    fromView.classList.add('hidden');
+    fromView.classList.remove('fade-out');
+    
+    if (onMiddle) onMiddle();
+    
+    toView.classList.remove('hidden');
+    toView.classList.add('fade-in');
+    
+    // Force reflow
+    void toView.offsetWidth;
+    
+    toView.classList.add('fade-in-active');
+    
+    setTimeout(() => {
+      toView.classList.remove('fade-in', 'fade-in-active');
+    }, 250);
+  }, 220);
+}
+
 function showMenu() {
   gameLoopActive = false;
   if (gameLoopId) {
@@ -3350,23 +3467,32 @@ function showMenu() {
   }
   loadStats();
   
-  // Exit fullscreen and reset body active class
-  document.body.classList.remove('test-match-active');
-  if (document.fullscreenElement) {
-    document.exitFullscreen().catch(err => console.warn(err));
+  const activeView = getActiveView();
+  if (activeView && activeView !== mainMenu) {
+    transitionView(activeView, mainMenu, () => {
+      document.body.classList.remove('test-match-active');
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(err => console.warn(err));
+      }
+    });
+  } else {
+    document.body.classList.remove('test-match-active');
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(err => console.warn(err));
+    }
+    mainMenu.classList.remove('hidden');
+    numberGuessGame.classList.add('hidden');
+    hangmanGameView.classList.add('hidden');
+    if (cricketGameView) cricketGameView.classList.add('hidden');
   }
   
-  mainMenu.classList.remove('hidden');
-  numberGuessGame.classList.add('hidden');
-  hangmanGameView.classList.add('hidden');
-  if (cricketGameView) cricketGameView.classList.add('hidden');
   if (cricketScorecardModal) cricketScorecardModal.classList.add('hidden');
   if (cricketPlayingXiModal) cricketPlayingXiModal.classList.add('hidden');
 }
 
 function showGame(gameId) {
   console.log('showGame called with gameId:', gameId);
-  if (gameId === 'cricker') {
+  if (gameId === 'cricket') {
     playSfx('click');
     if (cricketModeSelectModal) {
       cricketModeSelectModal.classList.remove('hidden');
@@ -3383,35 +3509,63 @@ function showGame(gameId) {
     clearTimeout(isAutoBowlingTimeout);
     isAutoBowlingTimeout = null;
   }
-  mainMenu.classList.add('hidden');
-  numberGuessGame.classList.add('hidden');
-  hangmanGameView.classList.add('hidden');
-  if (cricketGameView) cricketGameView.classList.add('hidden');
-  
-  // Clean up fullscreen state before entering other games
-  document.body.classList.remove('test-match-active');
-  if (document.fullscreenElement) {
-    document.exitFullscreen().catch(err => console.warn(err));
-  }
-  
+
+  const activeView = getActiveView();
+  let targetView = null;
+  let setupCallback = null;
+
   if (gameId === 'number-guess') {
-    numberGuessGame.classList.remove('hidden');
-    initGame();
+    targetView = numberGuessGame;
+    setupCallback = () => {
+      initGame();
+    };
   } else if (gameId === 'hangman') {
-    hangmanGameView.classList.remove('hidden');
-    initHangman();
+    targetView = hangmanGameView;
+    setupCallback = () => {
+      initHangman();
+    };
   } else if (gameId === 'mini-cricket') {
-    isTestMatch = false;
-    cricketGameView.classList.remove('hidden');
-    initCricket();
+    targetView = cricketGameView;
+    setupCallback = () => {
+      isTestMatch = false;
+      initCricket();
+    };
   } else if (gameId === 'cricket-test') {
-    isTestMatch = true;
-    document.body.classList.add('test-match-active');
-    if (document.documentElement.requestFullscreen) {
-      document.documentElement.requestFullscreen().catch(err => console.warn(err));
+    targetView = cricketGameView;
+    setupCallback = () => {
+      isTestMatch = true;
+      document.body.classList.add('test-match-active');
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(err => console.warn(err));
+      }
+      initCricket();
+    };
+  }
+
+  if (activeView && targetView && activeView !== targetView) {
+    transitionView(activeView, targetView, () => {
+      if (gameId !== 'cricket-test') {
+        document.body.classList.remove('test-match-active');
+        if (document.fullscreenElement) {
+          document.exitFullscreen().catch(err => console.warn(err));
+        }
+      }
+      if (setupCallback) setupCallback();
+    });
+  } else {
+    mainMenu.classList.add('hidden');
+    numberGuessGame.classList.add('hidden');
+    hangmanGameView.classList.add('hidden');
+    if (cricketGameView) cricketGameView.classList.add('hidden');
+
+    if (gameId !== 'cricket-test') {
+      document.body.classList.remove('test-match-active');
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(err => console.warn(err));
+      }
     }
-    cricketGameView.classList.remove('hidden');
-    initCricket();
+    if (setupCallback) setupCallback();
+    if (targetView) targetView.classList.remove('hidden');
   }
 }
 
@@ -4031,6 +4185,13 @@ gameCards.forEach(card => {
     if (gameId) {
       showGame(gameId);
     }
+  });
+  card.addEventListener('mousemove', (e) => {
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    card.style.setProperty('--mouse-x', `${x}px`);
+    card.style.setProperty('--mouse-y', `${y}px`);
   });
 });
 

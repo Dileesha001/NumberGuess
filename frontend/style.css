@@ -1703,28 +1703,65 @@ body::after {
 
 /* ===== PLAYING XI PRE-MATCH PREVIEW ===== */
 .playing-xi-modal-box {
-  background: rgba(12, 16, 32, 0.97);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(10, 15, 30, 0.97);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 28px;
-  padding: 36px 32px 28px;
-  width: 92%;
-  max-width: 680px;
-  box-shadow: 0 30px 80px -15px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255,255,255,0.04);
+  padding: 32px 28px 24px;
+  width: 95%;
+  max-width: 980px;
+  box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(255, 255, 255, 0.03);
   position: relative;
   animation: floatIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   display: flex;
   flex-direction: column;
 }
 
-.playing-xi-columns {
-  display: flex;
-  gap: 24px;
+/* Tab controls for responsive mobile view */
+.playing-xi-tabs {
+  display: none; /* Hidden on desktop */
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  border-bottom: 1.5px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 12px;
+}
+
+.xi-tab-btn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+  padding: 8px 18px;
+  border-radius: 24px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.xi-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: var(--text-primary);
+}
+
+.xi-tab-btn.active {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(59, 130, 246, 0.15) 100%);
+  border-color: #10b981;
+  color: #34d399;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.15);
+}
+
+.playing-xi-main-content {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr 1fr;
+  gap: 20px;
   align-items: stretch;
-  margin-top: 16px;
+  margin-top: 12px;
 }
 
 .playing-xi-col {
-  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -1734,15 +1771,15 @@ body::after {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 1.15rem;
+  font-size: 1.12rem;
   font-weight: 800;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.06);
   padding-bottom: 8px;
   margin-bottom: 4px;
 }
 
 .playing-xi-team-header .xi-flag {
-  font-size: 1.6rem;
+  font-size: 1.5rem;
   line-height: 1;
 }
 
@@ -1754,7 +1791,7 @@ body::after {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  max-height: 380px;
+  max-height: 390px;
   overflow-y: auto;
   padding-right: 4px;
 }
@@ -1782,97 +1819,235 @@ body::after {
   padding: 8px 12px;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.03);
-  border-radius: 10px;
-  font-size: 0.88rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
   font-weight: 600;
-  transition: all 0.2s ease;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
 }
 
 .playing-xi-row:hover {
   background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.04);
   transform: translateX(2px);
+}
+
+/* Highlight synced classes */
+.playing-xi-row.highlighted-squad-row {
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.35);
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transform: scale(1.02) translateX(4px);
+}
+
+.playing-xi-row.highlighted-opp-row {
+  background: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.35);
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transform: scale(1.02) translateX(-4px);
 }
 
 .playing-xi-row .player-name-wrap {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   color: var(--text-secondary);
 }
 
-.playing-xi-row .player-number {
-  color: var(--text-muted);
-  font-family: monospace;
-  font-size: 0.85rem;
-  width: 20px;
-  text-align: right;
-  margin-right: 8px;
+.playing-xi-row .player-info-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
 }
 
 .playing-xi-row .player-name-text {
   color: var(--text-primary);
+  font-weight: 700;
+}
+
+.playing-xi-row .player-spec-text {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.player-jersey-svg {
+  flex-shrink: 0;
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.playing-xi-row:hover .player-jersey-svg {
+  transform: scale(1.12) rotate(-5deg);
 }
 
 /* Role Badges */
 .xi-role-badge {
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   padding: 3px 8px;
   border-radius: 6px;
   line-height: 1;
 }
 
 .xi-role-badge.batter {
-  background: rgba(16, 185, 129, 0.12);
+  background: rgba(16, 185, 129, 0.1);
   color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.25);
+  border: 1px solid rgba(16, 185, 129, 0.22);
 }
 
 .xi-role-badge.bowler {
-  background: rgba(99, 102, 241, 0.12);
+  background: rgba(99, 102, 241, 0.1);
   color: #a5b4fc;
-  border: 1px solid rgba(99, 102, 241, 0.25);
+  border: 1px solid rgba(99, 102, 241, 0.22);
 }
 
 .xi-role-badge.all-rounder {
-  background: rgba(245, 158, 11, 0.12);
+  background: rgba(245, 158, 11, 0.1);
   color: #fcd34d;
-  border: 1px solid rgba(245, 158, 11, 0.25);
+  border: 1px solid rgba(245, 158, 11, 0.22);
 }
 
 .xi-role-badge.wicketkeeper {
-  background: rgba(6, 182, 212, 0.12);
+  background: rgba(6, 182, 212, 0.1);
   color: #22d3ee;
-  border: 1px solid rgba(6, 182, 212, 0.25);
+  border: 1px solid rgba(6, 182, 212, 0.22);
 }
 
-.playing-xi-divider {
-  width: 1px;
-  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.08) 20%, rgba(255, 255, 255, 0.08) 80%, transparent);
+/* Tactical visualizer column styles */
+.tactical-field-col {
+  display: flex;
+  flex-direction: column;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 20px;
+  padding: 16px;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.field-viz-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.field-viz-title {
+  font-size: 0.8rem;
+  font-weight: 900;
+  color: var(--text-secondary);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.field-viz-sub {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: -8px;
+  font-weight: 500;
+}
+
+.mini-field-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 310px;
+  aspect-ratio: 1;
+}
+
+#mini-cricket-field {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+  filter: drop-shadow(0 10px 25px rgba(0, 0, 0, 0.6));
+}
+
+.mini-field-hover-info {
+  margin-top: 14px;
+  font-size: 0.75rem;
+  color: #10b981;
+  text-align: center;
+  background: rgba(16, 185, 129, 0.06);
+  border: 1px solid rgba(16, 185, 129, 0.18);
+  padding: 6px 12px;
+  border-radius: 8px;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  transition: all 0.25s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.mini-field-hover-info.has-player {
+  color: #fff;
+  background: rgba(15, 23, 42, 0.85);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* Interactive jerseys inside stadium SVG */
+.mini-fielder-jersey, .mini-batsman-jersey {
+  cursor: pointer;
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.25s ease;
+}
+
+.mini-fielder-jersey:hover, .mini-batsman-jersey:hover {
+  transform: scale(1.35);
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.9));
+}
+
+.mini-fielder-jersey.highlighted, .mini-batsman-jersey.highlighted {
+  transform: scale(1.4);
+  filter: drop-shadow(0 0 12px #34d399);
 }
 
 /* Responsiveness */
-@media (max-width: 680px) {
+@media (max-width: 880px) {
   .playing-xi-modal-box {
     max-width: 95%;
     max-height: 92vh;
-    padding: 24px 20px;
+    padding: 24px 16px;
     overflow-y: auto;
   }
-  .playing-xi-columns {
-    flex-direction: column;
+  
+  .playing-xi-tabs {
+    display: flex; /* Show tabs on mobile viewports */
+  }
+  
+  .playing-xi-main-content {
+    grid-template-columns: 1fr;
     gap: 16px;
   }
-  .playing-xi-divider {
-    display: none;
+  
+  /* Manage column visibility based on class on the modal box */
+  .playing-xi-modal-box.show-list-tab .tactical-field-col {
+    display: none !important;
   }
+  .playing-xi-modal-box.show-list-tab .team-list-col {
+    display: flex !important;
+  }
+  .playing-xi-modal-box.show-field-tab .team-list-col {
+    display: none !important;
+  }
+  .playing-xi-modal-box.show-field-tab .tactical-field-col {
+    display: flex !important;
+  }
+  
   .playing-xi-list {
-    max-height: 220px;
+    max-height: 230px;
   }
 }
+
 
 /* ===== TEST CRICKET FULLSCREEN 3-COLUMN LAYOUT ===== */
 body.test-match-active {

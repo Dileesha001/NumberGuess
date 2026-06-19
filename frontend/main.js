@@ -843,6 +843,12 @@ const xiOppFlag = document.getElementById('xi-opp-flag');
 const xiOppName = document.getElementById('xi-opp-name');
 const xiOppList = document.getElementById('xi-opp-list');
 
+// Tactical Line-Up DOM References
+const miniFieldPlayers = document.getElementById('mini-field-players');
+const miniFieldHoverInfo = document.getElementById('mini-field-hover-info');
+const xiTabList = document.getElementById('xi-tab-list');
+const xiTabField = document.getElementById('xi-tab-field');
+
 // Cached Gameplay & Overlay Elements for Performance
 const ballEl = document.getElementById('cricket-ball');
 const strikerEl = document.getElementById('cricket-striker');
@@ -1012,6 +1018,135 @@ const PLAYER_ROLES = {
   "Kavem Hodge": "Batter", "Joshua Da Silva": "Wicketkeeper", "Jason Holder": "All-Rounder", "Alzarri Joseph": "Bowler",
   "Kemar Roach": "Bowler", "Jayden Seales": "Bowler", "Gudakesh Motie": "Bowler"
 };
+
+// Detailed player specialties for broadcast layout
+const PLAYER_DETAILS = {
+  // India
+  "Rohit Sharma": { batStyle: "Right-hand Bat", bowlStyle: "Off break", roleDetail: "Batter (C)" },
+  "Yashasvi Jaiswal": { batStyle: "Left-hand Bat", bowlStyle: "Leg break", roleDetail: "Batter" },
+  "Shubman Gill": { batStyle: "Right-hand Bat", bowlStyle: "Off break", roleDetail: "Batter" },
+  "Virat Kohli": { batStyle: "Right-hand Bat", bowlStyle: "Medium", roleDetail: "Batter" },
+  "Rishabh Pant": { batStyle: "Left-hand Bat", bowlStyle: "None", roleDetail: "Wicketkeeper" },
+  "KL Rahul": { batStyle: "Right-hand Bat", bowlStyle: "None", roleDetail: "Batter" },
+  "Ravindra Jadeja": { batStyle: "Left-hand Bat", bowlStyle: "Slow Left-arm Orthodox", roleDetail: "All-Rounder" },
+  "R. Ashwin": { batStyle: "Right-hand Bat", bowlStyle: "Right-arm Off break", roleDetail: "All-Rounder" },
+  "Jasprit Bumrah": { batStyle: "Right-hand Bat", bowlStyle: "Right-arm Fast", roleDetail: "Bowler" },
+  "Mohammed Siraj": { batStyle: "Right-hand Bat", bowlStyle: "Right-arm Fast-Medium", roleDetail: "Bowler" },
+  "Akash Deep": { batStyle: "Right-hand Bat", bowlStyle: "Right-arm Fast-Medium", roleDetail: "Bowler" },
+  // Australia
+  "Usman Khawaja": { batStyle: "Left-hand Bat", bowlStyle: "None", roleDetail: "Batter" },
+  "Steve Smith": { batStyle: "Right-hand Bat", bowlStyle: "Leg break", roleDetail: "Batter" },
+  "M. Labuschagne": { batStyle: "Right-hand Bat", bowlStyle: "Leg break / Off break", roleDetail: "Batter" },
+  "Travis Head": { batStyle: "Left-hand Bat", bowlStyle: "Right-arm Off break", roleDetail: "Batter" },
+  "Mitchell Marsh": { batStyle: "Right-hand Bat", bowlStyle: "Right-arm Medium", roleDetail: "All-Rounder" },
+  "Alex Carey": { batStyle: "Left-hand Bat", bowlStyle: "None", roleDetail: "Wicketkeeper" },
+  "Pat Cummins": { batStyle: "Right-hand Bat", bowlStyle: "Right-arm Fast", roleDetail: "Bowler (C)" },
+  "Mitchell Starc": { batStyle: "Left-hand Bat", bowlStyle: "Left-arm Fast", roleDetail: "Bowler" },
+  "Nathan Lyon": { batStyle: "Right-hand Bat", bowlStyle: "Right-arm Off break", roleDetail: "Bowler" },
+  "Josh Hazlewood": { batStyle: "Left-hand Bat", bowlStyle: "Right-arm Fast-Medium", roleDetail: "Bowler" },
+  "Cameron Green": { batStyle: "Right-hand Bat", bowlStyle: "Right-arm Fast-Medium", roleDetail: "All-Rounder" },
+  // England
+  "Zak Crawley": { batStyle: "Right-hand Bat", bowlStyle: "None", roleDetail: "Batter" },
+  "Ben Duckett": { batStyle: "Left-hand Bat", bowlStyle: "None", roleDetail: "Batter" },
+  "Ollie Pope": { batStyle: "Right-hand Bat", bowlStyle: "None", roleDetail: "Batter" },
+  "Joe Root": { batStyle: "Right-hand Bat", bowlStyle: "Right-arm Off break", roleDetail: "Batter" },
+  "Harry Brook": { batStyle: "Right-hand Bat", bowlStyle: "Right-arm Medium", roleDetail: "Batter" },
+  "Ben Stokes": { batStyle: "Left-hand Bat", bowlStyle: "Right-arm Fast-Medium", roleDetail: "All-Rounder (C)" },
+  "Jamie Smith": { batStyle: "Right-hand Bat", bowlStyle: "None", roleDetail: "Wicketkeeper" },
+  "Chris Woakes": { batStyle: "Right-hand Bat", bowlStyle: "Right-arm Fast-Medium", roleDetail: "All-Rounder" },
+  "Gus Atkinson": { batStyle: "Right-hand Bat", bowlStyle: "Right-arm Fast-Medium", roleDetail: "Bowler" },
+  "Shoaib Bashir": { batStyle: "Right-hand Bat", bowlStyle: "Right-arm Off break", roleDetail: "Bowler" },
+  "Mark Wood": { batStyle: "Right-hand Bat", bowlStyle: "Right-arm Fast", roleDetail: "Bowler" },
+  // Sri Lanka
+  "Pathum Nissanka": { batStyle: "Right-hand Bat", bowlStyle: "None", roleDetail: "Batter" },
+  "D. Karunaratne": { batStyle: "Left-hand Bat", bowlStyle: "Right-arm Medium", roleDetail: "Batter (C)" },
+  "Kusal Mendis": { batStyle: "Right-hand Bat", bowlStyle: "None", roleDetail: "Wicketkeeper" },
+  "Angelo Mathews": { batStyle: "Right-hand Bat", bowlStyle: "Right-arm Medium", roleDetail: "All-Rounder" },
+  "Dinesh Chandimal": { batStyle: "Right-hand Bat", bowlStyle: "None", roleDetail: "Batter" },
+  "D. de Silva": { batStyle: "Right-hand Bat", bowlStyle: "Right-arm Off break", roleDetail: "All-Rounder" },
+  "Kamindu Mendis": { batStyle: "Left-hand Bat", bowlStyle: "Ambidextrous Spin", roleDetail: "Batter" },
+  "P. Jayasuriya": { batStyle: "Right-hand Bat", bowlStyle: "Slow Left-arm Orthodox", roleDetail: "Bowler" },
+  "Asitha Fernando": { batStyle: "Right-hand Bat", bowlStyle: "Right-arm Medium-Fast", roleDetail: "Bowler" },
+  "Lahiru Kumara": { batStyle: "Left-hand Bat", bowlStyle: "Right-arm Fast", roleDetail: "Bowler" },
+  "Vishwa Fernando": { batStyle: "Right-hand Bat", bowlStyle: "Left-arm Fast-Medium", roleDetail: "Bowler" },
+  // New Zealand
+  "Tom Latham": { batStyle: "Left-hand Bat", bowlStyle: "None", roleDetail: "Batter (C)" },
+  "Devon Conway": { batStyle: "Left-hand Bat", bowlStyle: "None", roleDetail: "Batter" },
+  "Kane Williamson": { batStyle: "Right-hand Bat", bowlStyle: "Right-arm Off break", roleDetail: "Batter" },
+  "Rachin Ravindra": { batStyle: "Left-hand Bat", bowlStyle: "Slow Left-arm Orthodox", roleDetail: "All-Rounder" },
+  "Daryl Mitchell": { batStyle: "Right-hand Bat", bowlStyle: "Right-arm Medium", roleDetail: "Batter" },
+  "Glenn Phillips": { batStyle: "Right-hand Bat", bowlStyle: "Right-arm Off break", roleDetail: "All-Rounder" },
+  "Tom Blundell": { batStyle: "Right-hand Bat", bowlStyle: "None", roleDetail: "Wicketkeeper" },
+  "Mitchell Santner": { batStyle: "Left-hand Bat", bowlStyle: "Slow Left-arm Orthodox", roleDetail: "All-Rounder" },
+  "Matt Henry": { batStyle: "Right-hand Bat", bowlStyle: "Right-arm Fast-Medium", roleDetail: "Bowler" },
+  "Kyle Jamieson": { batStyle: "Right-hand Bat", bowlStyle: "Right-arm Fast-Medium", roleDetail: "Bowler" },
+  "Tim Southee": { batStyle: "Right-hand Bat", bowlStyle: "Right-arm Medium-Fast", roleDetail: "Bowler" },
+  // South Africa
+  "Aiden Markram": { batStyle: "Right-hand Bat", bowlStyle: "Right-arm Off break", roleDetail: "Batter" },
+  "Tony de Zorzi": { batStyle: "Left-hand Bat", bowlStyle: "None", roleDetail: "Batter" },
+  "Tristan Stubbs": { batStyle: "Right-hand Bat", bowlStyle: "Right-arm Off break", roleDetail: "Batter" },
+  "Temba Bavuma": { batStyle: "Right-hand Bat", bowlStyle: "None", roleDetail: "Batter (C)" },
+  "David Bedingham": { batStyle: "Right-hand Bat", bowlStyle: "None", roleDetail: "Batter" },
+  "Kyle Verreynne": { batStyle: "Right-hand Bat", bowlStyle: "None", roleDetail: "Wicketkeeper" },
+  "Wiaan Mulder": { batStyle: "Right-hand Bat", bowlStyle: "Right-arm Medium", roleDetail: "All-Rounder" },
+  "Marco Jansen": { batStyle: "Right-hand Bat", bowlStyle: "Left-arm Fast", roleDetail: "All-Rounder" },
+  "Keshav Maharaj": { batStyle: "Right-hand Bat", bowlStyle: "Slow Left-arm Orthodox", roleDetail: "Bowler" },
+  "Kagiso Rabada": { batStyle: "Left-hand Bat", bowlStyle: "Right-arm Fast", roleDetail: "Bowler" },
+  "Lungi Ngidi": { batStyle: "Right-hand Bat", bowlStyle: "Right-arm Fast-Medium", roleDetail: "Bowler" },
+  // West Indies
+  "Kraigg Brathwaite": { batStyle: "Right-hand Bat", bowlStyle: "Right-arm Off break", roleDetail: "Batter (C)" },
+  "Mikyle Louis": { batStyle: "Right-hand Bat", bowlStyle: "Right-arm Leg break", roleDetail: "Batter" },
+  "Keacy Carty": { batStyle: "Right-hand Bat", bowlStyle: "Right-arm Medium", roleDetail: "Batter" },
+  "Alick Athanaze": { batStyle: "Left-hand Bat", bowlStyle: "Right-arm Off break", roleDetail: "Batter" },
+  "Kavem Hodge": { batStyle: "Right-hand Bat", bowlStyle: "Slow Left-arm Orthodox", roleDetail: "Batter" },
+  "Joshua Da Silva": { batStyle: "Right-hand Bat", bowlStyle: "None", roleDetail: "Wicketkeeper" },
+  "Jason Holder": { batStyle: "Right-hand Bat", bowlStyle: "Right-arm Medium-Fast", roleDetail: "All-Rounder" },
+  "Alzarri Joseph": { batStyle: "Right-hand Bat", bowlStyle: "Right-arm Fast", roleDetail: "Bowler" },
+  "Kemar Roach": { batStyle: "Right-hand Bat", bowlStyle: "Right-arm Fast-Medium", roleDetail: "Bowler" },
+  "Jayden Seales": { batStyle: "Left-hand Bat", bowlStyle: "Right-arm Fast-Medium", roleDetail: "Bowler" },
+  "Gudakesh Motie": { batStyle: "Left-hand Bat", bowlStyle: "Slow Left-arm Orthodox", roleDetail: "Bowler" }
+};
+
+// Generates a high-quality SVG jersey in official team colors
+function getPlayerJerseySVG(teamCode, number) {
+  let mainColor = "#94a3b8"; // Default slate
+  let accentColor = "#1e293b";
+  let textColor = "#ffffff";
+  
+  if (teamCode === "IND") {
+    mainColor = "#1e40af"; // Royal Blue
+    accentColor = "#ea580c"; // Orange
+  } else if (teamCode === "AUS") {
+    mainColor = "#eab308"; // Gold
+    accentColor = "#166534"; // Green
+    textColor = "#1e293b";
+  } else if (teamCode === "ENG") {
+    mainColor = "#0284c7"; // Sky Blue
+    accentColor = "#dc2626"; // Red
+  } else if (teamCode === "SL") {
+    mainColor = "#1d4ed8"; // Blue
+    accentColor = "#fbbf24"; // Gold
+  } else if (teamCode === "NZ") {
+    mainColor = "#18181b"; // Black
+    accentColor = "#e4e4e7"; // White/Silver
+  } else if (teamCode === "SA") {
+    mainColor = "#166534"; // Forest Green
+    accentColor = "#eab308"; // Gold
+  } else if (teamCode === "WI") {
+    mainColor = "#7B002C"; // Maroon
+    accentColor = "#D4AF37"; // Gold
+  }
+  
+  return `
+    <svg class="player-jersey-svg" viewBox="0 0 100 100" width="30" height="30" style="overflow: visible; display: inline-block; vertical-align: middle;">
+      <path d="M 25 15 L 75 15 L 85 30 L 73 35 L 70 25 L 70 85 L 30 85 L 30 25 L 27 35 L 15 30 Z" fill="${mainColor}" stroke="${accentColor}" stroke-width="4" stroke-linejoin="round" />
+      <path d="M 40 15 Q 50 25 60 15" fill="none" stroke="${accentColor}" stroke-width="4" />
+      <line x1="20" y1="24" x2="27" y2="28" stroke="${accentColor}" stroke-width="3" />
+      <line x1="80" y1="24" x2="73" y2="28" stroke="${accentColor}" stroke-width="3" />
+      <text x="50" y="60" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="900" fill="${textColor}" text-anchor="middle" dominant-baseline="middle">${number}</text>
+    </svg>
+  `;
+}
 
 // Squad declarations containing real players
 const SQUADS = {
@@ -1475,29 +1610,281 @@ function showPlayingXI() {
   if (xiOppName) xiOppName.textContent = oppTeam.name;
 
   // Helper to build list HTML
-  const buildPlayerListHTML = (players) => {
+  const buildPlayerListHTML = (players, teamCode, teamType) => {
     return players.map((name, index) => {
       const role = PLAYER_ROLES[name] || "Batter";
+      const detail = PLAYER_DETAILS[name] || { batStyle: "Right-hand Bat", bowlStyle: "None", roleDetail: role };
+      
       let roleClass = "batter";
       if (role === "Bowler") roleClass = "bowler";
       else if (role === "All-Rounder") roleClass = "all-rounder";
       else if (role === "Wicketkeeper") roleClass = "wicketkeeper";
 
+      const jerseySVG = getPlayerJerseySVG(teamCode, index + 1);
+
+      // Build specialty info text:
+      let specStr = detail.batStyle;
+      if (detail.bowlStyle && detail.bowlStyle !== "None") {
+        specStr += ` • ${detail.bowlStyle}`;
+      }
+
       return `
-        <div class="playing-xi-row">
+        <div class="playing-xi-row player-name-hoverable" 
+             data-player-name="${name}" 
+             data-player-index="${index}" 
+             data-team-type="${teamType}">
           <div class="player-name-wrap">
-            <span class="player-number">${index + 1}</span>
-            <span class="player-name-text player-name-hoverable" data-player-name="${name}">${name}</span>
+            ${jerseySVG}
+            <div class="player-info-container">
+              <span class="player-name-text">${name}</span>
+              <span class="player-spec-text">${specStr}</span>
+            </div>
           </div>
-          <span class="xi-role-badge ${roleClass}">${role}</span>
+          <span class="xi-role-badge ${roleClass}">${detail.roleDetail}</span>
         </div>
       `;
     }).join("");
   };
 
   // Populate lists
-  if (xiUserList) xiUserList.innerHTML = buildPlayerListHTML(userTeam.batters);
-  if (xiOppList) xiOppList.innerHTML = buildPlayerListHTML(oppTeam.batters);
+  if (xiUserList) xiUserList.innerHTML = buildPlayerListHTML(userTeam.batters, userTeamCode, "user");
+  if (xiOppList) xiOppList.innerHTML = buildPlayerListHTML(oppTeam.batters, oppTeamCode, "opp");
+
+  // Fielding positions config on 400x400 SVG
+  const FIELD_POSITIONS = [
+    { posName: "Bowler", x: 200, y: 110 },
+    { posName: "Wicketkeeper", x: 200, y: 295 },
+    { posName: "Slip", x: 180, y: 290 },
+    { posName: "Point", x: 105, y: 220 },
+    { posName: "Cover", x: 115, y: 165 },
+    { posName: "Mid-off", x: 165, y: 120 },
+    { posName: "Mid-on", x: 235, y: 120 },
+    { posName: "Mid-wicket", x: 285, y: 165 },
+    { posName: "Square Leg", x: 295, y: 220 },
+    { posName: "Fine Leg", x: 275, y: 295 },
+    { posName: "Third Man", x: 110, y: 295 }
+  ];
+
+  // Function to build SVG representation of a player jersey
+  const drawMiniSVGJersey = (teamCode, number, x, y, name, role, spec, type, index) => {
+    let mainColor = "#94a3b8";
+    let accentColor = "#1e293b";
+    let textColor = "#ffffff";
+    
+    if (teamCode === "IND") {
+      mainColor = "#1e40af";
+      accentColor = "#ea580c";
+    } else if (teamCode === "AUS") {
+      mainColor = "#eab308";
+      accentColor = "#166534";
+      textColor = "#1e293b";
+    } else if (teamCode === "ENG") {
+      mainColor = "#0284c7";
+      accentColor = "#dc2626";
+    } else if (teamCode === "SL") {
+      mainColor = "#1d4ed8";
+      accentColor = "#fbbf24";
+    } else if (teamCode === "NZ") {
+      mainColor = "#18181b";
+      accentColor = "#e4e4e7";
+    } else if (teamCode === "SA") {
+      mainColor = "#166534";
+      accentColor = "#eab308";
+    } else if (teamCode === "WI") {
+      mainColor = "#7B002C";
+      accentColor = "#D4AF37";
+    }
+    
+    return `
+      <g class="mini-${type}-jersey" 
+         id="mini-jersey-${type}-${index}"
+         data-player-name="${name}" 
+         data-player-index="${index}" 
+         data-team-type="${type}"
+         data-player-role="${role}"
+         data-player-spec="${spec}"
+         transform="translate(${x - 12}, ${y - 12})"
+         style="transform-origin: ${x}px ${y}px;">
+        <path d="M 6 3 L 18 3 L 21 7 L 18 8 L 17 6 L 17 21 L 7 21 L 7 6 L 6 8 L 3 7 Z" fill="${mainColor}" stroke="${accentColor}" stroke-width="1.2" stroke-linejoin="round" />
+        <path d="M 9.5 3 Q 12 5.5 14.5 3" fill="none" stroke="${accentColor}" stroke-width="1" />
+        <text x="12" y="14" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="7.5" font-weight="900" fill="${textColor}" text-anchor="middle">${number}</text>
+        <circle cx="12" cy="12" r="14" fill="transparent" style="cursor: pointer;" />
+      </g>
+    `;
+  };
+
+  // Generate field SVG content
+  let fieldHTML = "";
+  
+  // 1. Draw Batting Team Active Players (Batsmen)
+  // Striker (index 0)
+  if (userTeam.batters[0]) {
+    const name = userTeam.batters[0];
+    const role = PLAYER_ROLES[name] || "Batter";
+    const detail = PLAYER_DETAILS[name] || { batStyle: "Right-hand Bat", bowlStyle: "None", roleDetail: role };
+    let specStr = detail.batStyle;
+    fieldHTML += drawMiniSVGJersey(userTeamCode, 1, 200, 265, name, "Striker", specStr, "user", 0);
+  }
+  // Non-Striker (index 1)
+  if (userTeam.batters[1]) {
+    const name = userTeam.batters[1];
+    const role = PLAYER_ROLES[name] || "Batter";
+    const detail = PLAYER_DETAILS[name] || { batStyle: "Right-hand Bat", bowlStyle: "None", roleDetail: role };
+    let specStr = detail.batStyle;
+    fieldHTML += drawMiniSVGJersey(userTeamCode, 2, 200, 135, name, "Non-Striker", specStr, "user", 1);
+  }
+  
+  // 2. Draw Bowling Team Active Players (Bowler + Keeper + 9 Fielders)
+  oppTeam.batters.forEach((name, index) => {
+    const role = PLAYER_ROLES[name] || "Batter";
+    const detail = PLAYER_DETAILS[name] || { batStyle: "Right-hand Bat", bowlStyle: "None", roleDetail: role };
+    let specStr = detail.batStyle;
+    if (detail.bowlStyle && detail.bowlStyle !== "None") {
+      specStr += ` • ${detail.bowlStyle}`;
+    }
+    
+    // Get fielding position
+    const pos = FIELD_POSITIONS[index] || { posName: "Fielder", x: 200 + (Math.random() - 0.5) * 150, y: 200 + (Math.random() - 0.5) * 150 };
+    fieldHTML += drawMiniSVGJersey(oppTeamCode, index + 1, pos.x, pos.y, name, pos.posName, specStr, "opp", index);
+  });
+  
+  if (miniFieldPlayers) {
+    miniFieldPlayers.innerHTML = fieldHTML;
+  }
+
+  // Handle mobile tab switching logic
+  const modalBox = cricketPlayingXiModal ? cricketPlayingXiModal.querySelector('.playing-xi-modal-box') : null;
+  if (modalBox) {
+    modalBox.classList.remove('show-field-tab');
+    modalBox.classList.add('show-list-tab');
+  }
+  
+  if (xiTabList && xiTabField && modalBox) {
+    xiTabList.classList.add('active');
+    xiTabField.classList.remove('active');
+    
+    // Add click listeners to tabs once
+    if (!xiTabList.dataset.listenerBound) {
+      xiTabList.addEventListener('click', () => {
+        playSfx('click');
+        xiTabList.classList.add('active');
+        xiTabField.classList.remove('active');
+        modalBox.classList.remove('show-field-tab');
+        modalBox.classList.add('show-list-tab');
+      });
+      xiTabList.dataset.listenerBound = 'true';
+    }
+    
+    if (!xiTabField.dataset.listenerBound) {
+      xiTabField.addEventListener('click', () => {
+        playSfx('click');
+        xiTabField.classList.add('active');
+        xiTabList.classList.remove('active');
+        modalBox.classList.remove('show-list-tab');
+        modalBox.classList.add('show-field-tab');
+      });
+      xiTabField.dataset.listenerBound = 'true';
+    }
+  }
+
+  // Initialize hover synchronization event listeners (using event delegation)
+  const handleListMouseOver = (e) => {
+    const row = e.target.closest('.playing-xi-row');
+    if (!row) return;
+    
+    const index = row.getAttribute('data-player-index');
+    const teamType = row.getAttribute('data-team-type');
+    const name = row.getAttribute('data-player-name');
+    
+    // Highlight matching jersey
+    const miniJersey = document.getElementById(`mini-jersey-${teamType}-${index}`);
+    if (miniJersey) {
+      miniJersey.classList.add('highlighted');
+      const role = miniJersey.getAttribute('data-player-role');
+      const spec = miniJersey.getAttribute('data-player-spec');
+      if (miniFieldHoverInfo) {
+        miniFieldHoverInfo.textContent = `${name} (${role}) — ${spec}`;
+        miniFieldHoverInfo.classList.add('has-player');
+      }
+    }
+  };
+  
+  const handleListMouseOut = (e) => {
+    const row = e.target.closest('.playing-xi-row');
+    if (!row) return;
+    
+    const index = row.getAttribute('data-player-index');
+    const teamType = row.getAttribute('data-team-type');
+    
+    const miniJersey = document.getElementById(`mini-jersey-${teamType}-${index}`);
+    if (miniJersey) {
+      miniJersey.classList.remove('highlighted');
+    }
+    
+    if (miniFieldHoverInfo) {
+      miniFieldHoverInfo.textContent = "Hover over jerseys to view player details";
+      miniFieldHoverInfo.classList.remove('has-player');
+    }
+  };
+
+  if (xiUserList && !xiUserList.dataset.hoverBound) {
+    xiUserList.addEventListener('mouseover', handleListMouseOver);
+    xiUserList.addEventListener('mouseout', handleListMouseOut);
+    xiUserList.dataset.hoverBound = 'true';
+  }
+  
+  if (xiOppList && !xiOppList.dataset.hoverBound) {
+    xiOppList.addEventListener('mouseover', handleListMouseOver);
+    xiOppList.addEventListener('mouseout', handleListMouseOut);
+    xiOppList.dataset.hoverBound = 'true';
+  }
+
+  const handleFieldMouseOver = (e) => {
+    const jersey = e.target.closest('g[data-player-name]');
+    if (!jersey) return;
+    
+    const name = jersey.getAttribute('data-player-name');
+    const teamType = jersey.getAttribute('data-team-type');
+    const role = jersey.getAttribute('data-player-role');
+    const spec = jersey.getAttribute('data-player-spec');
+    
+    // Highlight list row
+    const row = document.querySelector(`.playing-xi-row[data-player-name="${name}"][data-team-type="${teamType}"]`);
+    if (row) {
+      row.classList.add(teamType === "user" ? "highlighted-squad-row" : "highlighted-opp-row");
+      row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    
+    // Update banner info
+    if (miniFieldHoverInfo) {
+      miniFieldHoverInfo.textContent = `${name} (${role}) — ${spec}`;
+      miniFieldHoverInfo.classList.add('has-player');
+    }
+  };
+  
+  const handleFieldMouseOut = (e) => {
+    const jersey = e.target.closest('g[data-player-name]');
+    if (!jersey) return;
+    
+    const name = jersey.getAttribute('data-player-name');
+    const teamType = jersey.getAttribute('data-team-type');
+    
+    const row = document.querySelector(`.playing-xi-row[data-player-name="${name}"][data-team-type="${teamType}"]`);
+    if (row) {
+      row.classList.remove("highlighted-squad-row", "highlighted-opp-row");
+    }
+    
+    if (miniFieldHoverInfo) {
+      miniFieldHoverInfo.textContent = "Hover over jerseys to view player details";
+      miniFieldHoverInfo.classList.remove('has-player');
+    }
+  };
+
+  if (miniFieldPlayers && !miniFieldPlayers.dataset.hoverBound) {
+    miniFieldPlayers.addEventListener('mouseover', handleFieldMouseOver);
+    miniFieldPlayers.addEventListener('mouseout', handleFieldMouseOut);
+    miniFieldPlayers.dataset.hoverBound = 'true';
+  }
 
   // Show Playing XI Modal
   if (cricketPlayingXiModal) {

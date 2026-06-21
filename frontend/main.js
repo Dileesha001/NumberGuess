@@ -246,6 +246,7 @@ function saveStats() {
 
 // Player Career Stats Database Operations
 const DPR_PLAYER_STATS_KEY = 'dpr_cricket_player_stats';
+let cachedPlayerStatsDb = null;
 
 function normalizePlayerName(name) {
   if (name === "Prabath Jayasuriya") return "P. Jayasuriya";
@@ -253,6 +254,10 @@ function normalizePlayerName(name) {
 }
 
 function loadPlayerStatsDatabase() {
+  if (cachedPlayerStatsDb) {
+    return cachedPlayerStatsDb;
+  }
+
   let db = {};
   try {
     const stored = localStorage.getItem(DPR_PLAYER_STATS_KEY);
@@ -310,10 +315,12 @@ function loadPlayerStatsDatabase() {
     savePlayerStatsDatabase(db);
   }
   
+  cachedPlayerStatsDb = db;
   return db;
 }
 
 function savePlayerStatsDatabase(db) {
+  cachedPlayerStatsDb = db;
   try {
     localStorage.setItem(DPR_PLAYER_STATS_KEY, JSON.stringify(db));
   } catch (e) {
@@ -2578,6 +2585,7 @@ function drawFielders() {
       circle.setAttribute('stroke', '#ffffff');
       circle.setAttribute('stroke-width', '1.5');
       group.appendChild(circle);
+      f.element = circle;
 
       const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
       text.setAttribute('text-anchor', 'middle');
@@ -2586,12 +2594,22 @@ function drawFielders() {
       text.setAttribute('font-family', 'sans-serif');
       text.setAttribute('font-weight', '600');
       group.appendChild(text);
+      f.textElement = text;
+    });
+  } else {
+    fielders.forEach((f, idx) => {
+      if (!f.element) {
+        f.element = group.children[idx * 2];
+      }
+      if (!f.textElement) {
+        f.textElement = group.children[idx * 2 + 1];
+      }
     });
   }
 
   fielders.forEach((f, idx) => {
-    const circle = group.children[idx * 2];
-    const text = group.children[idx * 2 + 1];
+    const circle = f.element;
+    const text = f.textElement;
     
     if (circle) {
       if (f.x !== f.lastX || f.y !== f.lastY || f.state !== f.lastState || (f.fumbleTimer > 0) !== (f.lastFumbleTimer > 0)) {
@@ -3146,7 +3164,10 @@ function gameLoop(timestamp) {
     // Update timing indicator dot in SVG gauge
     if (timingIndicatorEl) {
       let gy = ((ball.y - 115) / 220) * 250;
-      timingIndicatorEl.setAttribute('cy', gy);
+      if (gy !== lastIndicatorCy) {
+        timingIndicatorEl.setAttribute('cy', gy);
+        lastIndicatorCy = gy;
+      }
     }
   } else if (ball.state === 'HIT') {
     ball.x += ball.vx * dt;

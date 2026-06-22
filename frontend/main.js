@@ -4647,6 +4647,19 @@ if (muteBtn) {
 
 initGame();
 
+// Splash Screen handling
+const splash = document.getElementById('splash-screen');
+if (splash) {
+  // Wait for the loader bar animation to complete (1.8s) + a small delay for premium feel
+  setTimeout(() => {
+    splash.classList.add('fade-out');
+    // Remove it from layout after transition completes to save resources
+    setTimeout(() => {
+      splash.style.display = 'none';
+    }, 800); // matching the 0.8s CSS transition duration
+  }, 2200);
+}
+
 // Player Stats Hover Tooltip Logic
 function getPlayerTooltipHTML(name, stats) {
   const normName = normalizePlayerName(name);

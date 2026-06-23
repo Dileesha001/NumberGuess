@@ -8,7 +8,13 @@ def load_scores():
     if os.path.exists(SCORES_FILE):
         try:
             with open(SCORES_FILE, 'r') as f:
-                return json.load(f)
+                scores = json.load(f)
+                if isinstance(scores, dict):
+                    # Ensure all difficulty keys exist
+                    for diff in ["Easy", "Medium", "Hard"]:
+                        if diff not in scores:
+                            scores[diff] = None
+                    return scores
         except Exception:
             pass
     return {"Easy": None, "Medium": None, "Hard": None}

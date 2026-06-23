@@ -11,7 +11,11 @@ def load_scores():
     if os.path.exists(SCORES_FILE):
         try:
             with open(SCORES_FILE, 'r') as f:
-                return json.load(f)
+                scores = json.load(f)
+                if isinstance(scores, dict):
+                    if "high_score" not in scores:
+                        scores["high_score"] = 0
+                    return scores
         except Exception:
             pass
     return {"high_score": 0}

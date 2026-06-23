@@ -894,7 +894,7 @@ const BOWLER_TYPES = {
   "Jasprit Bumrah": "Fast", "Mohammed Siraj": "Fast", "R. Ashwin": "Spin", "Ravindra Jadeja": "Spin", "Akash Deep": "Fast",
   "Pat Cummins": "Fast", "Mitchell Starc": "Fast", "Josh Hazlewood": "Fast", "Nathan Lyon": "Spin", "Mitchell Marsh": "Fast", "Cameron Green": "Fast",
   "Chris Woakes": "Fast", "Gus Atkinson": "Fast", "Mark Wood": "Fast", "Shoaib Bashir": "Spin", "Ben Stokes": "Fast",
-  "Prabath Jayasuriya": "Spin", "Asitha Fernando": "Fast", "Lahiru Kumara": "Fast", "Vishwa Fernando": "Fast", "D. de Silva": "Spin", "Angelo Mathews": "Fast",
+  "P. Jayasuriya": "Spin", "Asitha Fernando": "Fast", "Lahiru Kumara": "Fast", "Vishwa Fernando": "Fast", "D. de Silva": "Spin", "Angelo Mathews": "Fast",
   // New Zealand
   "Tim Southee": "Fast", "Matt Henry": "Fast", "Kyle Jamieson": "Fast", "Mitchell Santner": "Spin", "Glenn Phillips": "Spin", "Rachin Ravindra": "Spin",
   // South Africa
@@ -916,7 +916,7 @@ const BOWLER_WEIGHTS = {
   "Jasprit Bumrah": 4, "Mohammed Siraj": 4, "R. Ashwin": 4, "Ravindra Jadeja": 4, "Akash Deep": 3,
   "Pat Cummins": 4, "Mitchell Starc": 4, "Josh Hazlewood": 4, "Nathan Lyon": 4, "Mitchell Marsh": 2, "Cameron Green": 2,
   "Chris Woakes": 4, "Gus Atkinson": 4, "Mark Wood": 4, "Shoaib Bashir": 4, "Ben Stokes": 2,
-  "Prabath Jayasuriya": 4, "Asitha Fernando": 4, "Lahiru Kumara": 4, "Vishwa Fernando": 4, "D. de Silva": 2, "Angelo Mathews": 2,
+  "P. Jayasuriya": 4, "Asitha Fernando": 4, "Lahiru Kumara": 4, "Vishwa Fernando": 4, "D. de Silva": 2, "Angelo Mathews": 2,
   // New Zealand
   "Tim Southee": 4, "Matt Henry": 4, "Kyle Jamieson": 4, "Mitchell Santner": 4, "Glenn Phillips": 2, "Rachin Ravindra": 2,
   // South Africa
@@ -1179,7 +1179,7 @@ const SQUADS = {
     name: "Sri Lanka",
     short: "SL",
     batters: ["Pathum Nissanka", "D. Karunaratne", "Kusal Mendis", "Angelo Mathews", "Dinesh Chandimal", "D. de Silva", "Kamindu Mendis", "P. Jayasuriya", "Asitha Fernando", "Lahiru Kumara", "Vishwa Fernando"],
-    bowlers: ["Prabath Jayasuriya", "Asitha Fernando", "Lahiru Kumara", "Vishwa Fernando", "D. de Silva", "Angelo Mathews"]
+    bowlers: ["P. Jayasuriya", "Asitha Fernando", "Lahiru Kumara", "Vishwa Fernando", "D. de Silva", "Angelo Mathews"]
   },
   NZ: {
     name: "New Zealand",
@@ -2339,7 +2339,7 @@ function resetPlayState() {
   bowlingDirection = (Math.floor(cricketState.balls_faced / 6) % 2 === 0) ? 1 : -1;
   
   // Get list of fielders from opponent squad (excluding current bowler)
-  const opponentPlayers = SQUADS[oppTeamCode].batters.filter(p => p !== currentBowler.name);
+  const opponentPlayers = SQUADS[oppTeamCode].batters.filter(p => normalizePlayerName(p) !== normalizePlayerName(currentBowler.name));
   fielders = fieldersData.map((d, index) => {
     let playerName = opponentPlayers[index % opponentPlayers.length];
     let parts = playerName.split(' ');

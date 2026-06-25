@@ -5,6 +5,13 @@ import base64
 import sys
 import os
 
+# Force UTF-8 encoding on Windows to prevent UnicodeEncodeError with emojis
+if sys.platform == 'win32':
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+
 SCORES_FILE = "cricket_scores.json"
 
 def load_scores():

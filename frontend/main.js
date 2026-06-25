@@ -214,17 +214,19 @@ function loadStats() {
     const stored = localStorage.getItem('dpr_mini_games_stats');
     if (stored) {
       const parsed = JSON.parse(stored);
-      if (parsed.numberGuess) {
-        gameStats.numberGuess = { ...gameStats.numberGuess, ...parsed.numberGuess };
-      }
-      if (parsed.hangman) {
-        gameStats.hangman = { ...gameStats.hangman, ...parsed.hangman };
-      }
-      if (parsed.cricket) {
-        gameStats.cricket = { ...gameStats.cricket, ...parsed.cricket };
-      }
-      if (parsed.cricketTest) {
-        gameStats.cricketTest = { ...gameStats.cricketTest, ...parsed.cricketTest };
+      if (parsed && typeof parsed === 'object') {
+        if (parsed.numberGuess) {
+          gameStats.numberGuess = { ...gameStats.numberGuess, ...parsed.numberGuess };
+        }
+        if (parsed.hangman) {
+          gameStats.hangman = { ...gameStats.hangman, ...parsed.hangman };
+        }
+        if (parsed.cricket) {
+          gameStats.cricket = { ...gameStats.cricket, ...parsed.cricket };
+        }
+        if (parsed.cricketTest) {
+          gameStats.cricketTest = { ...gameStats.cricketTest, ...parsed.cricketTest };
+        }
       }
     }
   } catch (e) {
@@ -262,7 +264,10 @@ function loadPlayerStatsDatabase() {
   try {
     const stored = localStorage.getItem(DPR_PLAYER_STATS_KEY);
     if (stored) {
-      db = JSON.parse(stored);
+      const parsed = JSON.parse(stored);
+      if (parsed && typeof parsed === 'object') {
+        db = parsed;
+      }
     }
   } catch (e) {
     console.error("Failed to load player stats database", e);
@@ -763,7 +768,10 @@ let recentHangmanWords = [];
 try {
   const stored = localStorage.getItem('hangmanRecentWords');
   if (stored) {
-    recentHangmanWords = JSON.parse(stored);
+    const parsed = JSON.parse(stored);
+    if (Array.isArray(parsed)) {
+      recentHangmanWords = parsed;
+    }
   }
 } catch (e) {
   console.error('Error reading from localStorage', e);
@@ -1217,6 +1225,10 @@ let bowlerStatsMap = {}; // name -> { name, balls, runs, wickets }
 
 let bowlingDirection = 1; // 1 = top-to-bottom, -1 = bottom-to-top
 let isAutoBowlingTimeout = null;
+let fielderThrowTimeout = null;
+let milestoneTimeout = null;
+let tvBannerTimeout1 = null;
+let tvBannerTimeout2 = null;
 let isCricketPaused = false;
 let pausedAutoBowling = false;
 
@@ -1582,6 +1594,7 @@ function updateHowToPlayModal() {
 }
 
 function initCricket() {
+  clearAllGameplayTimeouts();
   if (cricketTeamSelectModal) {
     cricketTeamSelectModal.classList.remove('hidden');
   }
@@ -1703,7 +1716,7 @@ function showPlayingXI() {
     }
     
     return `
-      <g class="mini-${type}-jersey" 
+      <g class="mini-${type}-jersey player-name-hoverable" 
          id="mini-jersey-${type}-${index}"
          data-player-name="${name}" 
          data-player-index="${index}" 
@@ -1992,10 +2005,7 @@ function startMatchWithSelectedTeams() {
     pauseModal.classList.add('hidden');
   }
   
-  if (isAutoBowlingTimeout) {
-    clearTimeout(isAutoBowlingTimeout);
-    isAutoBowlingTimeout = null;
-  }
+  clearAllGameplayTimeouts();
   resetPlayState();
   updateCricketUI();
   
@@ -2238,7 +2248,8 @@ function triggerMilestoneCelebration(msg) {
     `;
     toast.classList.add('show');
     
-    setTimeout(() => {
+    milestoneTimeout = setTimeout(() => {
+      milestoneTimeout = null;
       toast.classList.remove('show');
       isMilestoneCelebrating = false;
       
@@ -3252,7 +3263,8 @@ function gameLoop(timestamp) {
           
           // Introduce human aim delay (200ms - 450ms)
           let aimDelay = 200 + Math.random() * 250;
-          setTimeout(() => {
+          fielderThrowTimeout = setTimeout(() => {
+            fielderThrowTimeout = null;
             if (activeFielder && ball.state === 'DEAD') {
               let targetStumps = STUMPS_STRIKER;
               let b1Dist = Math.abs(batsmen.batsman1Y - batsmen.target1Y);
@@ -3593,14 +3605,25 @@ function triggerTvBanner(title, subtitle, themeClass) {
   const subtitleEl = document.getElementById('tv-banner-subtitle');
   if (!banner || !titleEl || !subtitleEl) return;
   
+  if (tvBannerTimeout1) {
+    clearTimeout(tvBannerTimeout1);
+    tvBannerTimeout1 = null;
+  }
+  if (tvBannerTimeout2) {
+    clearTimeout(tvBannerTimeout2);
+    tvBannerTimeout2 = null;
+  }
+
   titleEl.textContent = title;
   subtitleEl.textContent = subtitle;
   
   banner.className = 'tv-event-banner show ' + themeClass;
   
-  setTimeout(() => {
+  tvBannerTimeout1 = setTimeout(() => {
+    tvBannerTimeout1 = null;
     banner.classList.remove('show');
-    setTimeout(() => {
+    tvBannerTimeout2 = setTimeout(() => {
+      tvBannerTimeout2 = null;
       banner.className = 'tv-event-banner hidden';
     }, 450);
   }, 2200);
@@ -3755,6 +3778,31 @@ function finishDelivery() {
   updateCricketUI();
 }
 
+function clearAllGameplayTimeouts() {
+  if (isAutoBowlingTimeout) {
+    clearTimeout(isAutoBowlingTimeout);
+    isAutoBowlingTimeout = null;
+  }
+  if (fielderThrowTimeout) {
+    clearTimeout(fielderThrowTimeout);
+    fielderThrowTimeout = null;
+  }
+  if (milestoneTimeout) {
+    clearTimeout(milestoneTimeout);
+    milestoneTimeout = null;
+  }
+  if (tvBannerTimeout1) {
+    clearTimeout(tvBannerTimeout1);
+    tvBannerTimeout1 = null;
+  }
+  if (tvBannerTimeout2) {
+    clearTimeout(tvBannerTimeout2);
+    tvBannerTimeout2 = null;
+  }
+  milestoneQueue = [];
+  isMilestoneCelebrating = false;
+}
+
 function toggleCricketPause() {
   if (cricketState.game_over) return;
   if (isBeginningModalOpen()) return; // Don't pause if squad selection / playing XI is open
@@ -3863,10 +3911,7 @@ function showMenu() {
     cancelAnimationFrame(gameLoopId);
     gameLoopId = null;
   }
-  if (isAutoBowlingTimeout) {
-    clearTimeout(isAutoBowlingTimeout);
-    isAutoBowlingTimeout = null;
-  }
+  clearAllGameplayTimeouts();
   isCricketPaused = false;
   pausedAutoBowling = false;
   const pauseModal = document.getElementById('cricket-pause-modal');
@@ -3913,10 +3958,7 @@ function showGame(gameId) {
     cancelAnimationFrame(gameLoopId);
     gameLoopId = null;
   }
-  if (isAutoBowlingTimeout) {
-    clearTimeout(isAutoBowlingTimeout);
-    isAutoBowlingTimeout = null;
-  }
+  clearAllGameplayTimeouts();
 
   const activeView = getActiveView();
   let targetView = null;
@@ -4665,16 +4707,35 @@ function getPlayerTooltipHTML(name, stats) {
   const normName = normalizePlayerName(name);
   const role = PLAYER_ROLES[normName] || "Batter";
   
+  // Safe defaults for batting & bowling objects
+  const batting = (stats && stats.batting) || {};
+  const battingInnings = batting.innings || 0;
+  const battingRuns = batting.runs || 0;
+  const battingDismissals = batting.dismissals || 0;
+  const battingBalls = batting.balls || 0;
+  const battingFours = batting.fours || 0;
+  const battingSixes = batting.sixes || 0;
+  const battingFiftyCount = batting.fiftyCount || 0;
+  const battingHundredCount = batting.hundredCount || 0;
+  const battingHighestScore = batting.highestScore || 0;
+  const battingHighestScoreNotOut = batting.highestScoreNotOut || false;
+
+  const bowling = (stats && stats.bowling) || {};
+  const bowlingInnings = bowling.innings || 0;
+  const bowlingWickets = bowling.wickets || 0;
+  const bowlingBallsBowled = bowling.ballsBowled || 0;
+  const bowlingRunsConceded = bowling.runsConceded || 0;
+  const bowlingBestWickets = bowling.bestWickets || 0;
+  const bowlingBestRuns = bowling.bestRuns || 0;
+
   // Dynamic batting calculations
-  const batting = stats.batting;
-  const batAvg = batting.dismissals > 0 ? (batting.runs / batting.dismissals).toFixed(2) : "-";
-  const batSR = batting.balls > 0 ? ((batting.runs / batting.balls) * 100).toFixed(2) : "0.00";
-  const highestScoreStr = batting.highestScore + (batting.highestScoreNotOut ? "*" : "");
+  const batAvg = battingDismissals > 0 ? (battingRuns / battingDismissals).toFixed(2) : "-";
+  const batSR = battingBalls > 0 ? ((battingRuns / battingBalls) * 100).toFixed(2) : "0.00";
+  const highestScoreStr = battingHighestScore + (battingHighestScoreNotOut ? "*" : "");
   
   // Dynamic bowling calculations
-  const bowling = stats.bowling;
-  const bowlAvg = bowling.wickets > 0 ? (bowling.runsConceded / bowling.wickets).toFixed(2) : "-";
-  const bestFiguresStr = bowling.bestWickets > 0 || bowling.bestRuns > 0 ? `${bowling.bestWickets}/${bowling.bestRuns}` : "-";
+  const bowlAvg = bowlingWickets > 0 ? (bowlingRunsConceded / bowlingWickets).toFixed(2) : "-";
+  const bestFiguresStr = bowlingBestWickets > 0 || bowlingBestRuns > 0 ? `${bowlingBestWickets}/${bowlingBestRuns}` : "-";
   
   let roleClass = "batter";
   if (role === "Bowler") roleClass = "bowler";
@@ -4699,11 +4760,11 @@ function getPlayerTooltipHTML(name, stats) {
         <div class="tooltip-grid">
           <div class="tooltip-stat-item">
             <span class="tooltip-stat-label">Innings</span>
-            <span class="tooltip-stat-value">${batting.innings}</span>
+            <span class="tooltip-stat-value">${battingInnings}</span>
           </div>
           <div class="tooltip-stat-item">
             <span class="tooltip-stat-label">Runs</span>
-            <span class="tooltip-stat-value">${batting.runs}</span>
+            <span class="tooltip-stat-value">${battingRuns}</span>
           </div>
           <div class="tooltip-stat-item">
             <span class="tooltip-stat-label">Average</span>
@@ -4715,15 +4776,15 @@ function getPlayerTooltipHTML(name, stats) {
           </div>
           <div class="tooltip-stat-item">
             <span class="tooltip-stat-label">Fours</span>
-            <span class="tooltip-stat-value">${batting.fours}</span>
+            <span class="tooltip-stat-value">${battingFours}</span>
           </div>
           <div class="tooltip-stat-item">
             <span class="tooltip-stat-label">Sixes</span>
-            <span class="tooltip-stat-value">${batting.sixes}</span>
+            <span class="tooltip-stat-value">${battingSixes}</span>
           </div>
           <div class="tooltip-stat-item">
             <span class="tooltip-stat-label">50s/100s</span>
-            <span class="tooltip-stat-value">${batting.fiftyCount}/${batting.hundredCount}</span>
+            <span class="tooltip-stat-value">${battingFiftyCount}/${battingHundredCount}</span>
           </div>
           <div class="tooltip-stat-item">
             <span class="tooltip-stat-label">Highest</span>
@@ -4742,15 +4803,15 @@ function getPlayerTooltipHTML(name, stats) {
         <div class="tooltip-grid">
           <div class="tooltip-stat-item">
             <span class="tooltip-stat-label">Innings</span>
-            <span class="tooltip-stat-value">${bowling.innings}</span>
+            <span class="tooltip-stat-value">${bowlingInnings}</span>
           </div>
           <div class="tooltip-stat-item">
             <span class="tooltip-stat-label">Wickets</span>
-            <span class="tooltip-stat-value">${bowling.wickets}</span>
+            <span class="tooltip-stat-value">${bowlingWickets}</span>
           </div>
           <div class="tooltip-stat-item">
             <span class="tooltip-stat-label">Balls</span>
-            <span class="tooltip-stat-value">${bowling.ballsBowled}</span>
+            <span class="tooltip-stat-value">${bowlingBallsBowled}</span>
           </div>
           <div class="tooltip-stat-item">
             <span class="tooltip-stat-label">Average</span>

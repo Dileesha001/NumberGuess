@@ -1,6 +1,14 @@
 import random
 import json
 import os
+import sys
+
+# Force UTF-8 encoding on Windows to prevent UnicodeEncodeError with emojis
+if sys.platform == 'win32':
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
 
 SCORES_FILE = "number_guess_scores.json"
 
@@ -95,6 +103,11 @@ def number_guessing_game():
             # Check bounds
             if guess < 1 or guess > max_num:
                 print(f"⚠️  Out of bounds! Please guess a number between 1 and {max_num}.")
+                continue
+
+            # Check current bounds to prevent wasting attempts
+            if guess < min_bound or guess > max_bound:
+                print(f"⚠️  Out of current bounds! Please guess a number between {min_bound} and {max_bound}.")
                 continue
 
             # Check duplicates

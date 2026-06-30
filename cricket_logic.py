@@ -34,16 +34,16 @@ def save_scores(scores):
     except Exception as e:
         print(f"Could not save scores: {e}")
 
+PLAY_BALL_OUTCOMES = [0, 1, 2, 3, 4, 6, 'W']
+PLAY_BALL_WEIGHTS = [25, 30, 15, 5, 10, 10, 5]
+
 def play_ball(state):
     # state = {'runs': 0, 'wickets': 0, 'balls_faced': 0, 'max_balls': 12, 'game_over': False}
     
     if state.get('game_over', False):
         return state, "Game is already over!"
         
-    outcomes = [0, 1, 2, 3, 4, 6, 'W']
-    weights = [25, 30, 15, 5, 10, 10, 5]  # total 100
-    
-    result = random.choices(outcomes, weights=weights)[0]
+    result = random.choices(PLAY_BALL_OUTCOMES, weights=PLAY_BALL_WEIGHTS)[0]
     
     message = ""
     state['balls_faced'] = state.get('balls_faced', 0) + 1

@@ -866,6 +866,7 @@ const xiTabField = document.getElementById('xi-tab-field');
 
 // Cached Gameplay & Overlay Elements for Performance
 const ballEl = document.getElementById('cricket-ball');
+const ballShadowEl = document.getElementById('cricket-ball-shadow');
 const strikerEl = document.getElementById('cricket-striker');
 const nonStrikerEl = document.getElementById('cricket-nonstriker');
 const bowlerEl = document.getElementById('cricket-bowler');
@@ -1295,8 +1296,9 @@ class Fielder {
       if (this.x !== this.homeX || this.y !== this.homeY) {
         let hdx = this.homeX - this.x;
         let hdy = this.homeY - this.y;
-        let hdist = Math.sqrt(hdx * hdx + hdy * hdy);
-        if (hdist > 2 * dt) {
+        let hdistSq = hdx * hdx + hdy * hdy;
+        if (hdistSq > 4 * dt * dt) {
+          let hdist = Math.sqrt(hdistSq);
           this.x += (hdx / hdist) * 1.5 * dt;
           this.y += (hdy / hdist) * 1.5 * dt;
         } else {
@@ -1317,8 +1319,9 @@ class Fielder {
       this.state = 'CHASING';
       let dx = ballX - this.x;
       let dy = ballY - this.y;
-      let distance = Math.sqrt(dx * dx + dy * dy);
-      if (distance > 4 * dt) {
+      let distSq = dx * dx + dy * dy;
+      if (distSq > 16 * dt * dt) {
+        let distance = Math.sqrt(distSq);
         this.x += (dx / distance) * this.speed * dt;
         this.y += (dy / distance) * this.speed * dt;
       } else {
@@ -1328,9 +1331,10 @@ class Fielder {
     } else {
       let dx = ballX - this.x;
       let dy = ballY - this.y;
-      let distance = Math.sqrt(dx * dx + dy * dy);
-      if ((ball.state === 'HIT' || ball.state === 'THROWN') && distance < 120) {
+      let distSq = dx * dx + dy * dy;
+      if ((ball.state === 'HIT' || ball.state === 'THROWN') && distSq < 14400) { // 120 * 120 = 14400
         this.state = 'CHASING';
+        let distance = Math.sqrt(distSq);
         let moveSpeed = this.speed * 0.7;
         if (distance > 12 * dt) {
           this.x += (dx / distance) * moveSpeed * dt;
@@ -1339,8 +1343,9 @@ class Fielder {
       } else {
         let hdx = this.homeX - this.x;
         let hdy = this.homeY - this.y;
-        let hdist = Math.sqrt(hdx * hdx + hdy * hdy);
-        if (hdist > 2 * dt) {
+        let hdistSq = hdx * hdx + hdy * hdy;
+        if (hdistSq > 4 * dt * dt) {
+          let hdist = Math.sqrt(hdistSq);
           this.x += (hdx / hdist) * 1.5 * dt; // return to base
           this.y += (hdy / hdist) * 1.5 * dt;
         } else {
@@ -2475,7 +2480,7 @@ function updateSVGDOM() {
     }
   }
 
-  const shadowEl = document.getElementById('cricket-ball-shadow');
+  const shadowEl = ballShadowEl || document.getElementById('cricket-ball-shadow');
   if (shadowEl) {
     if (ball.state !== 'IDLE' && ball.state !== 'DEAD') {
       let shadowRadius = 5;
@@ -2675,10 +2680,10 @@ function bowlBall() {
   ball.y = (bowlingDirection === 1) ? 115 : 335;
 
   // Visual sweet spot shifting in gauge
-  const sweetSpot = document.getElementById('timing-sweet-spot');
-  const earlyZone = document.getElementById('timing-early-zone');
-  const lateZone = document.getElementById('timing-late-zone');
-  const indicator = document.getElementById('timing-indicator');
+  const sweetSpot = timingSweetSpotEl || document.getElementById('timing-sweet-spot');
+  const earlyZone = timingEarlyZoneEl || document.getElementById('timing-early-zone');
+  const lateZone = timingLateZoneEl || document.getElementById('timing-late-zone');
+  const indicator = timingIndicatorEl || document.getElementById('timing-indicator');
   
   if (sweetSpot && earlyZone && lateZone) {
     if (bowlingDirection === 1) {
@@ -2753,7 +2758,7 @@ function attemptHit() {
     showCricketMessage(timingMsg, messageType);
     playSfx(timingQuality === "POOR" ? 'fail' : 'hit');
     
-    const speedVal = document.getElementById('cricket-speed-val');
+    const speedVal = cricketSpeedValEl || document.getElementById('cricket-speed-val');
     if (speedVal) {
       let color = timingQuality === "PERFECT" ? "var(--success-color)" : 
                   timingQuality === "GOOD" ? "#60a5fa" : 
@@ -2761,10 +2766,10 @@ function attemptHit() {
       speedVal.innerHTML += ` | Timing: <span style="color: ${color}; font-weight: bold;">${timingQuality}</span>`;
     }
     
-    const batEl = document.getElementById('cricket-bat');
-    if (batEl) {
+    const bat = batEl || document.getElementById('cricket-bat');
+    if (bat) {
       const swingRot = (bowlingDirection === 1) ? -75 : 75;
-      batEl.style.transform = `rotate(${swingRot}deg)`;
+      bat.style.transform = `rotate(${swingRot}deg)`;
       triggerBatSwingTrail(swingRot);
     }
 
@@ -3092,15 +3097,15 @@ function processHitResponse(res) {
 }
 
 function selectActiveFielder() {
-  let minD = Infinity;
+  let minDSq = Infinity;
   let closest = null;
   fielders.forEach(f => {
     f.state = 'IDLE';
     let dx = ball.x - f.x;
     let dy = ball.y - f.y;
-    let d = Math.sqrt(dx * dx + dy * dy);
-    if (d < minD) {
-      minD = d;
+    let dSq = dx * dx + dy * dy;
+    if (dSq < minDSq) {
+      minDSq = dSq;
       closest = f;
     }
   });
@@ -3195,8 +3200,8 @@ function gameLoop(timestamp) {
       }
     }
 
-    let distFromCenter = Math.sqrt((ball.x - 225) * (ball.x - 225) + (ball.y - 225) * (ball.y - 225));
-    if (distFromCenter >= 210) {
+    let distSq = (ball.x - 225) * (ball.x - 225) + (ball.y - 225) * (ball.y - 225);
+    if (distSq >= 44100) { // 210 * 210 = 44100
       ball.state = 'DEAD';
       if (currentShotOutcome) {
         if (currentShotOutcome.message.includes('SIX')) {
@@ -3232,9 +3237,9 @@ function gameLoop(timestamp) {
   if (activeFielder) {
     let dx = ball.x - activeFielder.x;
     let dy = ball.y - activeFielder.y;
-    let distance = Math.sqrt(dx * dx + dy * dy);
+    let distanceSq = dx * dx + dy * dy;
     
-    if (distance < 5 && ball.state === 'HIT') {
+    if (distanceSq < 25 && ball.state === 'HIT') { // 5 * 5 = 25
       ball.vx = 0;
       ball.vy = 0;
       ball.x = activeFielder.x;
@@ -4684,6 +4689,15 @@ if (muteBtn) {
     isMuted = !isMuted;
     muteBtn.textContent = isMuted ? '🔇' : '🔊';
     muteBtn.title = isMuted ? 'Unmute Sound' : 'Mute Sound';
+    
+    // Suspend audio context when muted to release resource locks
+    if (audioCtx) {
+      if (isMuted) {
+        audioCtx.suspend().catch(e => console.error("Error suspending audio", e));
+      } else {
+        audioCtx.resume().catch(e => console.error("Error resuming audio", e));
+      }
+    }
   });
 }
 

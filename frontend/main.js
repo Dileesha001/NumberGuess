@@ -1271,6 +1271,14 @@ let lastBatTransformOrigin = null;
 
 let lastIndicatorCy = null;
 
+let lastShadowX = null;
+let lastShadowY = null;
+let lastShadowRadius = null;
+let lastShadowOpacity = null;
+let lastShadowBlur = null;
+
+let cachedFielderElements = [];
+
 class Fielder {
   constructor(id, name, x, y, speed) {
     this.id = id;
@@ -1428,6 +1436,11 @@ function addCommentary(text, type = '') {
   line.className = `commentary-line active ${type}`;
   line.innerHTML = text;
   container.appendChild(line);
+  
+  // Prevent DOM bloat by keeping only the last 50 commentary lines
+  while (container.children.length > 50) {
+    container.removeChild(container.firstChild);
+  }
   
   container.scrollTop = container.scrollHeight;
 }
@@ -2398,6 +2411,7 @@ function resetPlayState() {
   lastB1Y = null; lastB2Y = null; lastStrikerFill = null; lastNonStrikerFill = null; lastBowlerY = null; lastBowlerFill = null;
   lastBatX1 = null; lastBatY1 = null; lastBatX2 = null; lastBatY2 = null; lastBatTransformOrigin = null;
   lastIndicatorCy = null;
+  lastShadowX = null; lastShadowY = null; lastShadowRadius = null; lastShadowOpacity = null; lastShadowBlur = null;
 
   updateSVGDOM();
   drawFielders();
@@ -2494,13 +2508,27 @@ function updateSVGDOM() {
         opacity = Math.max(0.1, 0.45 - h * 0.008);
         offset = h * 0.4;
       }
-      shadowEl.setAttribute('cx', ball.x);
-      shadowEl.setAttribute('cy', ball.y + offset);
-      shadowEl.setAttribute('r', shadowRadius);
-      shadowEl.style.opacity = opacity;
-      shadowEl.style.filter = `blur(${shadowBlur}px)`;
+      let cyVal = ball.y + offset;
+      let filterVal = `blur(${shadowBlur}px)`;
+      
+      if (ball.x !== lastShadowX || cyVal !== lastShadowY || shadowRadius !== lastShadowRadius || opacity !== lastShadowOpacity || filterVal !== lastShadowBlur) {
+        shadowEl.setAttribute('cx', ball.x);
+        shadowEl.setAttribute('cy', cyVal);
+        shadowEl.setAttribute('r', shadowRadius);
+        shadowEl.style.opacity = opacity;
+        shadowEl.style.filter = filterVal;
+        
+        lastShadowX = ball.x;
+        lastShadowY = cyVal;
+        lastShadowRadius = shadowRadius;
+        lastShadowOpacity = opacity;
+        lastShadowBlur = filterVal;
+      }
     } else {
-      shadowEl.style.opacity = '0';
+      if (lastShadowOpacity !== '0') {
+        shadowEl.style.opacity = '0';
+        lastShadowOpacity = '0';
+      }
     }
   }
 
@@ -2594,14 +2622,16 @@ function drawFielders() {
   if (!group) return;
   
   const expectedChildCount = fielders.length * 2;
-  if (group.children.length !== expectedChildCount) {
+  if (cachedFielderElements.length !== expectedChildCount) {
     group.innerHTML = '';
+    cachedFielderElements = [];
     fielders.forEach((f, idx) => {
       const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
       circle.setAttribute('stroke', '#ffffff');
       circle.setAttribute('stroke-width', '1.5');
       group.appendChild(circle);
       f.element = circle;
+      cachedFielderElements.push(circle);
 
       const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
       text.setAttribute('text-anchor', 'middle');
@@ -2611,15 +2641,12 @@ function drawFielders() {
       text.setAttribute('font-weight', '600');
       group.appendChild(text);
       f.textElement = text;
+      cachedFielderElements.push(text);
     });
   } else {
     fielders.forEach((f, idx) => {
-      if (!f.element) {
-        f.element = group.children[idx * 2];
-      }
-      if (!f.textElement) {
-        f.textElement = group.children[idx * 2 + 1];
-      }
+      f.element = cachedFielderElements[idx * 2];
+      f.textElement = cachedFielderElements[idx * 2 + 1];
     });
   }
 

@@ -16,9 +16,19 @@
     <!-- Intro Splash Screen -->
     <div id="splash-screen" class="splash-screen">
       <div class="splash-content">
-        <img src="./logo.svg" alt="DPR Mini Games Logo" class="splash-logo" />
-        <div class="splash-loader-container">
-          <div class="splash-loader-bar"></div>
+        <div class="splash-logo-wrapper">
+          <img src="./logo.svg" alt="DPR Mini Games Logo" class="splash-logo" />
+          <div class="splash-logo-glow"></div>
+        </div>
+        <h1 class="splash-title">DPR MINI GAMES</h1>
+        <div class="splash-loader-wrapper">
+          <div class="splash-loader-container">
+            <div class="splash-loader-bar"></div>
+          </div>
+          <div class="splash-loader-status">
+            <span>Loading Games</span>
+            <span class="splash-loader-percent" id="splash-percent">0%</span>
+          </div>
         </div>
       </div>
     </div>

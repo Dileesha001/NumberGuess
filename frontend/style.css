@@ -2946,13 +2946,13 @@ body.test-match-active .cricket-commentary-box .commentary-lines {
   left: 0;
   width: 100%;
   height: 100%;
-  background: radial-gradient(circle at center, #101428 0%, #04050a 100%);
+  background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
   z-index: 9999;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.8s;
+  transition: opacity 0.8s cubic-bezier(0.25, 1, 0.5, 1), visibility 0.8s;
   opacity: 1;
   visibility: visible;
 }
@@ -2963,22 +2963,85 @@ body.test-match-active .cricket-commentary-box .commentary-lines {
   pointer-events: none !important;
 }
 
+.splash-screen.fade-out .splash-content {
+  transform: scale(0.9) translateY(-10px);
+  opacity: 0;
+  transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.8s;
+}
+
 .splash-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 32px;
-  max-width: 320px;
+  gap: 28px;
+  max-width: 360px;
   width: 90%;
+  transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.8s;
+}
+
+.splash-logo-wrapper {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .splash-logo {
-  width: 180px;
-  height: 180px;
-  filter: drop-shadow(0 0 30px rgba(99, 102, 241, 0.45));
-  animation: splashLogoIntro 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, splashLogoFloat 3s ease-in-out infinite 1.2s;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  filter: drop-shadow(0 0 20px rgba(99, 102, 241, 0.4));
+  animation: splashLogoIntro 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, splashLogoFloat 4s ease-in-out infinite 1.2s;
   opacity: 0;
-  transform: scale(0.6) translateY(20px);
+  transform: scale(0.7) translateY(15px);
+}
+
+.splash-logo-glow {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.3) 0%, rgba(99, 102, 241, 0) 70%);
+  z-index: 1;
+  border-radius: 50%;
+  animation: splashGlowPulse 3s ease-in-out infinite alternate;
+}
+
+@keyframes splashGlowPulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.2);
+    opacity: 0.9;
+  }
+}
+
+.splash-title {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  color: #ffffff;
+  text-align: center;
+  margin: 0;
+  opacity: 0;
+  transform: translateY(10px);
+  animation: splashTitleIntro 1s cubic-bezier(0.25, 1, 0.5, 1) forwards 0.4s;
+  text-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+}
+
+@keyframes splashTitleIntro {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.splash-logo-float-wrapper {
+  animation: splashLogoFloat 4s ease-in-out infinite;
 }
 
 @keyframes splashLogoIntro {
@@ -2991,18 +3054,33 @@ body.test-match-active .cricket-commentary-box .commentary-lines {
 @keyframes splashLogoFloat {
   0%, 100% {
     transform: translateY(0);
-    filter: drop-shadow(0 0 30px rgba(99, 102, 241, 0.45));
+    filter: drop-shadow(0 0 20px rgba(99, 102, 241, 0.4));
   }
   50% {
     transform: translateY(-8px);
-    filter: drop-shadow(0 0 45px rgba(99, 102, 241, 0.7));
+    filter: drop-shadow(0 0 35px rgba(99, 102, 241, 0.6));
+  }
+}
+
+.splash-loader-wrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  opacity: 0;
+  animation: splashLoaderIntro 1s cubic-bezier(0.25, 1, 0.5, 1) forwards 0.8s;
+}
+
+@keyframes splashLoaderIntro {
+  to {
+    opacity: 1;
   }
 }
 
 .splash-loader-container {
   width: 100%;
   height: 4px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
   border-radius: 2px;
   overflow: hidden;
   position: relative;
@@ -3012,18 +3090,25 @@ body.test-match-active .cricket-commentary-box .commentary-lines {
   width: 0%;
   height: 100%;
   background: linear-gradient(90deg, #6366f1, #06b6d4, #10b981);
-  box-shadow: 0 0 10px rgba(99, 102, 241, 0.7);
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.5);
   border-radius: 2px;
-  animation: splashLoading 1.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  transition: width 0.1s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-@keyframes splashLoading {
-  0% {
-    width: 0%;
-  }
-  100% {
-    width: 100%;
-  }
+.splash-loader-status {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #94a3b8;
+  letter-spacing: 0.05em;
+  padding: 0 2px;
+}
+
+.splash-loader-percent {
+  font-weight: 600;
+  color: #38bdf8;
 }
 
 

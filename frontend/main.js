@@ -4732,15 +4732,34 @@ initGame();
 
 // Splash Screen handling
 const splash = document.getElementById('splash-screen');
-if (splash) {
-  // Wait for the loader bar animation to complete (1.8s) + a small delay for premium feel
-  setTimeout(() => {
-    splash.classList.add('fade-out');
-    // Remove it from layout after transition completes to save resources
-    setTimeout(() => {
-      splash.style.display = 'none';
-    }, 800); // matching the 0.8s CSS transition duration
-  }, 2200);
+const splashPercent = document.getElementById('splash-percent');
+const splashBar = document.querySelector('.splash-loader-bar');
+if (splash && splashPercent && splashBar) {
+  let progress = 0;
+  const duration = 2000; // 2 seconds
+  const intervalTime = 20; // 20ms update interval
+  const totalSteps = duration / intervalTime;
+  const increment = 100 / totalSteps;
+
+  const splashTimer = setInterval(() => {
+    progress += increment;
+    if (progress >= 100) {
+      progress = 100;
+      clearInterval(splashTimer);
+      
+      // Wait a moment at 100% then trigger smooth zoom exit transition
+      setTimeout(() => {
+        splash.classList.add('fade-out');
+        setTimeout(() => {
+          splash.style.display = 'none';
+        }, 800); // matching the 0.8s CSS transition duration
+      }, 300);
+    }
+    
+    // Update loading text and progress bar synchronously
+    splashPercent.textContent = `${Math.floor(progress)}%`;
+    splashBar.style.width = `${progress}%`;
+  }, intervalTime);
 }
 
 // Player Stats Hover Tooltip Logic

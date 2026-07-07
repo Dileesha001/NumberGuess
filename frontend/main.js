@@ -25,6 +25,16 @@ let guessHistory = [];
 let minBound = 1;
 let maxBound = 100;
 
+// Number Guessing Modes State
+let activeGuessMode = 'classic'; // 'classic' or 'time-attack'
+let guessTimerInterval = null;
+let guessTimeRemaining = 30.0;
+const GUESS_MAX_TIME = 30.0;
+
+// Hangman Modes State
+let activeHangmanCategory = 'all'; // 'all' or specific name
+let hangmanHintUsed = false;
+
 // Statistics State
 let gameStats = {
   numberGuess: { bestScore: null, gamesPlayed: 0 },
@@ -37,6 +47,91 @@ let gameStats = {
 let isMuted = false;
 let audioCtx = null;
 let bowlNoiseBuffer = null;
+let musicInterval = null;
+let musicGainNode = null;
+let isMusicPlaying = false;
+
+const melodySeq = [329.63, 392.00, 440.00, 392.00, 349.23, 329.63, 293.66, 329.63]; // E4, G4, A4, G4, F4, E4, D4, E4
+const bassSeq = [130.81, 146.83, 164.81, 196.00]; // C3, D3, E3, G3
+let seqIndex = 0;
+
+function startBackgroundMusic() {
+  if (isMuted || isMusicPlaying) return;
+  initAudio();
+  if (!audioCtx) return;
+  
+  isMusicPlaying = true;
+  musicGainNode = audioCtx.createGain();
+  musicGainNode.gain.setValueAtTime(0.015, audioCtx.currentTime); // keep it very quiet
+  musicGainNode.connect(audioCtx.destination);
+  
+  let stepTime = 0.25; // 250ms per step
+  let lastScheduleTime = audioCtx.currentTime;
+  
+  musicInterval = setInterval(() => {
+    const now = audioCtx.currentTime;
+    // Look-ahead schedule
+    if (now + 0.1 > lastScheduleTime) {
+      const scheduledTime = lastScheduleTime;
+      
+      // Play melody note
+      const osc = audioCtx.createOscillator();
+      const noteGain = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(melodySeq[seqIndex % melodySeq.length], scheduledTime);
+      
+      // Soft envelope
+      noteGain.gain.setValueAtTime(0.0, scheduledTime);
+      noteGain.gain.linearRampToValueAtTime(0.4, scheduledTime + 0.05);
+      noteGain.gain.exponentialRampToValueAtTime(0.001, scheduledTime + stepTime - 0.02);
+      
+      osc.connect(noteGain);
+      noteGain.connect(musicGainNode);
+      osc.start(scheduledTime);
+      osc.stop(scheduledTime + stepTime);
+      
+      // Play bass note on step 0 and 4
+      if (seqIndex % 4 === 0) {
+        const bassOsc = audioCtx.createOscillator();
+        const bassGain = audioCtx.createGain();
+        bassOsc.type = 'sawtooth';
+        bassOsc.frequency.setValueAtTime(bassSeq[(seqIndex / 4) % bassSeq.length], scheduledTime);
+        
+        // Low pass filter to make bass warm
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(200, scheduledTime);
+        
+        bassGain.gain.setValueAtTime(0.0, scheduledTime);
+        bassGain.gain.linearRampToValueAtTime(0.6, scheduledTime + 0.08);
+        bassGain.gain.exponentialRampToValueAtTime(0.001, scheduledTime + stepTime * 2 - 0.05);
+        
+        bassOsc.connect(filter);
+        filter.connect(bassGain);
+        bassGain.connect(musicGainNode);
+        bassOsc.start(scheduledTime);
+        bassOsc.stop(scheduledTime + stepTime * 2);
+      }
+      
+      seqIndex++;
+      lastScheduleTime += stepTime;
+    }
+  }, 100);
+}
+
+function stopBackgroundMusic() {
+  isMusicPlaying = false;
+  if (musicInterval) {
+    clearInterval(musicInterval);
+    musicInterval = null;
+  }
+  if (musicGainNode) {
+    try {
+      musicGainNode.disconnect();
+    } catch(e) {}
+    musicGainNode = null;
+  }
+}
 
 // Mini Cricket Over outcomes history
 let ballOutcomesHistory = [];
@@ -90,6 +185,19 @@ function playSfx(type) {
         
         osc.start(now);
         osc.stop(now + 0.1);
+        break;
+      }
+      case 'hover': {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.frequency.setValueAtTime(1000, now);
+        osc.frequency.exponentialRampToValueAtTime(800, now + 0.04);
+        gain.gain.setValueAtTime(0.02, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+        osc.start(now);
+        osc.stop(now + 0.04);
         break;
       }
       case 'bowl': {
@@ -201,6 +309,105 @@ function playSfx(type) {
         
         osc.start(now);
         osc.stop(now + 0.3);
+        break;
+      }
+      case 'cheer': {
+        if (!bowlNoiseBuffer) {
+          initAudio();
+        }
+        const noise = audioCtx.createBufferSource();
+        noise.buffer = bowlNoiseBuffer;
+        
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.Q.setValueAtTime(1.5, now);
+        filter.frequency.setValueAtTime(800, now);
+        filter.frequency.linearRampToValueAtTime(950, now + 0.6);
+        filter.frequency.linearRampToValueAtTime(700, now + 1.2);
+        
+        const gain = audioCtx.createGain();
+        gain.gain.setValueAtTime(0.0, now);
+        gain.gain.linearRampToValueAtTime(0.08, now + 0.2);
+        gain.gain.linearRampToValueAtTime(0.08, now + 0.9);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 1.6);
+        
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        noise.start(now);
+        noise.stop(now + 1.6);
+        break;
+      }
+      case 'milestone': {
+        const freqs = [261.63, 329.63, 392.00, 523.25];
+        freqs.forEach((freq, idx) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+          osc.frequency.exponentialRampToValueAtTime(freq * 1.5, now + idx * 0.08 + 0.4);
+          
+          gain.gain.setValueAtTime(0.0, now);
+          gain.gain.setValueAtTime(0.08, now + idx * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.5);
+          
+          const filter = audioCtx.createBiquadFilter();
+          filter.type = 'lowpass';
+          filter.frequency.setValueAtTime(1000, now);
+          
+          osc.connect(filter);
+          filter.connect(gain);
+          gain.connect(audioCtx.destination);
+          
+          osc.start(now + idx * 0.08);
+          osc.stop(now + idx * 0.08 + 0.5);
+        });
+        break;
+      }
+      case 'win': {
+        const chord = [523.25, 659.25, 783.99, 1046.50];
+        chord.forEach((freq, idx) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+          
+          gain.gain.setValueAtTime(0.0, now);
+          gain.gain.setValueAtTime(0.12, now + idx * 0.1);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.35);
+          
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now + idx * 0.1);
+          osc.stop(now + idx * 0.1 + 0.35);
+        });
+        break;
+      }
+      case 'lose': {
+        const chord = [392.00, 369.99, 349.23, 311.13];
+        chord.forEach((freq, idx) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.15);
+          osc.frequency.linearRampToValueAtTime(freq * 0.8, now + idx * 0.15 + 0.45);
+          
+          gain.gain.setValueAtTime(0.0, now);
+          gain.gain.setValueAtTime(0.1, now + idx * 0.15);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.15 + 0.45);
+          
+          const filter = audioCtx.createBiquadFilter();
+          filter.type = 'lowpass';
+          filter.frequency.setValueAtTime(400, now);
+          
+          osc.connect(filter);
+          filter.connect(gain);
+          gain.connect(audioCtx.destination);
+          
+          osc.start(now + idx * 0.15);
+          osc.stop(now + idx * 0.15 + 0.45);
+        });
         break;
       }
     }
@@ -1582,26 +1789,46 @@ function getProceduralCommentary(outcome, speed, style) {
 function generateBowlingSpeed() {
   if (!cricketSpeedValEl) return;
   
-  if (!overBowlerStyle) {
-    const bowlerType = BOWLER_TYPES[currentBowler.name] || "Fast";
-    overBowlerStyle = (bowlerType === "Spin") ? "Off-spin" : "Fast-medium";
+  // Bowler Selection override
+  const selectedBowlerEl = document.getElementById('cricket-bowler-select');
+  const bowlerVal = selectedBowlerEl ? selectedBowlerEl.value : 'fast';
+  
+  if (bowlerVal === 'spin') {
+    overBowlerStyle = "Off-spin";
+  } else if (bowlerVal === 'swing') {
+    overBowlerStyle = "Swing";
+  } else {
+    overBowlerStyle = "Fast-medium";
   }
+  
   ballStyle = overBowlerStyle;
+  
+  const pitchVal = document.getElementById('cricket-pitch-select')?.value || 'flat';
   
   if (ballStyle === "Off-spin") {
     ballSpeedKmh = 85 + Math.random() * 20;
     currentBallSpeedY = 3.2 + ((ballSpeedKmh - 85) / 20) * 0.6;
     spinBreakDirection = Math.random() < 0.5 ? 1 : -1;
-    currentBallSpeedX = -spinBreakDirection * (0.4 + Math.random() * 0.3); // drift wide
+    currentBallSpeedX = -spinBreakDirection * (0.4 + Math.random() * 0.3);
+  } else if (ballStyle === "Swing") {
+    ballSpeedKmh = 115 + Math.random() * 15;
+    const speedMultiplier = pitchVal === 'green' ? 1.12 : 1.0;
+    ballSpeedKmh *= speedMultiplier;
+    currentBallSpeedY = 4.5 + ((ballSpeedKmh - 115) / 15) * 0.8;
+    spinBreakDirection = Math.random() < 0.5 ? 1 : -1;
+    currentBallSpeedX = -spinBreakDirection * 0.3; // initial drift
   } else {
     ballSpeedKmh = 130 + Math.random() * 22;
+    const speedMultiplier = pitchVal === 'green' ? 1.06 : 1.0;
+    ballSpeedKmh *= speedMultiplier;
     currentBallSpeedY = 5.4 + ((ballSpeedKmh - 130) / 22) * 1.0;
-    currentBallSpeedX = (Math.random() - 0.5) * 0.4; // slight initial angle
+    currentBallSpeedX = (Math.random() - 0.5) * 0.4;
   }
-  hasBounced = false;
-  bouncePointY = 190 + Math.random() * 50; // bounce point Y
   
-  cricketSpeedValEl.innerHTML = `${ballStyle} @ <span class="highlight">${ballSpeedKmh.toFixed(1)} km/h</span>`;
+  hasBounced = false;
+  bouncePointY = 190 + Math.random() * 50;
+  
+  cricketSpeedValEl.innerHTML = `${ballStyle} @ <span class="highlight">${ballSpeedKmh.toFixed(1)} km/h</span> | Pitch: <span class="highlight">${pitchVal.toUpperCase()}</span>`;
 }
 
 function updateOverHistoryUI() {
@@ -2862,6 +3089,17 @@ function attemptHit() {
     let isWicket = false;
     let runMessage = "";
     
+    // Pitch & Bowler adjustments
+    const pitchVal = document.getElementById('cricket-pitch-select')?.value || 'flat';
+    let wicketAdjustment = 0;
+    if (pitchVal === 'green' && (ballStyle === 'Fast-medium' || ballStyle === 'Swing')) {
+      wicketAdjustment = 0.08;
+    } else if (pitchVal === 'dusty' && ballStyle === 'Off-spin') {
+      wicketAdjustment = 0.12;
+    } else if (pitchVal === 'flat') {
+      wicketAdjustment = -0.05;
+    }
+    
     if (timingQuality === "PERFECT") {
       const r = Math.random();
       if (r < 0.40) {
@@ -2880,50 +3118,53 @@ function attemptHit() {
     } 
     else if (timingQuality === "GOOD") {
       const r = Math.random();
-      if (r < 0.15) {
+      const wThreshold = 0.85 - wicketAdjustment;
+      if (r >= wThreshold) {
+        result = 'W';
+        isWicket = true;
+        runMessage = "OUT! Sliced high and caught in the deep!";
+      } else if (r < 0.15) {
         result = 4;
         runMessage = "FOUR! Shouts of catch but it beats the fielder!";
       } else if (r < 0.50) {
         result = 2;
         runMessage = "Runs: 2. Batsmen running hard.";
-      } else if (r < 0.85) {
+      } else {
         result = 1;
         runMessage = "Runs: 1. Played down the ground.";
-      } else {
-        result = 'W';
-        isWicket = true;
-        runMessage = "OUT! Sliced high and caught in the deep!";
       }
     } 
     else if (timingQuality === "DECENT") {
       const r = Math.random();
-      if (r < 0.10) {
+      const wThreshold = 0.80 - wicketAdjustment;
+      if (r >= wThreshold) {
+        result = 'W';
+        isWicket = true;
+        runMessage = "OUT! Leading edge, caught by the bowler!";
+      } else if (r < 0.10) {
         result = 2;
         runMessage = "Runs: 2. Misfield allows an extra single.";
       } else if (r < 0.55) {
         result = 1;
         runMessage = "Runs: 1. Batsman turns it away for a single.";
-      } else if (r < 0.80) {
+      } else {
         result = 0;
         runMessage = "Dot ball. Clean stop by the cover fielder.";
-      } else {
-        result = 'W';
-        isWicket = true;
-        runMessage = "OUT! Leading edge, caught by the bowler!";
       }
     } 
     else { // POOR
       const r = Math.random();
-      if (r < 0.10) {
-        result = 1;
-        runMessage = "Runs: 1. Thick edge runs away.";
-      } else if (r < 0.65) {
-        result = 0;
-        runMessage = "Dot ball. Beaten completely by pace.";
-      } else {
+      const wThreshold = 0.65 - wicketAdjustment;
+      if (r >= wThreshold) {
         result = 'W';
         isWicket = true;
         runMessage = "OUT! Played on! Dragged onto the stumps!";
+      } else if (r < 0.10) {
+        result = 1;
+        runMessage = "Runs: 1. Thick edge runs away.";
+      } else {
+        result = 0;
+        runMessage = "Dot ball. Beaten completely by pace.";
       }
     }
     
@@ -3227,8 +3468,17 @@ function gameLoop(timestamp) {
       if (ballStyle === "Off-spin") {
         if (!hasBounced && ball.y >= bouncePointY) {
           hasBounced = true;
-          currentBallSpeedX = spinBreakDirection * (0.8 + Math.random() * 0.6);
+          const pitchVal = document.getElementById('cricket-pitch-select')?.value || 'flat';
+          const multiplier = pitchVal === 'dusty' ? 1.8 : 1.0;
+          currentBallSpeedX = spinBreakDirection * (0.8 + Math.random() * 0.6) * multiplier;
           playSfx('click'); // bounce sound
+        }
+      } else if (ballStyle === "Swing") {
+        if (!hasBounced) {
+          currentBallSpeedX += (spinBreakDirection || 1) * 0.08 * dt;
+        } else if (ball.y >= bouncePointY) {
+          hasBounced = true;
+          playSfx('click');
         }
       } else {
         currentBallSpeedX += Math.sin(ball.y / 25) * 0.05 * dt;
@@ -3246,8 +3496,17 @@ function gameLoop(timestamp) {
       if (ballStyle === "Off-spin") {
         if (!hasBounced && ball.y <= bouncePointY) {
           hasBounced = true;
-          currentBallSpeedX = spinBreakDirection * (0.8 + Math.random() * 0.6);
+          const pitchVal = document.getElementById('cricket-pitch-select')?.value || 'flat';
+          const multiplier = pitchVal === 'dusty' ? 1.8 : 1.0;
+          currentBallSpeedX = spinBreakDirection * (0.8 + Math.random() * 0.6) * multiplier;
           playSfx('click'); // bounce sound
+        }
+      } else if (ballStyle === "Swing") {
+        if (!hasBounced) {
+          currentBallSpeedX += (spinBreakDirection || 1) * 0.08 * dt;
+        } else if (ball.y <= bouncePointY) {
+          hasBounced = true;
+          playSfx('click');
         }
       } else {
         currentBallSpeedX += Math.sin((450 - ball.y) / 25) * 0.05 * dt;
@@ -4111,6 +4370,22 @@ function initGame() {
   isGameOver = false;
   guessHistory = [];
   
+  // Reset Timer state
+  clearInterval(guessTimerInterval);
+  guessTimerInterval = null;
+  guessTimeRemaining = GUESS_MAX_TIME;
+  
+  const timerContainer = document.getElementById('guess-timer-container');
+  if (timerContainer) {
+    timerContainer.classList.add('hidden');
+  }
+  
+  // Show Mode Selection Modal
+  const modeModal = document.getElementById('number-guess-mode-modal');
+  if (modeModal) {
+    modeModal.classList.remove('hidden');
+  }
+
   // Reset Bounds for Range visualizer
   minBound = 1;
   maxBound = 100;
@@ -4257,6 +4532,8 @@ function handleGuess(e) {
     
     // Game Won
     isGameOver = true;
+    clearInterval(guessTimerInterval);
+    guessTimerInterval = null;
     minBound = guess;
     maxBound = guess;
     updateRangeUI(guess);
@@ -4358,6 +4635,9 @@ function handleHangmanLetterGuess(letter) {
       showHangmanMessage('🎉 You won! You guessed the word!', 'success');
       playSfx('success');
       
+      const hintBtn = document.getElementById('hangman-hint-btn');
+      if (hintBtn) hintBtn.classList.add('hidden');
+      
       // Update statistics
       gameStats.hangman.wins++;
       saveStats();
@@ -4401,6 +4681,9 @@ function handleHangmanLetterGuess(letter) {
       showHangmanMessage(`Game Over! The word was ${currentWord}.`, 'error');
       playSfx('out');
       
+      const hintBtn = document.getElementById('hangman-hint-btn');
+      if (hintBtn) hintBtn.classList.add('hidden');
+      
       // Update statistics
       gameStats.hangman.losses++;
       saveStats();
@@ -4425,10 +4708,30 @@ function disableAllKeyboardKeys() {
 }
 
 function initHangman() {
-  let availableWords = hangmanWords.filter(w => !recentHangmanWords.includes(w.word));
+  // Show Category Selection Modal
+  const modal = document.getElementById('hangman-category-modal');
+  if (modal) {
+    modal.classList.remove('hidden');
+  }
+
+  // Reset Hint state
+  hangmanHintUsed = false;
+  const hintBtn = document.getElementById('hangman-hint-btn');
+  if (hintBtn) {
+    hintBtn.classList.remove('hidden');
+    hintBtn.disabled = false;
+    hintBtn.style.opacity = '1';
+  }
+
+  let filteredWords = hangmanWords;
+  if (activeHangmanCategory !== 'all') {
+    filteredWords = hangmanWords.filter(w => w.category === activeHangmanCategory);
+  }
+  
+  let availableWords = filteredWords.filter(w => !recentHangmanWords.includes(w.word));
   if (availableWords.length === 0) {
-    availableWords = hangmanWords;
-    recentHangmanWords = [];
+    availableWords = filteredWords;
+    recentHangmanWords = recentHangmanWords.filter(w => !filteredWords.some(fw => fw.word === w));
   }
   
   const chosen = availableWords[Math.floor(Math.random() * availableWords.length)];
@@ -4793,12 +5096,51 @@ if (muteBtn) {
     if (audioCtx) {
       if (isMuted) {
         audioCtx.suspend().catch(e => console.error("Error suspending audio", e));
+        stopBackgroundMusic();
       } else {
         audioCtx.resume().catch(e => console.error("Error resuming audio", e));
+        startBackgroundMusic();
       }
     }
   });
 }
+
+const musicBtn = document.getElementById('music-btn');
+if (musicBtn) {
+  musicBtn.addEventListener('click', () => {
+    if (isMusicPlaying) {
+      stopBackgroundMusic();
+      musicBtn.style.opacity = '0.45';
+    } else {
+      startBackgroundMusic();
+      musicBtn.style.opacity = '1';
+    }
+  });
+}
+
+// Start music on first click to satisfy browser autoplay policies
+document.addEventListener('click', () => {
+  if (!isMusicPlaying && !isMuted) {
+    startBackgroundMusic();
+    const musicBtnEl = document.getElementById('music-btn');
+    if (musicBtnEl) musicBtnEl.style.opacity = '1';
+  }
+}, { once: true });
+
+function attachHoverSounds() {
+  const hoverables = document.querySelectorAll('button, .game-card, .mode-select-card, .team-select-option, .key-btn, .letter-box, select, input[type="submit"]');
+  hoverables.forEach(el => {
+    if (!el.dataset.hoverSoundBound) {
+      el.dataset.hoverSoundBound = 'true';
+      el.addEventListener('mouseenter', () => {
+        playSfx('hover');
+      });
+    }
+  });
+}
+
+// Setup hover sound event delegation or attachment
+attachHoverSounds();
 
 const fullscreenBtn = document.getElementById('fullscreen-btn');
 if (fullscreenBtn) {
@@ -4818,6 +5160,271 @@ document.addEventListener('fullscreenchange', () => {
     fullscreenBtn.style.opacity = document.fullscreenElement ? '0.5' : '1';
   }
 });
+
+// Since pages might render dynamic elements, attach hover sounds when views change
+const originalShowGame = showGame;
+showGame = function(gameId) {
+  originalShowGame(gameId);
+  setTimeout(attachHoverSounds, 100);
+};
+
+const originalShowMenu = showMenu;
+showMenu = function() {
+  clearInterval(guessTimerInterval);
+  guessTimerInterval = null;
+  const timerContainer = document.getElementById('guess-timer-container');
+  if (timerContainer) {
+    timerContainer.classList.add('hidden');
+  }
+  originalShowMenu();
+  setTimeout(attachHoverSounds, 100);
+};
+
+// Start Guess Game and Timer functions
+function startGuessGame() {
+  const modeModal = document.getElementById('number-guess-mode-modal');
+  if (modeModal) {
+    modeModal.classList.add('hidden');
+  }
+  
+  if (activeGuessMode === 'time-attack') {
+    const timerContainer = document.getElementById('guess-timer-container');
+    if (timerContainer) {
+      timerContainer.classList.remove('hidden');
+    }
+    
+    updateGuessTimerUI();
+    guessTimerInterval = setInterval(() => {
+      guessTimeRemaining -= 0.1;
+      if (guessTimeRemaining <= 0) {
+        guessTimeRemaining = 0;
+        updateGuessTimerUI();
+        handleGuessTimeOut();
+      } else {
+        updateGuessTimerUI();
+      }
+    }, 100);
+  }
+  
+  guessInput.focus();
+}
+
+function updateGuessTimerUI() {
+  const textEl = document.getElementById('guess-timer-text');
+  const fillEl = document.getElementById('guess-timer-fill');
+  if (textEl) {
+    textEl.textContent = `${guessTimeRemaining.toFixed(1)}s`;
+  }
+  if (fillEl) {
+    const pct = (guessTimeRemaining / GUESS_MAX_TIME) * 100;
+    fillEl.style.width = `${pct}%`;
+    if (guessTimeRemaining < 10) {
+      fillEl.style.background = 'linear-gradient(90deg, #f43f5e, #e11d48)';
+    } else {
+      fillEl.style.background = 'linear-gradient(90deg, #ec4899, #f43f5e)';
+    }
+  }
+}
+
+function handleGuessTimeOut() {
+  clearInterval(guessTimerInterval);
+  guessTimerInterval = null;
+  isGameOver = true;
+  
+  guessInput.disabled = true;
+  submitBtn.disabled = true;
+  submitBtn.style.opacity = '0.5';
+  
+  showMessage(`💀 Time's up! You ran out of time.<br/>The correct number was: ${secretNumber}`, 'error');
+  playSfx('lose');
+  
+  restartBtn.classList.remove('hidden');
+  restartBtn.focus();
+}
+
+// Guess Mode selection cards
+const modeClassicBtn = document.getElementById('mode-classic-btn');
+const modeTimeBtn = document.getElementById('mode-time-btn');
+const startGuessBtn = document.getElementById('number-guess-start-btn');
+
+if (modeClassicBtn && modeTimeBtn) {
+  modeClassicBtn.addEventListener('click', () => {
+    activeGuessMode = 'classic';
+    modeClassicBtn.classList.add('selected');
+    modeTimeBtn.classList.remove('selected');
+    playSfx('click');
+  });
+  
+  modeTimeBtn.addEventListener('click', () => {
+    activeGuessMode = 'time-attack';
+    modeTimeBtn.classList.add('selected');
+    modeClassicBtn.classList.remove('selected');
+    playSfx('click');
+  });
+}
+
+if (startGuessBtn) {
+  startGuessBtn.addEventListener('click', () => {
+    playSfx('click');
+    startGuessGame();
+  });
+}
+
+// Hangman Category selection cards
+const categoryCards = document.querySelectorAll('#hangman-category-modal .mode-select-card');
+const startHangmanBtn = document.getElementById('hangman-start-btn');
+const hangmanHintBtn = document.getElementById('hangman-hint-btn');
+
+categoryCards.forEach(card => {
+  card.addEventListener('click', () => {
+    categoryCards.forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    activeHangmanCategory = card.getAttribute('data-category');
+    playSfx('click');
+  });
+});
+
+if (startHangmanBtn) {
+  startHangmanBtn.addEventListener('click', () => {
+    playSfx('click');
+    const modal = document.getElementById('hangman-category-modal');
+    if (modal) modal.classList.add('hidden');
+  });
+}
+
+function triggerHangmanHint() {
+  if (isHangmanGameOver || hangmanHintUsed) return;
+  
+  const unrevealedLetters = [];
+  for (let i = 0; i < currentWord.length; i++) {
+    const char = currentWord[i];
+    if (!guessedLetters.has(char)) {
+      unrevealedLetters.push(char);
+    }
+  }
+  
+  if (unrevealedLetters.length <= 1) {
+    showHangmanMessage("Cannot give a hint for the last letter! 💡", "warning");
+    playSfx('fail');
+    return;
+  }
+  
+  const hintLetter = unrevealedLetters[Math.floor(Math.random() * unrevealedLetters.length)];
+  guessedLetters.add(hintLetter);
+  
+  const keyBtn = document.getElementById(`key-${hintLetter}`);
+  if (keyBtn) {
+    keyBtn.classList.add('correct-guess');
+    keyBtn.disabled = true;
+  }
+  
+  wrongGuesses++;
+  hangmanWrongCount.textContent = wrongGuesses;
+  
+  if (wrongGuesses <= hangmanParts.length) {
+    const part = hangmanParts[wrongGuesses - 1];
+    if (part) {
+      part.classList.remove('hide-part');
+      part.classList.add('show-part');
+    }
+  }
+  
+  renderHangmanWord();
+  playSfx('click');
+  
+  hangmanHintUsed = true;
+  if (hangmanHintBtn) {
+    hangmanHintBtn.disabled = true;
+    hangmanHintBtn.style.opacity = '0.4';
+  }
+  
+  showHangmanMessage(`Hint: Revealed letter "${hintLetter}". Penalty applied! 💡`, "warning");
+  
+  // Evaluate win/loss condition
+  const isWin = currentWord.split('').every(l => guessedLetters.has(l));
+  if (isWin) {
+    isHangmanGameOver = true;
+    showHangmanMessage('🎉 You won! Hint helped you guess the word!', 'success');
+    playSfx('success');
+    
+    gameStats.hangman.wins++;
+    saveStats();
+    
+    if (hangmanHintBtn) hangmanHintBtn.classList.add('hidden');
+    hangmanInput.disabled = true;
+    hangmanSubmitBtn.disabled = true;
+    hangmanSubmitBtn.style.opacity = '0.5';
+    hangmanRestartBtn.classList.remove('hidden');
+    hangmanRestartBtn.focus();
+    disableAllKeyboardKeys();
+  } else if (wrongGuesses >= 6) {
+    isHangmanGameOver = true;
+    hangmanWordDisplay.innerHTML = '';
+    for (let i = 0; i < currentWord.length; i++) {
+      const box = document.createElement('div');
+      box.className = 'letter-box';
+      box.textContent = currentWord[i];
+      if (!guessedLetters.has(currentWord[i])) {
+        box.style.color = 'var(--error-color)';
+      }
+      hangmanWordDisplay.appendChild(box);
+    }
+    showHangmanMessage(`Game Over! The word was ${currentWord}.`, 'error');
+    playSfx('out');
+    
+    gameStats.hangman.losses++;
+    saveStats();
+    
+    if (hangmanHintBtn) hangmanHintBtn.classList.add('hidden');
+    hangmanInput.disabled = true;
+    hangmanSubmitBtn.disabled = true;
+    hangmanSubmitBtn.style.opacity = '0.5';
+    hangmanRestartBtn.classList.remove('hidden');
+    hangmanRestartBtn.focus();
+    disableAllKeyboardKeys();
+  }
+}
+
+if (hangmanHintBtn) {
+  hangmanHintBtn.addEventListener('click', triggerHangmanHint);
+}
+
+// Electron custom borderless title bar listeners
+const isElectron = typeof window !== 'undefined' && window.process && window.process.type === 'renderer';
+if (isElectron) {
+  document.body.classList.add('is-electron');
+  
+  try {
+    const electron = window.require ? window.require('electron') : null;
+    if (electron) {
+      const { ipcRenderer } = electron;
+      
+      const minBtn = document.getElementById('title-bar-min-btn');
+      const maxBtn = document.getElementById('title-bar-max-btn');
+      const closeBtn = document.getElementById('title-bar-close-btn');
+      
+      if (minBtn) {
+        minBtn.addEventListener('click', () => {
+          ipcRenderer.send('window-minimize');
+        });
+      }
+      
+      if (maxBtn) {
+        maxBtn.addEventListener('click', () => {
+          ipcRenderer.send('window-maximize');
+        });
+      }
+      
+      if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+          ipcRenderer.send('window-close');
+        });
+      }
+    }
+  } catch (e) {
+    console.error('Failed to setup Electron title bar listeners:', e);
+  }
+}
 
 initGame();
 

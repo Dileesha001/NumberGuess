@@ -3136,5 +3136,194 @@ body.test-match-active .cricket-commentary-box .commentary-lines {
   color: #38bdf8;
 }
 
+/* ===== CUSTOM WINDOWS TITLE BAR STYLES ===== */
+.custom-title-bar {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 36px;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  z-index: 999999;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.title-bar-drag-area {
+  flex-grow: 1;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding-left: 16px;
+  -webkit-app-region: drag;
+  cursor: grab;
+}
+
+.title-bar-logo {
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+}
+
+.title-bar-text {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+}
+
+.title-bar-controls {
+  display: flex;
+  height: 100%;
+}
+
+.title-bar-btn {
+  width: 48px;
+  height: 100%;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+  -webkit-app-region: no-drag;
+}
+
+.title-bar-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f8fafc;
+}
+
+.title-bar-btn.close:hover {
+  background: #e11d48;
+  color: white;
+}
+
+/* Shown inside Electron app context */
+body.is-electron .custom-title-bar {
+  display: flex;
+}
+
+body.is-electron #app {
+  padding-top: 36px;
+}
+
+/* Make sure the splash screen respects the title bar too */
+body.is-electron .splash-screen {
+  top: 36px;
+  height: calc(100vh - 36px);
+}
+
+
+/* ===== TIME ATTACK COUNTDOWN TIMER STYLES ===== */
+.guess-timer-container {
+  width: 100%;
+  margin-bottom: 20px;
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 12px;
+  box-sizing: border-box;
+}
+
+.timer-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #94a3b8;
+  margin-bottom: 8px;
+}
+
+.timer-progress-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.timer-fill {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #ec4899, #f43f5e);
+  border-radius: 4px;
+  transition: width 0.1s linear;
+}
+
+
+/* ===== GAME MODE SELECT OVERLAYS & CARDS ===== */
+.mode-select-box {
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(20px);
+}
+
+.mode-cards-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  width: 100%;
+  max-width: 540px;
+  margin: 0 auto;
+}
+
+.mode-select-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.mode-select-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-4px);
+}
+
+.mode-select-card.selected {
+  background: rgba(236, 72, 153, 0.08);
+  border-color: #ec4899;
+  box-shadow: 0 0 20px rgba(236, 72, 153, 0.2);
+}
+
+#hangman-category-modal .mode-select-card.selected {
+  background: rgba(14, 165, 233, 0.08);
+  border-color: #0ea5e9;
+  box-shadow: 0 0 20px rgba(14, 165, 233, 0.2);
+}
+
+.mode-card-icon {
+  font-size: 2.2rem;
+  margin-bottom: 12px;
+}
+
+.mode-select-card h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #fff;
+}
+
+.mode-select-card p {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
 
 

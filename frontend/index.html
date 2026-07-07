@@ -13,6 +13,25 @@
     <title>DPR Mini Games</title>
   </head>
   <body>
+    <!-- Custom Borderless Title Bar -->
+    <div id="custom-title-bar" class="custom-title-bar">
+      <div class="title-bar-drag-area">
+        <img src="./logo.svg" alt="Logo" class="title-bar-logo" />
+        <span class="title-bar-text">DPR Mini Games</span>
+      </div>
+      <div class="title-bar-controls">
+        <button id="title-bar-min-btn" class="title-bar-btn" title="Minimize">
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><rect y="5" width="12" height="2" fill="currentColor"/></svg>
+        </button>
+        <button id="title-bar-max-btn" class="title-bar-btn" title="Maximize">
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><rect x="1.5" y="1.5" width="9" height="9" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+        </button>
+        <button id="title-bar-close-btn" class="title-bar-btn close" title="Close">
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5 L10.5 10.5 M10.5 1.5 L1.5 10.5" stroke="currentColor" stroke-width="1.5"/></svg>
+        </button>
+      </div>
+    </div>
+
     <!-- Intro Splash Screen -->
     <div id="splash-screen" class="splash-screen">
       <div class="splash-content">
@@ -40,6 +59,13 @@
           <svg class="control-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
             <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          </svg>
+        </button>
+        <button id="music-btn" class="icon-btn" title="Toggle Music">
+          <svg class="control-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 18V5l12-2v13"></path>
+            <circle cx="6" cy="18" r="3"></circle>
+            <circle cx="18" cy="16" r="3"></circle>
           </svg>
         </button>
         <button id="fullscreen-btn" class="icon-btn" title="Toggle Fullscreen">
@@ -148,61 +174,123 @@
 
       <!-- Game View for Number Guessing -->
       <div id="number-guess-game" class="hidden">
+        <!-- Mode Selection Overlay Modal -->
+        <div id="number-guess-mode-modal" class="how-to-play-overlay">
+          <div class="team-select-modal-box mode-select-box">
+            <h2 class="modal-title" style="margin-bottom: 24px;">Select Game Mode</h2>
+            <div class="mode-cards-container">
+              <div class="mode-select-card selected" id="mode-classic-btn" data-mode="classic">
+                <div class="mode-card-icon">🎯</div>
+                <h3>Classic Mode</h3>
+                <p>Guess the number with standard feedback and no time limits.</p>
+              </div>
+              <div class="mode-select-card" id="mode-time-btn" data-mode="time-attack">
+                <div class="mode-card-icon">⚡</div>
+                <h3>Time Attack</h3>
+                <p>Race against the clock! You have 30 seconds to guess the number.</p>
+              </div>
+            </div>
+            <button id="number-guess-start-btn" class="cricket-team-select-start-btn" style="margin-top: 24px;">Start Game</button>
+          </div>
+        </div>
+
         <main class="game-container">
           <div class="game-nav">
             <button id="back-btn" class="back-btn">← Back to Menu</button>
           </div>
           <header class="game-header">
-          <h1>Number Guessing Game</h1>
-          <p>I have selected a number between <span class="highlight">1 and 100</span>.</p>
-        </header>
+            <h1>Number Guessing Game</h1>
+            <p>I have selected a number between <span class="highlight">1 and 100</span>.</p>
+          </header>
 
-        <div class="game-body">
-          <!-- Range visual tracker -->
-          <div class="range-tracker-container">
-            <div class="range-text">Range: <span id="range-min">1</span> - <span id="range-max">100</span></div>
-            <div class="range-visual-bar">
-              <div class="range-track"></div>
-              <div class="range-highlight" id="range-highlight-bar"></div>
-              <div class="range-marker" id="range-last-guess-marker"></div>
+          <div class="game-body">
+            <!-- Countdown Timer Bar -->
+            <div id="guess-timer-container" class="guess-timer-container hidden">
+              <div class="timer-label">Time Remaining: <span id="guess-timer-text">30.0s</span></div>
+              <div class="timer-progress-bar">
+                <div id="guess-timer-fill" class="timer-fill"></div>
+              </div>
+            </div>
+
+            <!-- Range visual tracker -->
+            <div class="range-tracker-container">
+              <div class="range-text">Range: <span id="range-min">1</span> - <span id="range-max">100</span></div>
+              <div class="range-visual-bar">
+                <div class="range-track"></div>
+                <div class="range-highlight" id="range-highlight-bar"></div>
+                <div class="range-marker" id="range-last-guess-marker"></div>
+              </div>
+            </div>
+
+            <form id="guess-form" class="guess-form">
+              <input 
+                type="number" 
+                id="guess-input" 
+                class="guess-input" 
+                placeholder="Enter your guess" 
+                min="1" 
+                max="100" 
+                required
+              />
+              <button type="submit" class="guess-btn" id="submit-btn">Guess</button>
+            </form>
+
+            <div id="message-container" class="message-container hidden">
+              <!-- Messages will be injected here via JS -->
+            </div>
+
+            <div id="stats" class="stats">
+              Attempts: <span id="attempts-count">0</span>
+            </div>
+
+            <div id="guess-history-container" class="history-container hidden">
+              <div class="history-label">Guess History</div>
+              <div id="guess-history-chips" class="history-chips"></div>
             </div>
           </div>
 
-          <form id="guess-form" class="guess-form">
-            <input 
-              type="number" 
-              id="guess-input" 
-              class="guess-input" 
-              placeholder="Enter your guess" 
-              min="1" 
-              max="100" 
-              required
-            />
-            <button type="submit" class="guess-btn" id="submit-btn">Guess</button>
-          </form>
-
-          <div id="message-container" class="message-container hidden">
-            <!-- Messages will be injected here via JS -->
+          <div class="game-footer">
+            <button id="restart-btn" class="restart-btn hidden">Play Again</button>
           </div>
-
-          <div id="stats" class="stats">
-            Attempts: <span id="attempts-count">0</span>
-          </div>
-
-          <div id="guess-history-container" class="history-container hidden">
-            <div class="history-label">Guess History</div>
-            <div id="guess-history-chips" class="history-chips"></div>
-          </div>
-        </div>
-
-        <div class="game-footer">
-          <button id="restart-btn" class="restart-btn hidden">Play Again</button>
-        </div>
         </main>
       </div>
 
       <!-- Game View for Hangman -->
       <div id="hangman-game" class="hidden">
+        <!-- Hangman Category Selection Modal -->
+        <div id="hangman-category-modal" class="how-to-play-overlay">
+          <div class="team-select-modal-box mode-select-box" style="max-width: 580px;">
+            <h2 class="modal-title" style="margin-bottom: 24px;">Select Word Category</h2>
+            <div class="mode-cards-container" style="grid-template-columns: repeat(3, 1fr); gap: 12px;">
+              <div class="mode-select-card selected" id="category-all-btn" data-category="all" style="padding: 16px;">
+                <div class="mode-card-icon" style="font-size: 1.8rem;">🌟</div>
+                <h4 style="margin: 8px 0 4px 0;">All</h4>
+              </div>
+              <div class="mode-select-card" id="category-animals-btn" data-category="Animals" style="padding: 16px;">
+                <div class="mode-card-icon" style="font-size: 1.8rem;">🦁</div>
+                <h4 style="margin: 8px 0 4px 0;">Animals</h4>
+              </div>
+              <div class="mode-select-card" id="category-nature-btn" data-category="Nature" style="padding: 16px;">
+                <div class="mode-card-icon" style="font-size: 1.8rem;">🌳</div>
+                <h4 style="margin: 8px 0 4px 0;">Nature</h4>
+              </div>
+              <div class="mode-select-card" id="category-space-btn" data-category="Space" style="padding: 16px;">
+                <div class="mode-card-icon" style="font-size: 1.8rem;">🚀</div>
+                <h4 style="margin: 8px 0 4px 0;">Space</h4>
+              </div>
+              <div class="mode-select-card" id="category-birds-btn" data-category="Birds" style="padding: 16px;">
+                <div class="mode-card-icon" style="font-size: 1.8rem;">🦅</div>
+                <h4 style="margin: 8px 0 4px 0;">Birds</h4>
+              </div>
+              <div class="mode-select-card" id="category-fruits-btn" data-category="Fruits" style="padding: 16px;">
+                <div class="mode-card-icon" style="font-size: 1.8rem;">🍎</div>
+                <h4 style="margin: 8px 0 4px 0;">Fruits</h4>
+              </div>
+            </div>
+            <button id="hangman-start-btn" class="cricket-team-select-start-btn" style="margin-top: 24px;">Start Game</button>
+          </div>
+        </div>
+
         <main class="game-container">
           <div class="game-nav">
             <button id="hangman-back-btn" class="back-btn">← Back to Menu</button>
@@ -275,6 +363,7 @@
           </div>
 
           <div class="game-footer">
+            <button id="hangman-hint-btn" class="restart-btn" style="background: linear-gradient(135deg, #f59e0b, #d97706); margin-right: 12px;">Get Hint</button>
             <button id="hangman-restart-btn" class="restart-btn hidden">Play Again</button>
           </div>
         </main>
@@ -481,6 +570,25 @@
                 <option value="SA">South Africa</option>
                 <option value="WI">West Indies</option>
               </select>
+              <!-- Pitch & Bowler Configuration -->
+              <div class="cricket-config-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0;">
+                <div class="team-dropdown-group" style="margin-bottom: 0;">
+                  <label class="team-dropdown-label">🟢 Pitch Type</label>
+                  <select id="cricket-pitch-select" class="cricket-custom-select" style="width: 100%; background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.08); color: var(--text-primary); padding: 12px; border-radius: 12px; font-family: inherit;">
+                    <option value="flat" selected>Flat Pitch (Batsman Friendly)</option>
+                    <option value="green">Green Pitch (Fast & Swing Friendly)</option>
+                    <option value="dusty">Dusty Pitch (Spin Friendly)</option>
+                  </select>
+                </div>
+                <div class="team-dropdown-group" style="margin-bottom: 0;">
+                  <label class="team-dropdown-label">🔴 Bowler Style</label>
+                  <select id="cricket-bowler-select" class="cricket-custom-select" style="width: 100%; background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.08); color: var(--text-primary); padding: 12px; border-radius: 12px; font-family: inherit;">
+                    <option value="fast" selected>Fast Bowling</option>
+                    <option value="spin">Spin Bowling</option>
+                    <option value="swing">Swing Bowling</option>
+                  </select>
+                </div>
+              </div>
 
               <div class="quick-start-option">
                 <input type="checkbox" id="cricket-quick-start" />

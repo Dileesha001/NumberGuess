@@ -936,38 +936,94 @@ const BOWLER_WEIGHTS = {
 
 let isMilestoneCelebrating = false;
 
-function getTeamFlagHTML(teamCode, className = "country-flag-img") {
-  if (teamCode === "WI") {
-    return `<svg class="${className}" width="28" height="20" viewBox="0 0 28 20" style="display:inline-block; vertical-align:middle;">
-      <rect width="28" height="20" fill="#7B002C" rx="2" />
-      <circle cx="14" cy="11" r="5" fill="#FDB813" />
-      <ellipse cx="14" cy="16" rx="9" ry="3" fill="#D4AF37" />
-      <path d="M14,16 Q13,12 14,8" stroke="#8B5A2B" stroke-width="1.2" fill="none" />
-      <path d="M14,8 Q11,7 9,9 M14,8 Q12,5 11,3 M14,8 Q15,4 17,4 M14,8 Q16,6 18,8 M14,8 Q15,10 17,11" stroke="#228B22" stroke-width="1" fill="none" />
-    </svg>`;
+function getTeamFlagSVG(teamCode, className = "") {
+  const cls = className ? ` class="${className}"` : '';
+  let svgContent = '';
+  
+  if (teamCode === "IND") {
+    svgContent = `
+      <rect width="28" height="20" fill="#FF9933" />
+      <rect y="6.67" width="28" height="6.67" fill="#FFFFFF" />
+      <rect y="13.33" width="28" height="6.67" fill="#138808" />
+      <circle cx="14" cy="10" r="2" fill="none" stroke="#000080" stroke-width="0.5" />
+      <circle cx="14" cy="10" r="0.4" fill="#000080" />
+      <path d="M14 8 L14 12 M12 10 L16 10 M12.6 8.6 L15.4 11.4 M12.6 11.4 L15.4 8.6" stroke="#000080" stroke-width="0.2" />
+    `;
+  } else if (teamCode === "AUS") {
+    svgContent = `
+      <rect width="28" height="20" fill="#000033" />
+      <path d="M0 0 L14 10 M0 10 L14 0" stroke="#FFFFFF" stroke-width="1.5" />
+      <path d="M0 0 L14 10 M0 10 L14 0" stroke="#FF0000" stroke-width="0.6" />
+      <path d="M7 0 L7 10 M0 5 L14 5" stroke="#FFFFFF" stroke-width="2.5" />
+      <path d="M7 0 L7 10 M0 5 L14 5" stroke="#FF0000" stroke-width="1" />
+      <circle cx="21" cy="5" r="0.6" fill="#FFFFFF" />
+      <circle cx="24.5" cy="8" r="0.8" fill="#FFFFFF" />
+      <circle cx="21" cy="11.5" r="0.8" fill="#FFFFFF" />
+      <circle cx="24.5" cy="14.5" r="0.8" fill="#FFFFFF" />
+      <circle cx="18" cy="8" r="0.5" fill="#FFFFFF" />
+    `;
+  } else if (teamCode === "ENG") {
+    svgContent = `
+      <rect width="28" height="20" fill="#FFFFFF" />
+      <path d="M14 0 L14 20 M0 10 L28 10" stroke="#E11D48" stroke-width="3" />
+    `;
+  } else if (teamCode === "SL") {
+    svgContent = `
+      <rect width="28" height="20" fill="#FFBE29" />
+      <rect x="1.5" y="1.5" width="3.5" height="17" fill="#006A4E" />
+      <rect x="5.5" y="1.5" width="3.5" height="17" fill="#FF8D00" />
+      <rect x="10.5" y="1.5" width="16" height="17" fill="#7B002C" />
+      <circle cx="18.5" cy="10" r="3" fill="#FFBE29" />
+      <path d="M15 13 L15 8" stroke="#FFBE29" stroke-width="1" />
+    `;
+  } else if (teamCode === "NZ") {
+    svgContent = `
+      <rect width="28" height="20" fill="#000033" />
+      <path d="M0 0 L14 10 M0 10 L14 0" stroke="#FFFFFF" stroke-width="1.5" />
+      <path d="M0 0 L14 10 M0 10 L14 0" stroke="#FF0000" stroke-width="0.6" />
+      <path d="M7 0 L7 10 M0 5 L14 5" stroke="#FFFFFF" stroke-width="2.5" />
+      <path d="M7 0 L7 10 M0 5 L14 5" stroke="#FF0000" stroke-width="1" />
+      <circle cx="21" cy="5" r="0.9" fill="#E11D48" stroke="#FFFFFF" stroke-width="0.5" />
+      <circle cx="24.5" cy="8" r="0.9" fill="#E11D48" stroke="#FFFFFF" stroke-width="0.5" />
+      <circle cx="21" cy="11.5" r="0.9" fill="#E11D48" stroke="#FFFFFF" stroke-width="0.5" />
+      <circle cx="18" cy="8" r="0.6" fill="#E11D48" stroke="#FFFFFF" stroke-width="0.4" />
+    `;
+  } else if (teamCode === "SA") {
+    svgContent = `
+      <rect width="28" height="20" fill="#FFFFFF" />
+      <polygon points="0,0 28,0 28,8 11.5,8 3,0" fill="#E11D48" />
+      <polygon points="0,20 28,20 28,12 11.5,12 3,20" fill="#002395" />
+      <path d="M0,5 L11,10 L0,15" fill="none" stroke="#F59E0B" stroke-width="2" />
+      <polygon points="0,6 8,10 0,14" fill="#000000" />
+      <path d="M0,10 L12.5,10 M12.5,10 L28,10" stroke="#007A3D" stroke-width="3" fill="none" />
+      <path d="M0,3.5 L12,10 L0,16.5" stroke="#FFFFFF" stroke-width="1" fill="none" />
+      <path d="M12,10 L28,10" stroke="#007A3D" stroke-width="3.5" fill="none" />
+    `;
+  } else if (teamCode === "WI") {
+    svgContent = `
+      <rect width="28" height="20" fill="#7B002C" rx="1" />
+      <circle cx="14" cy="11" r="5.5" fill="#FDB813" />
+      <ellipse cx="14" cy="16" rx="8.5" ry="2.5" fill="#D4AF37" />
+      <path d="M14,16 Q13,12 14,8.5" stroke="#8B5A2B" stroke-width="1.2" fill="none" />
+      <path d="M14,8.5 Q11.5,7.5 9.5,9 M14,8.5 Q12,5.5 11,3.5 M14,8.5 Q15,4.5 17,4.5 M14,8.5 Q16,6.5 17.5,8.5" stroke="#228B22" stroke-width="1" fill="none" />
+    `;
+  } else {
+    svgContent = `
+      <rect width="28" height="20" fill="#475569" rx="1" />
+      <circle cx="14" cy="10" r="5" fill="none" stroke="#94a3b8" stroke-width="1.5" />
+      <line x1="9" y1="10" x2="19" y2="10" stroke="#94a3b8" stroke-width="1.5" />
+    `;
   }
-  const codes = {
-    IND: "in",
-    AUS: "au",
-    ENG: "gb-eng",
-    SL: "lk",
-    NZ: "nz",
-    SA: "za"
-  };
-  const code = codes[teamCode] || "un";
-  return `<img class="${className}" src="https://flagcdn.com/w40/${code}.png" alt="${teamCode}" style="display:inline-block; vertical-align:middle;">`;
+  
+  return `<svg${cls} width="28" height="20" viewBox="0 0 28 20" style="display:inline-block; vertical-align:middle; border-radius:3px; box-shadow: 0 1px 3px rgba(0,0,0,0.3);">${svgContent}</svg>`;
+}
+
+function getTeamFlagHTML(teamCode, className = "country-flag-img") {
+  return getTeamFlagSVG(teamCode, className);
 }
 
 function getFlagCDNCode(teamCode) {
-  const codes = {
-    IND: "in",
-    AUS: "au",
-    ENG: "gb-eng",
-    SL: "lk",
-    NZ: "nz",
-    SA: "za"
-  };
-  return codes[teamCode] || "un";
+  return teamCode;
 }
 
 function updateSVGOutfieldFlags(userTeamCode, oppTeamCode) {
@@ -976,17 +1032,18 @@ function updateSVGOutfieldFlags(userTeamCode, oppTeamCode) {
   
   const setFlagSVG = (el, teamCode, cx, cy, r) => {
     if (!el) return;
-    if (teamCode === "WI") {
-      el.innerHTML = `
-        <rect x="${cx - r}" y="${cy - r}" width="${r * 2}" height="${r * 2}" fill="#7B002C" />
-        <circle cx="${cx}" cy="${cy}" r="${r * 0.5}" fill="#FDB813" />
-        <ellipse cx="${cx}" cy="${cy + r * 0.5}" rx="${r * 0.9}" ry="${r * 0.3}" fill="#D4AF37" />
-        <path d="M${cx},${cy + r * 0.5} Q${cx - r * 0.1},${cy + r * 0.1} ${cx},${cy - r * 0.3}" stroke="#8B5A2B" stroke-width="1.2" fill="none" />
-      `;
-    } else {
-      const code = getFlagCDNCode(teamCode);
-      el.innerHTML = `<image href="https://flagcdn.com/w80/${code}.png" x="${cx - r}" y="${cy - r}" height="${r * 2}" width="${r * 2}" preserveAspectRatio="xMidYMid slice" />`;
-    }
+    const w = r * 2.8;
+    const h = r * 2.0;
+    const x = cx - r * 1.4;
+    const y = cy - r;
+    const scaleX = w / 28;
+    const scaleY = h / 20;
+    
+    const rawFlagSVG = getTeamFlagSVG(teamCode)
+      .replace(/<svg[^>]*>/, '')
+      .replace('</svg>', '');
+      
+    el.innerHTML = `<g transform="translate(${x}, ${y}) scale(${scaleX}, ${scaleY})">${rawFlagSVG}</g>`;
   };
   
   setFlagSVG(svgUserFlagGraphic, userTeamCode, 90, 90, 24);
@@ -4017,9 +4074,6 @@ function showGame(gameId) {
     setupCallback = () => {
       isTestMatch = true;
       document.body.classList.add('test-match-active');
-      if (document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen().catch(err => console.warn(err));
-      }
       initCricket();
     };
   }
@@ -4513,6 +4567,24 @@ function setupTeamDropdown(dropdownId, optionsId, selectId, flagId, nameId) {
   const nameEl = document.getElementById(nameId);
   if (!container || !optionsPanel) return;
 
+  // Substitute option images with inline SVGs at runtime
+  optionsPanel.querySelectorAll('.team-select-option').forEach(opt => {
+    const val = opt.getAttribute('data-value');
+    const existingImg = opt.querySelector('.country-flag-img');
+    if (existingImg && val) {
+      existingImg.outerHTML = getTeamFlagSVG(val, 'country-flag-img');
+    }
+  });
+
+  // Set initial trigger flag if not yet set
+  const selectedOpt = optionsPanel.querySelector('.team-select-option.selected');
+  if (selectedOpt && flagEl) {
+    const val = selectedOpt.getAttribute('data-value');
+    if (val) {
+      flagEl.innerHTML = getTeamFlagSVG(val, 'country-flag-img');
+    }
+  }
+
   const trigger = container.querySelector('.team-select-trigger');
 
   // Toggle open
@@ -4714,7 +4786,7 @@ const muteBtn = document.getElementById('mute-btn');
 if (muteBtn) {
   muteBtn.addEventListener('click', () => {
     isMuted = !isMuted;
-    muteBtn.textContent = isMuted ? '🔇' : '🔊';
+    muteBtn.style.opacity = isMuted ? '0.45' : '1';
     muteBtn.title = isMuted ? 'Unmute Sound' : 'Mute Sound';
     
     // Suspend audio context when muted to release resource locks
@@ -4727,6 +4799,25 @@ if (muteBtn) {
     }
   });
 }
+
+const fullscreenBtn = document.getElementById('fullscreen-btn');
+if (fullscreenBtn) {
+  fullscreenBtn.addEventListener('click', () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.warn(`Error attempting to enable fullscreen: ${err.message}`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  });
+}
+
+document.addEventListener('fullscreenchange', () => {
+  if (fullscreenBtn) {
+    fullscreenBtn.style.opacity = document.fullscreenElement ? '0.5' : '1';
+  }
+});
 
 initGame();
 

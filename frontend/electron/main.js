@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import fs from 'node:fs';
@@ -27,6 +27,7 @@ function createWindow() {
   win = new BrowserWindow({
     width: 1000,
     height: 800,
+    frame: false, // Borderless custom header window
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
@@ -34,6 +35,25 @@ function createWindow() {
     autoHideMenuBar: true, // Hides the top menu for a clean look
     title: "DPR Mini Games",
     icon: iconPath
+  });
+
+  // Handle IPC calls from the frontend custom header
+  ipcMain.on('window-minimize', () => {
+    if (win) win.minimize();
+  });
+
+  ipcMain.on('window-maximize', () => {
+    if (win) {
+      if (win.isMaximized()) {
+        win.unmaximize();
+      } else {
+        win.maximize();
+      }
+    }
+  });
+
+  ipcMain.on('window-close', () => {
+    if (win) win.close();
   });
 
   // Capture renderer process console logs
